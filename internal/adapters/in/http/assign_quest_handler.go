@@ -3,16 +3,16 @@ package http
 import (
 	"context"
 	"quest-manager/internal/adapters/in/http/problems"
+	httpValidations "quest-manager/internal/adapters/in/http/validations"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/generated/servers"
-	"quest-manager/internal/pkg/validations"
 )
 
 // AssignQuest implements POST /api/v1/quests/{quest_id}/assign from OpenAPI.
 func (a *ApiHandler) AssignQuest(ctx context.Context, request servers.AssignQuestRequestObject) (servers.AssignQuestResponseObject, error) {
 	// Валидация запроса с помощью централизованной функции
-	validatedData, validationErr := validations.ValidateAssignQuestRequest(request.Body, request.QuestId)
+	validatedData, validationErr := httpValidations.ValidateAssignQuestRequest(request.Body, request.QuestId)
 	if validationErr != nil {
 		// Возвращаем детальную ошибку через middleware обработчик
 		return nil, validationErr

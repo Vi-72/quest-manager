@@ -7,34 +7,34 @@ import (
 	"quest-manager/internal/core/ports"
 )
 
-// AssignQuestCommandHandler defines the interface for assigning a quest.
+// AssignQuestCommandHandler defines the interface for handling AssignQuestCommand.
 type AssignQuestCommandHandler interface {
 	Handle(ctx context.Context, cmd AssignQuestCommand) (AssignQuestResult, error)
 }
 
 var _ AssignQuestCommandHandler = &assignQuestHandler{}
 
+// assignQuestHandler implements AssignQuestCommandHandler.
 type assignQuestHandler struct {
 	repo ports.QuestRepository
 }
 
-// NewAssignQuestCommandHandler creates a new AssignQuestCommandHandler.
+// NewAssignQuestCommandHandler creates a new instance of AssignQuestCommandHandler.
 func NewAssignQuestCommandHandler(repo ports.QuestRepository) AssignQuestCommandHandler {
 	return &assignQuestHandler{repo: repo}
 }
 
-// Handle assigns the quest to the specified user.
+// Handle assigns a quest to a user using domain business rules.
 func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand) (AssignQuestResult, error) {
 	q, err := h.repo.GetByID(ctx, cmd.ID)
 	if err != nil {
 		return AssignQuestResult{}, fmt.Errorf("quest not found: %w", err)
 	}
 
-	if cmd.UserID == "" {
-		return AssignQuestResult{}, fmt.Errorf("user_id is required for assignment")
+	// Используем доменную логику вместо прямого изменения полей
+	if err := q.AssignTo(cmd.UserID); err != nil {
+		return AssignQuestResult{}, fmt.Errorf("failed to assign quest: %w", err)
 	}
-
-	q.AssignTo(cmd.UserID)
 
 	if err := h.repo.Save(ctx, q); err != nil {
 		return AssignQuestResult{}, fmt.Errorf("failed to save quest: %w", err)

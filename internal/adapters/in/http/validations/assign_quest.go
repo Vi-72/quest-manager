@@ -15,29 +15,24 @@ type ValidatedAssignQuestData struct {
 // ValidateAssignQuestRequest валидирует запрос назначения квеста
 func ValidateAssignQuestRequest(req *servers.AssignQuestRequest, questIdParam string) (*ValidatedAssignQuestData, *ValidationError) {
 	// Валидация body
-	if req == nil {
-		return nil, NewValidationError("body", "is required")
+	if err := ValidateBody(req, "body"); err != nil {
+		return nil, err
 	}
 
 	// Валидация UserId
-	if req.UserId == "" {
-		return nil, NewValidationError("userId", "is required")
-	}
-
-	// Валидация UserId format (UUID)
-	_, err := uuid.Parse(req.UserId)
+	userID, err := ValidateUUID(req.UserId, "userId")
 	if err != nil {
-		return nil, NewValidationErrorWithCause("userId", "must be a valid UUID format (e.g. d5cde057-d462-419b-9428-42eebe22a85e)", err)
+		return nil, err
 	}
 
 	// Валидация QuestId format (UUID)
-	questID, err := uuid.Parse(questIdParam)
+	questID, err := ValidateUUID(questIdParam, "questId")
 	if err != nil {
-		return nil, NewValidationErrorWithCause("questId", "must be a valid UUID format", err)
+		return nil, err
 	}
 
 	return &ValidatedAssignQuestData{
 		QuestID: questID,
-		UserID:  req.UserId,
+		UserID:  userID.String(), // Сохраняем как строку для совместимости
 	}, nil
 }
