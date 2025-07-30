@@ -20,25 +20,26 @@ type ValidatedCreateQuestData struct {
 
 // ValidateCreateQuestRequest валидирует технические аспекты запроса (формат, диапазоны, не пустые значения)
 func ValidateCreateQuestRequest(req *servers.CreateQuestRequest) (*ValidatedCreateQuestData, *ValidationError) {
-	if req == nil {
-		return nil, NewValidationError("body", "is required")
+	// Валидация body
+	if err := ValidateBody(req, "body"); err != nil {
+		return nil, err
 	}
 
 	// Техническая валидация title
-	title := strings.TrimSpace(req.Title)
-	if title == "" {
-		return nil, NewValidationError("title", "is required and cannot be empty")
+	title, err := TrimAndValidateString(req.Title, "title")
+	if err != nil {
+		return nil, err
 	}
 
 	// Техническая валидация description
-	description := strings.TrimSpace(req.Description)
-	if description == "" {
-		return nil, NewValidationError("description", "is required and cannot be empty")
+	description, err := TrimAndValidateString(req.Description, "description")
+	if err != nil {
+		return nil, err
 	}
 
 	// Техническая валидация difficulty (только не пустое)
-	if req.Difficulty == "" {
-		return nil, NewValidationError("difficulty", "is required and cannot be empty")
+	if err := ValidateNotEmpty(string(req.Difficulty), "difficulty"); err != nil {
+		return nil, err
 	}
 
 	// Валидация и конвертация target_location

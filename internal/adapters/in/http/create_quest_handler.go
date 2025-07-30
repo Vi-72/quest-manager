@@ -2,16 +2,16 @@ package http
 
 import (
 	"context"
+	httpValidations "quest-manager/internal/adapters/in/http/validations"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/generated/servers"
-	"quest-manager/internal/pkg/validations"
 )
 
 // CreateQuest implements POST /api/v1/quests from OpenAPI.
 func (a *ApiHandler) CreateQuest(ctx context.Context, request servers.CreateQuestRequestObject) (servers.CreateQuestResponseObject, error) {
 	// Валидация запроса и получение обработанных данных
-	validatedData, validationErr := validations.ValidateCreateQuestRequest(request.Body)
+	validatedData, validationErr := httpValidations.ValidateCreateQuestRequest(request.Body)
 	if validationErr != nil {
 		// Возвращаем детальную ошибку через middleware обработчик
 		return nil, validationErr
@@ -34,7 +34,7 @@ func (a *ApiHandler) CreateQuest(ctx context.Context, request servers.CreateQues
 
 	result, err := a.createQuestHandler.Handle(ctx, cmd)
 	if err != nil {
-		return servers.CreateQuest400Response{}, nil
+		return servers.CreateQuest500Response{}, nil
 	}
 
 	// Get the created quest from repository to return full object

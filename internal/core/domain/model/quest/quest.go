@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"quest-manager/internal/core/domain/model/kernel"
+	"quest-manager/internal/pkg/ddd"
 
 	"github.com/google/uuid"
 )
@@ -30,8 +31,9 @@ const (
 	DifficultyHard   Difficulty = "hard"
 )
 
-// Quest is the main domain model representing a quest entity.
+// Quest is the main domain aggregate representing a quest entity.
 type Quest struct {
+	*ddd.BaseAggregate[uuid.UUID]
 	ID                uuid.UUID
 	Title             string
 	Description       string
@@ -71,9 +73,12 @@ func NewQuest(
 		return Quest{}, errors.New("invalid difficulty: must be one of 'easy', 'medium', 'hard'")
 	}
 
+	questID := uuid.New()
 	now := time.Now()
-	return Quest{
-		ID:                uuid.New(),
+
+	quest := Quest{
+		BaseAggregate:     ddd.NewBaseAggregate(questID),
+		ID:                questID,
 		Title:             title,
 		Description:       description,
 		Difficulty:        questDifficulty,
@@ -86,36 +91,120 @@ func NewQuest(
 		Creator:           creator,
 		CreatedAt:         now,
 		UpdatedAt:         now,
-	}, nil
+	}
+
+	// Создаем доменное событие
+	quest.RaiseDomainEvent(QuestCreated{
+		ID:         uuid.New(),
+		EventID:    uuid.New(),
+		Title:      title,
+		Creator:    creator,
+		Difficulty: difficulty,
+		Timestamp:  now,
+	})
+
+	return quest, nil
 }
 
 // AssignTo sets the assignee for the quest and changes its status to "assigned".
-func (q *Quest) AssignTo(userID string) {
+// Содержит бизнес-логику назначения квеста.
+func (q *Quest) AssignTo(userID string) error {
+	// Бизнес-правила назначения
+	if q.Status != StatusCreated && q.Status != StatusPosted {
+		return errors.New("quest can only be assigned if status is 'created' or 'posted'")
+	}
+
+	if q.Assignee != nil {
+		return errors.New("quest is already assigned to another user")
+	}
+
+	oldStatus := q.Status
 	q.Assignee = &userID
 	q.Status = StatusAssigned
 	q.UpdatedAt = time.Now()
+
+	// Создаем доменные события
+	q.RaiseDomainEvent(QuestAssigned{
+		ID:        uuid.New(),
+		EventID:   uuid.New(),
+		QuestID:   q.ID,
+		UserID:    userID,
+		Timestamp: q.UpdatedAt,
+	})
+
+	q.RaiseDomainEvent(QuestStatusChanged{
+		ID:        uuid.New(),
+		EventID:   uuid.New(),
+		QuestID:   q.ID,
+		OldStatus: oldStatus,
+		NewStatus: q.Status,
+		Timestamp: q.UpdatedAt,
+	})
+
+	return nil
 }
 
-// MarkPosted updates the quest status to "posted".
+// ChangeStatus изменяет статус квеста с проверкой бизнес-правил
+func (q *Quest) ChangeStatus(newStatus Status) error {
+	// Валидация переходов статуса (business rules)
+	if !q.isValidStatusTransition(q.Status, newStatus) {
+		return errors.New("invalid status transition from " + string(q.Status) + " to " + string(newStatus))
+	}
+
+	oldStatus := q.Status
+	q.Status = newStatus
+	q.UpdatedAt = time.Now()
+
+	// Создаем доменное событие
+	q.RaiseDomainEvent(QuestStatusChanged{
+		ID:        uuid.New(),
+		EventID:   uuid.New(),
+		QuestID:   q.ID,
+		OldStatus: oldStatus,
+		NewStatus: newStatus,
+		Timestamp: q.UpdatedAt,
+	})
+
+	return nil
+}
+
+// isValidStatusTransition проверяет допустимость перехода между статусами
+func (q *Quest) isValidStatusTransition(from, to Status) bool {
+	validTransitions := map[Status][]Status{
+		StatusCreated:    {StatusPosted, StatusAssigned},
+		StatusPosted:     {StatusAssigned, StatusCreated},
+		StatusAssigned:   {StatusInProgress, StatusDeclined, StatusPosted},
+		StatusInProgress: {StatusCompleted, StatusDeclined},
+		StatusDeclined:   {StatusPosted},
+		StatusCompleted:  {}, // Финальный статус
+	}
+
+	allowed, exists := validTransitions[from]
+	if !exists {
+		return false
+	}
+
+	for _, allowedStatus := range allowed {
+		if allowedStatus == to {
+			return true
+		}
+	}
+	return false
+}
+
+// Deprecated: использовать ChangeStatus вместо этих методов
 func (q *Quest) MarkPosted() {
-	q.Status = StatusPosted
-	q.UpdatedAt = time.Now()
+	q.ChangeStatus(StatusPosted)
 }
 
-// MarkInProgress updates the quest status to "in_progress".
 func (q *Quest) MarkInProgress() {
-	q.Status = StatusInProgress
-	q.UpdatedAt = time.Now()
+	q.ChangeStatus(StatusInProgress)
 }
 
-// MarkDeclined updates the quest status to "declined".
 func (q *Quest) MarkDeclined() {
-	q.Status = StatusDeclined
-	q.UpdatedAt = time.Now()
+	q.ChangeStatus(StatusDeclined)
 }
 
-// MarkCompleted updates the quest status to "completed".
 func (q *Quest) MarkCompleted() {
-	q.Status = StatusCompleted
-	q.UpdatedAt = time.Now()
+	q.ChangeStatus(StatusCompleted)
 }

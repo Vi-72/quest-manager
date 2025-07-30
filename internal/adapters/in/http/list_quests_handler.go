@@ -11,7 +11,9 @@ import (
 func (a *ApiHandler) ListQuests(ctx context.Context, request servers.ListQuestsRequestObject) (servers.ListQuestsResponseObject, error) {
 	query := queries.ListQuestsQuery{}
 	if request.Params.Status != nil {
-		status := quest.Status(*request.Params.Status)
+		// Просто передаем статус как есть - домен/репозиторий сам разберется с валидностью
+		statusStr := string(*request.Params.Status)
+		status := quest.Status(statusStr)
 		query.Status = &status
 	}
 
