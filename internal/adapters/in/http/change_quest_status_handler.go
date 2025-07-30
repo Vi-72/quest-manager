@@ -2,12 +2,11 @@ package http
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/generated/servers"
-
-	"github.com/google/uuid"
 )
 
 // ChangeQuestStatus implements PATCH /api/v1/quests/{quest_id}/status from OpenAPI.

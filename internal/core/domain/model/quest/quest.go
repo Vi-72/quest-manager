@@ -1,10 +1,12 @@
 package quest
 
 import (
+	"errors"
 	"time"
 
-	"github.com/google/uuid"
 	"quest-manager/internal/core/domain/model/kernel"
+
+	"github.com/google/uuid"
 )
 
 // Status represents the current state of a quest.
@@ -47,20 +49,34 @@ type Quest struct {
 }
 
 // NewQuest creates a new quest instance with "created" status.
+// Validates that difficulty is a valid domain value.
 func NewQuest(
 	title, description string,
-	difficulty Difficulty,
+	difficulty string, // Принимаем string для валидации
 	reward string,
 	targetLocation, executionLocation kernel.GeoCoordinate,
 	creator string,
 	equipment, skills []string,
-) Quest {
+) (Quest, error) {
+	// Валидация difficulty в домене
+	var questDifficulty Difficulty
+	switch difficulty {
+	case string(DifficultyEasy):
+		questDifficulty = DifficultyEasy
+	case string(DifficultyMedium):
+		questDifficulty = DifficultyMedium
+	case string(DifficultyHard):
+		questDifficulty = DifficultyHard
+	default:
+		return Quest{}, errors.New("invalid difficulty: must be one of 'easy', 'medium', 'hard'")
+	}
+
 	now := time.Now()
 	return Quest{
 		ID:                uuid.New(),
 		Title:             title,
 		Description:       description,
-		Difficulty:        difficulty,
+		Difficulty:        questDifficulty,
 		Reward:            reward,
 		TargetLocation:    targetLocation,
 		ExecutionLocation: executionLocation,
@@ -70,7 +86,7 @@ func NewQuest(
 		Creator:           creator,
 		CreatedAt:         now,
 		UpdatedAt:         now,
-	}
+	}, nil
 }
 
 // AssignTo sets the assignee for the quest and changes its status to "assigned".

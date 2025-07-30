@@ -2,11 +2,10 @@ package http
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"quest-manager/internal/adapters/in/http/problems"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/generated/servers"
-
-	"github.com/google/uuid"
 )
 
 // ListAssignedQuests implements GET /api/v1/quests/assigned from OpenAPI.

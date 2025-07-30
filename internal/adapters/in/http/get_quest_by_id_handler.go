@@ -2,10 +2,9 @@ package http
 
 import (
 	"context"
+	"github.com/google/uuid"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/generated/servers"
-
-	"github.com/google/uuid"
 )
 
 // GetQuestById implements GET /api/v1/quests/{quest_id} from OpenAPI.

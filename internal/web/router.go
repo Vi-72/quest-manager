@@ -1,6 +1,7 @@
 package web
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -8,6 +9,7 @@ import (
 	"quest-manager/cmd"
 	"quest-manager/internal/adapters/in/http/problems"
 	"quest-manager/internal/generated/servers"
+	"quest-manager/internal/pkg/validations"
 )
 
 const apiV1Prefix = "/api/v1"
@@ -62,7 +64,7 @@ func NewRouter(root *cmd.CompositionRoot) http.Handler {
 
 	strictHandler := root.NewApiHandler()
 
-	// Create StrictHandler with custom error handling for parameter parsing
+	// Create StrictHandler with custom error handling for parameter parsing and validation
 	apiHandler := servers.NewStrictHandlerWithOptions(strictHandler, nil, servers.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			// Handle parameter parsing errors with detailed messages
@@ -70,7 +72,16 @@ func NewRouter(root *cmd.CompositionRoot) http.Handler {
 			problem.WriteResponse(w)
 		},
 		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			// Handle response errors
+			// Check if it's a validation error from our pkg/validations
+			var validationErr *validations.ValidationError
+			if errors.As(err, &validationErr) {
+				// Convert validation error to Problem Details and return
+				problem := validations.ConvertValidationErrorToProblem(validationErr)
+				problem.WriteResponse(w)
+				return
+			}
+
+			// Handle other response errors
 			problem := problems.NewBadRequest("Response error: " + err.Error())
 			problem.WriteResponse(w)
 		},

@@ -23,10 +23,11 @@ func NewCreateQuestCommandHandler(repo ports.QuestRepository) CreateQuestCommand
 }
 
 func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand) (CreateQuestResult, error) {
-	q := quest.NewQuest(
+	// Создаем новый квест (домен теперь валидирует difficulty)
+	q, err := quest.NewQuest(
 		cmd.Title,
 		cmd.Description,
-		cmd.Difficulty,
+		cmd.Difficulty, // Теперь уже string, не нужна конвертация
 		cmd.Reward,
 		cmd.TargetLocation,
 		cmd.ExecutionLocation,
@@ -34,7 +35,11 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 		cmd.Equipment,
 		cmd.Skills,
 	)
+	if err != nil {
+		return CreateQuestResult{}, err
+	}
 
+	// Сохраняем квест
 	if err := h.repo.Save(ctx, q); err != nil {
 		return CreateQuestResult{}, err
 	}

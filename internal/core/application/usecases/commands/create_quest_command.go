@@ -3,15 +3,16 @@ package commands
 import (
 	"time"
 
-	"github.com/google/uuid"
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/quest"
+
+	"github.com/google/uuid"
 )
 
 type CreateQuestCommand struct {
 	Title             string
 	Description       string
-	Difficulty        quest.Difficulty
+	Difficulty        string // Изменено на string, валидация в домене
 	Reward            string
 	TargetLocation    kernel.GeoCoordinate
 	ExecutionLocation kernel.GeoCoordinate
