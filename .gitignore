@@ -39,5 +39,8 @@ Thumbs.db
 *.log
 
 # Build artifacts
-app
-quest-manager
+/app
+/quest-manager
+
+# But keep cmd/app/ directory
+!cmd/app/
