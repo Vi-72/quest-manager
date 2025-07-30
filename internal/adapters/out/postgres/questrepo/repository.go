@@ -2,11 +2,12 @@ package questrepo
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
 	"quest-manager/internal/pkg/errs"
+
+	"github.com/google/uuid"
 )
 
 var _ ports.QuestRepository = &Repository{}
@@ -112,6 +113,28 @@ func (r *Repository) FindAll(ctx context.Context) ([]quest.Quest, error) {
 	db := r.tracker.Db()
 	if err := db.WithContext(ctx).Find(&dtos).Error; err != nil {
 		return nil, errs.WrapInfrastructureError("failed to get all quests", err)
+	}
+
+	quests := make([]quest.Quest, len(dtos))
+	for i, dto := range dtos {
+		q, err := DtoToDomain(dto)
+		if err != nil {
+			return nil, errs.WrapInfrastructureError("failed to convert dto to domain", err)
+		}
+		quests[i] = q
+	}
+
+	return quests, nil
+}
+
+// FindByStatus retrieves all quests with the specified status.
+func (r *Repository) FindByStatus(ctx context.Context, status quest.Status) ([]quest.Quest, error) {
+	var dtos []QuestDTO
+	db := r.tracker.Db()
+	if err := db.WithContext(ctx).
+		Where("status = ?", string(status)).
+		Find(&dtos).Error; err != nil {
+		return nil, errs.WrapInfrastructureError("failed to get quests by status", err)
 	}
 
 	quests := make([]quest.Quest, len(dtos))

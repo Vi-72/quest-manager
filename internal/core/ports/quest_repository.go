@@ -2,9 +2,10 @@ package ports
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/quest"
+
+	"github.com/google/uuid"
 )
 
 // QuestRepository defines access methods for quests.
@@ -14,6 +15,9 @@ type QuestRepository interface {
 
 	// FindAll retrieves all quests without filters.
 	FindAll(ctx context.Context) ([]quest.Quest, error)
+
+	// FindByStatus retrieves all quests with the specified status.
+	FindByStatus(ctx context.Context, status quest.Status) ([]quest.Quest, error)
 
 	// FindByLocation returns all quests by target or execution location.
 	FindByLocation(ctx context.Context, center kernel.GeoCoordinate, radiusKm float64) ([]quest.Quest, error)

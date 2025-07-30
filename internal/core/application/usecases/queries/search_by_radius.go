@@ -8,15 +8,9 @@ import (
 	"quest-manager/internal/core/ports"
 )
 
-// SearchQuestsByRadiusQuery represents the input parameters for searching quests by radius.
-type SearchQuestsByRadiusQuery struct {
-	Center   kernel.GeoCoordinate
-	RadiusKm float64
-}
-
-// SearchQuestsByRadiusQueryHandler defines the interface for handling SearchQuestsByRadiusQuery.
+// SearchQuestsByRadiusQueryHandler defines the interface for handling quest search by radius.
 type SearchQuestsByRadiusQueryHandler interface {
-	Handle(ctx context.Context, query SearchQuestsByRadiusQuery) ([]quest.Quest, error)
+	Handle(ctx context.Context, center kernel.GeoCoordinate, radiusKm float64) ([]quest.Quest, error)
 }
 
 type searchQuestsByRadiusHandler struct {
@@ -29,6 +23,6 @@ func NewSearchQuestsByRadiusQueryHandler(repo ports.QuestRepository) SearchQuest
 }
 
 // Handle retrieves quests within the specified radius from the center coordinate.
-func (h *searchQuestsByRadiusHandler) Handle(ctx context.Context, query SearchQuestsByRadiusQuery) ([]quest.Quest, error) {
-	return h.repo.FindByLocation(ctx, query.Center, query.RadiusKm)
+func (h *searchQuestsByRadiusHandler) Handle(ctx context.Context, center kernel.GeoCoordinate, radiusKm float64) ([]quest.Quest, error) {
+	return h.repo.FindByLocation(ctx, center, radiusKm)
 }

@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"quest-manager/internal/adapters/in/http/validations"
-	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/generated/servers"
 )
 
@@ -20,13 +19,8 @@ func (a *ApiHandler) SearchQuestsByRadius(ctx context.Context, request servers.S
 		return nil, validationErr
 	}
 
-	query := queries.SearchQuestsByRadiusQuery{
-		Center:   validatedData.Center,
-		RadiusKm: validatedData.RadiusKm,
-	}
-
 	// Получаем список квестов напрямую
-	quests, err := a.searchQuestsByRadius.Handle(ctx, query)
+	quests, err := a.searchQuestsByRadius.Handle(ctx, validatedData.Center, validatedData.RadiusKm)
 	if err != nil {
 		return servers.SearchQuestsByRadius500Response{}, nil
 	}

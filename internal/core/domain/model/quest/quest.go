@@ -22,6 +22,16 @@ const (
 	StatusCompleted  Status = "completed"
 )
 
+// IsValidStatus проверяет является ли строка валидным статусом квеста
+func IsValidStatus(status string) bool {
+	switch Status(status) {
+	case StatusCreated, StatusPosted, StatusAssigned, StatusInProgress, StatusDeclined, StatusCompleted:
+		return true
+	default:
+		return false
+	}
+}
+
 // Difficulty represents the difficulty level of a quest.
 type Difficulty string
 

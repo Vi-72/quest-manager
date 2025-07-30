@@ -2,23 +2,22 @@ package http
 
 import (
 	"context"
-	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/generated/servers"
 )
 
 // ListQuests implements GET /api/v1/quests from OpenAPI.
 func (a *ApiHandler) ListQuests(ctx context.Context, request servers.ListQuestsRequestObject) (servers.ListQuestsResponseObject, error) {
-	query := queries.ListQuestsQuery{}
+	var status *quest.Status
 	if request.Params.Status != nil {
 		// Просто передаем статус как есть - домен/репозиторий сам разберется с валидностью
 		statusStr := string(*request.Params.Status)
-		status := quest.Status(statusStr)
-		query.Status = &status
+		questStatus := quest.Status(statusStr)
+		status = &questStatus
 	}
 
-	// Получаем список квестов напрямую
-	quests, err := a.listQuestsHandler.Handle(ctx, query)
+	// Получаем список квестов напрямую с опциональным фильтром
+	quests, err := a.listQuestsHandler.Handle(ctx, status)
 	if err != nil {
 		return servers.ListQuests500Response{}, nil
 	}
