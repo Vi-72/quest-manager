@@ -44,44 +44,31 @@ func (r *Repository) GetByID(ctx context.Context, questID uuid.UUID) (quest.Ques
 	return DtoToDomain(dto)
 }
 
-const earthRadiusKm = 6371.0
-
-// FindByLocation retrieves quests within a radius (in km) around the given coordinate.
-func (r *Repository) FindByLocation(ctx context.Context, center kernel.GeoCoordinate, radiusKm float64) ([]quest.Quest, error) {
+// FindByBoundingBox retrieves quests within a bounding box area.
+// Simple database query without business logic.
+func (r *Repository) FindByBoundingBox(ctx context.Context, bbox kernel.BoundingBox) ([]quest.Quest, error) {
 	var dtos []QuestDTO
-
-	// Bounding box in degrees (1 degree ~ 111 km)
-	radiusDeg := radiusKm / 111.0
-	minLat := center.Latitude() - radiusDeg
-	maxLat := center.Latitude() + radiusDeg
-	minLon := center.Longitude() - radiusDeg
-	maxLon := center.Longitude() + radiusDeg
 
 	db := r.tracker.Db()
 	if err := db.WithContext(ctx).
 		Where("(target_latitude BETWEEN ? AND ? AND target_longitude BETWEEN ? AND ?) OR "+
 			"(execution_latitude BETWEEN ? AND ? AND execution_longitude BETWEEN ? AND ?)",
-			minLat, maxLat, minLon, maxLon,
-			minLat, maxLat, minLon, maxLon).
+			bbox.MinLat, bbox.MaxLat, bbox.MinLon, bbox.MaxLon,
+			bbox.MinLat, bbox.MaxLat, bbox.MinLon, bbox.MaxLon).
 		Find(&dtos).Error; err != nil {
-		return nil, errs.WrapInfrastructureError("failed to get quests by location", err)
+		return nil, errs.WrapInfrastructureError("failed to get quests by bounding box", err)
 	}
 
-	// Filter by exact radius
-	var result []quest.Quest
-	for _, dto := range dtos {
+	quests := make([]quest.Quest, len(dtos))
+	for i, dto := range dtos {
 		q, err := DtoToDomain(dto)
 		if err != nil {
 			return nil, errs.WrapInfrastructureError("failed to convert dto to domain", err)
 		}
-
-		if center.DistanceTo(q.TargetLocation) <= radiusKm ||
-			center.DistanceTo(q.ExecutionLocation) <= radiusKm {
-			result = append(result, q)
-		}
+		quests[i] = q
 	}
 
-	return result, nil
+	return quests, nil
 }
 
 // FindByAssignee retrieves all quests assigned to a specific user.

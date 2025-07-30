@@ -19,8 +19,9 @@ type QuestRepository interface {
 	// FindByStatus retrieves all quests with the specified status.
 	FindByStatus(ctx context.Context, status quest.Status) ([]quest.Quest, error)
 
-	// FindByLocation returns all quests by target or execution location.
-	FindByLocation(ctx context.Context, center kernel.GeoCoordinate, radiusKm float64) ([]quest.Quest, error)
+	// FindByBoundingBox returns all quests within the specified bounding box area.
+	// This is a simple database query without business logic.
+	FindByBoundingBox(ctx context.Context, bbox kernel.BoundingBox) ([]quest.Quest, error)
 
 	// FindByAssignee returns all quests assigned to a specific user.
 	FindByAssignee(ctx context.Context, userID string) ([]quest.Quest, error)

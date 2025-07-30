@@ -18,6 +18,14 @@ type GeoCoordinate struct {
 	Lon float64 `json:"lon"`
 }
 
+// BoundingBox represents a geographical bounding box.
+type BoundingBox struct {
+	MinLat float64
+	MaxLat float64
+	MinLon float64
+	MaxLon float64
+}
+
 // NewGeoCoordinate creates a new coordinate with validation.
 func NewGeoCoordinate(lat, lon float64) (GeoCoordinate, error) {
 	if lat < MinLatitude || lat > MaxLatitude {
@@ -50,6 +58,24 @@ func (g GeoCoordinate) DistanceTo(other GeoCoordinate) float64 {
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 
 	return earthRadiusKm * c
+}
+
+// BoundingBoxForRadius calculates a bounding box for the given radius in kilometers.
+// This provides an approximate rectangular area that encompasses all points within the radius.
+func (g GeoCoordinate) BoundingBoxForRadius(radiusKm float64) BoundingBox {
+	// Calculate latitude radius in degrees (1 degree latitude ≈ 111.32 km)
+	latRadiusInDegrees := radiusKm / 111.32
+
+	// Calculate longitude radius in degrees, adjusted for latitude distortion
+	// At latitude, 1 degree longitude = cos(latitude) * 111.32 km
+	lonRadiusInDegrees := radiusKm / (111.32 * math.Cos(g.Lat*math.Pi/180.0))
+
+	return BoundingBox{
+		MinLat: g.Lat - latRadiusInDegrees,
+		MaxLat: g.Lat + latRadiusInDegrees,
+		MinLon: g.Lon - lonRadiusInDegrees,
+		MaxLon: g.Lon + lonRadiusInDegrees,
+	}
 }
 
 func (g GeoCoordinate) Equals(other GeoCoordinate) bool {
