@@ -13,29 +13,34 @@ import (
 )
 
 type CompositionRoot struct {
-	configs Config
-	db      *gorm.DB
-
-	closers []Closer
+	configs    Config
+	db         *gorm.DB
+	unitOfWork ports.UnitOfWork
+	closers    []Closer
 }
 
 func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
-	return &CompositionRoot{
-		configs: configs,
-		db:      db,
-	}
-}
-
-func (cr *CompositionRoot) NewUnitOfWork() ports.UnitOfWork {
-	unitOfWork, err := postgres.NewUnitOfWork(cr.db)
+	// Создаем Unit of Work один раз при инициализации
+	unitOfWork, err := postgres.NewUnitOfWork(db)
 	if err != nil {
 		log.Fatalf("cannot create UnitOfWork: %v", err)
 	}
-	return unitOfWork
+
+	return &CompositionRoot{
+		configs:    configs,
+		db:         db,
+		unitOfWork: unitOfWork,
+	}
 }
 
+// GetUnitOfWork возвращает единственный экземпляр UnitOfWork
+func (cr *CompositionRoot) GetUnitOfWork() ports.UnitOfWork {
+	return cr.unitOfWork
+}
+
+// QuestRepository возвращает репозиторий из единственного UoW
 func (cr *CompositionRoot) QuestRepository() ports.QuestRepository {
-	return cr.NewUnitOfWork().QuestRepository()
+	return cr.unitOfWork.QuestRepository()
 }
 
 // NewCreateQuestCommandHandler creates a handler for creating quests.

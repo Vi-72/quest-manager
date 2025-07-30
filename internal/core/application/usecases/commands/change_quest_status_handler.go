@@ -25,25 +25,16 @@ func NewChangeQuestStatusCommandHandler(repo ports.QuestRepository) ChangeQuestS
 	return &changeQuestStatusHandler{repo: repo}
 }
 
-// Handle updates the quest status and, if needed, assigns it to a user.
-// Handle updates only the quest status (excluding assignment).
+// Handle updates the quest status using domain business rules.
 func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestStatusCommand) (ChangeQuestStatusResult, error) {
 	q, err := h.repo.GetByID(ctx, cmd.ID)
 	if err != nil {
 		return ChangeQuestStatusResult{}, fmt.Errorf("quest not found: %w", err)
 	}
 
-	switch cmd.Status {
-	case quest.StatusPosted:
-		q.MarkPosted()
-	case quest.StatusInProgress:
-		q.MarkInProgress()
-	case quest.StatusDeclined:
-		q.MarkDeclined()
-	case quest.StatusCompleted:
-		q.MarkCompleted()
-	default:
-		return ChangeQuestStatusResult{}, fmt.Errorf("invalid status: %s", cmd.Status)
+	// Используем доменную логику вместо switch/case
+	if err := q.ChangeStatus(quest.Status(cmd.Status)); err != nil {
+		return ChangeQuestStatusResult{}, fmt.Errorf("failed to change quest status: %w", err)
 	}
 
 	if err := h.repo.Save(ctx, q); err != nil {

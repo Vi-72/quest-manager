@@ -2,22 +2,18 @@ package http
 
 import (
 	"context"
-	"github.com/google/uuid"
-	"quest-manager/internal/adapters/in/http/problems"
+	"quest-manager/internal/adapters/in/http/validations"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/generated/servers"
 )
 
 // ListAssignedQuests implements GET /api/v1/quests/assigned from OpenAPI.
 func (a *ApiHandler) ListAssignedQuests(ctx context.Context, request servers.ListAssignedQuestsRequestObject) (servers.ListAssignedQuestsResponseObject, error) {
-	if request.Params.UserId == "" {
-		return nil, problems.NewBadRequest("UserId query parameter is required")
-	}
-
-	// Validate UserId is a valid UUID format
-	_, err := uuid.Parse(request.Params.UserId)
-	if err != nil {
-		return nil, problems.NewBadRequest("UserId must be a valid UUID format (e.g. d5cde057-d462-419b-9428-42eebe22a85e)")
+	// Валидация UUID для user_id
+	_, validationErr := validations.ValidateUUID(request.Params.UserId, "user_id")
+	if validationErr != nil {
+		// Возвращаем ошибку валидации, middleware автоматически обработает её и вернет 400 ответ
+		return nil, validationErr
 	}
 
 	query := queries.ListAssignedQuestsQuery{UserID: request.Params.UserId}

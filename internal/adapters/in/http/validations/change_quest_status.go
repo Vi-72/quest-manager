@@ -1,21 +1,10 @@
 package validations
 
 import (
-	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/generated/servers"
 
 	"github.com/google/uuid"
 )
-
-// validQuestStatuses содержит все допустимые значения статуса квеста для изменения
-var validQuestStatuses = []string{
-	string(quest.StatusCreated),
-	string(quest.StatusPosted),
-	string(quest.StatusAssigned),
-	string(quest.StatusInProgress),
-	string(quest.StatusDeclined),
-	string(quest.StatusCompleted),
-}
 
 // ValidatedChangeQuestStatusData содержит валидированные данные для изменения статуса квеста
 type ValidatedChangeQuestStatusData struct {
@@ -30,14 +19,9 @@ func ValidateChangeQuestStatusRequest(req *servers.ChangeStatusRequest, questIdP
 		return nil, err
 	}
 
-	// Валидация Status
+	// Валидация Status - только проверяем что не пустая строка
 	statusStr := string(req.Status)
 	if err := ValidateNotEmpty(statusStr, "status"); err != nil {
-		return nil, err
-	}
-
-	// Валидация что статус является допустимым значением
-	if err := ValidateEnum(statusStr, validQuestStatuses, "status"); err != nil {
 		return nil, err
 	}
 
