@@ -1,74 +1,33 @@
 package http
 
 import (
-	"encoding/json"
-	"net/http"
-	"strconv"
-
+	"context"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/domain/model/kernel"
+	"quest-manager/internal/generated/servers"
 )
 
-// SearchQuestsByRadiusHTTPHandler handles GET /api/v1/quests/search-radius requests.
-type SearchQuestsByRadiusHTTPHandler struct {
-	queryHandler queries.SearchQuestsByRadiusQueryHandler
-}
-
-// NewSearchQuestsByRadiusHTTPHandler creates a new instance of SearchQuestsByRadiusHTTPHandler.
-func NewSearchQuestsByRadiusHTTPHandler(handler queries.SearchQuestsByRadiusQueryHandler) *SearchQuestsByRadiusHTTPHandler {
-	return &SearchQuestsByRadiusHTTPHandler{queryHandler: handler}
-}
-
-// ServeHTTP processes the HTTP request for searching quests within a radius.
-func (h *SearchQuestsByRadiusHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// Extract and validate query parameters
-	latStr := r.URL.Query().Get("lat")
-	lonStr := r.URL.Query().Get("lon")
-	radiusStr := r.URL.Query().Get("radius_km")
-
-	if latStr == "" || lonStr == "" || radiusStr == "" {
-		http.Error(w, "lat, lon, and radius_km are required", http.StatusBadRequest)
-		return
-	}
-
-	lat, err := strconv.ParseFloat(latStr, 64)
+// SearchQuestsByRadius implements GET /api/v1/quests/search-radius from OpenAPI.
+func (a *ApiHandler) SearchQuestsByRadius(ctx context.Context, request servers.SearchQuestsByRadiusRequestObject) (servers.SearchQuestsByRadiusResponseObject, error) {
+	center, err := kernel.NewGeoCoordinate(float64(request.Params.Lat), float64(request.Params.Lon))
 	if err != nil {
-		http.Error(w, "invalid lat value", http.StatusBadRequest)
-		return
+		return servers.SearchQuestsByRadius400Response{}, nil
 	}
 
-	lon, err := strconv.ParseFloat(lonStr, 64)
-	if err != nil {
-		http.Error(w, "invalid lon value", http.StatusBadRequest)
-		return
-	}
-
-	radiusKm, err := strconv.ParseFloat(radiusStr, 64)
-	if err != nil || radiusKm <= 0 {
-		http.Error(w, "invalid radius_km value", http.StatusBadRequest)
-		return
-	}
-
-	center, err := kernel.NewGeoCoordinate(lat, lon)
-	if err != nil {
-		http.Error(w, "invalid coordinates: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// Prepare query
 	query := queries.SearchQuestsByRadiusQuery{
 		Center:   center,
-		RadiusKm: radiusKm,
+		RadiusKm: float64(request.Params.RadiusKm),
 	}
 
-	result, err := h.queryHandler.Handle(r.Context(), query)
+	result, err := a.searchQuestsByRadius.Handle(ctx, query)
 	if err != nil {
-		http.Error(w, "failed to search quests: "+err.Error(), http.StatusInternalServerError)
-		return
+		return servers.SearchQuestsByRadius500Response{}, nil
 	}
 
-	// Return results
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(result.Quests)
+	var apiQuests []servers.Quest
+	for _, q := range result.Quests {
+		apiQuests = append(apiQuests, QuestToAPI(q))
+	}
+
+	return servers.SearchQuestsByRadius200JSONResponse(apiQuests), nil
 }

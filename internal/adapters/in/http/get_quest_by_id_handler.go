@@ -1,47 +1,26 @@
 package http
 
 import (
-	"encoding/json"
-	"net/http"
+	"context"
+	"quest-manager/internal/core/application/usecases/queries"
+	"quest-manager/internal/generated/servers"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"quest-manager/internal/core/application/usecases/queries"
 )
 
-// GetQuestByIDHTTPHandler handles GET /api/v1/quests/{quest_id} requests.
-type GetQuestByIDHTTPHandler struct {
-	queryHandler queries.GetQuestByIDQueryHandler
-}
-
-// NewGetQuestByIDHTTPHandler creates a new instance of GetQuestByIDHTTPHandler.
-func NewGetQuestByIDHTTPHandler(handler queries.GetQuestByIDQueryHandler) *GetQuestByIDHTTPHandler {
-	return &GetQuestByIDHTTPHandler{queryHandler: handler}
-}
-
-// ServeHTTP processes the HTTP request to get a quest by its ID.
-func (h *GetQuestByIDHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	questIDStr, ok := vars["quest_id"]
-	if !ok {
-		http.Error(w, "quest_id path parameter is required", http.StatusBadRequest)
-		return
-	}
-
-	questID, err := uuid.Parse(questIDStr)
+// GetQuestById implements GET /api/v1/quests/{quest_id} from OpenAPI.
+func (a *ApiHandler) GetQuestById(ctx context.Context, request servers.GetQuestByIdRequestObject) (servers.GetQuestByIdResponseObject, error) {
+	questID, err := uuid.Parse(request.QuestId)
 	if err != nil {
-		http.Error(w, "invalid quest_id format", http.StatusBadRequest)
-		return
+		return servers.GetQuestById404Response{}, nil
 	}
 
 	query := queries.GetQuestByIDQuery{ID: questID}
-	result, err := h.queryHandler.Handle(r.Context(), query)
+	result, err := a.getQuestByIDHandler.Handle(ctx, query)
 	if err != nil {
-		http.Error(w, "quest not found: "+err.Error(), http.StatusNotFound)
-		return
+		return servers.GetQuestById404Response{}, nil
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(result.Quest)
+	apiQuest := QuestToAPI(result.Quest)
+	return servers.GetQuestById200JSONResponse(apiQuest), nil
 }

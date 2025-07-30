@@ -80,15 +80,24 @@ type ChangeStatusRequest struct {
 // ChangeStatusRequestStatus defines model for ChangeStatusRequest.Status.
 type ChangeStatusRequestStatus string
 
+// Coordinate defines model for Coordinate.
+type Coordinate struct {
+	// Latitude Latitude coordinate
+	Latitude float32 `json:"latitude"`
+
+	// Longitude Longitude coordinate
+	Longitude float32 `json:"longitude"`
+}
+
 // CreateQuestRequest defines model for CreateQuestRequest.
 type CreateQuestRequest struct {
 	Description       string                       `json:"description"`
 	Difficulty        CreateQuestRequestDifficulty `json:"difficulty"`
 	Equipment         *[]string                    `json:"equipment,omitempty"`
-	ExecutionLocation string                       `json:"execution_location"`
+	ExecutionLocation Coordinate                   `json:"execution_location"`
 	Reward            *string                      `json:"reward,omitempty"`
 	Skills            *[]string                    `json:"skills,omitempty"`
-	TargetLocation    string                       `json:"target_location"`
+	TargetLocation    Coordinate                   `json:"target_location"`
 	Title             string                       `json:"title"`
 }
 
@@ -97,18 +106,20 @@ type CreateQuestRequestDifficulty string
 
 // Quest defines model for Quest.
 type Quest struct {
+	Assignee          *string         `json:"assignee"`
 	CreatedAt         time.Time       `json:"created_at"`
+	Creator           string          `json:"creator"`
 	Description       string          `json:"description"`
 	Difficulty        QuestDifficulty `json:"difficulty"`
 	Equipment         *[]string       `json:"equipment,omitempty"`
-	ExecutionLocation string          `json:"execution_location"`
+	ExecutionLocation Coordinate      `json:"execution_location"`
 	Id                string          `json:"id"`
 	Reward            *string         `json:"reward,omitempty"`
 	Skills            *[]string       `json:"skills,omitempty"`
 	Status            QuestStatus     `json:"status"`
-	TargetLocation    string          `json:"target_location"`
+	TargetLocation    Coordinate      `json:"target_location"`
 	Title             string          `json:"title"`
-	UpdatedAt         *time.Time      `json:"updated_at,omitempty"`
+	UpdatedAt         time.Time       `json:"updated_at"`
 }
 
 // QuestDifficulty defines model for Quest.Difficulty.
@@ -1084,25 +1095,27 @@ func (sh *strictHandler) ChangeQuestStatus(w http.ResponseWriter, r *http.Reques
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9xYXW/bNhT9K8TdHtXYXTKg0FvSYIWBDVga9KkIDEa8ttlQpEJeOjMC//eBH1L8IdsJ",
-	"nGbtnkyYV7qH55xLXuoRKlM3RqMmB+UjuGqGNY/Dc+fkVF95dPQZ78NP+LexpkFLEmOMd2jHUoShQFdZ",
-	"2ZA0Gkr44tCy0SUjw3h8D6MZsvgWRgYKoEWDUIIjK/UUlssCLN57aVFA+bV7700XaG6/YUWwLODjjOsp",
-	"XhMn73YCc3E6jFD7OryyssgJBRTQGJcGCVkcSj1urJladA4KEFgpmSYCPQpD/M0h0DlnL+aYfD+XawQ+",
-	"buYqQMjJRFZe0WJ1WcjdAgqoUUhfQwEzbvugFhCANjXqmFkS1q43S/6DW8sX8bF/sPIB01iZiu8EZ/Eh",
-	"JO6bcndSKfeyrMTtFGl/SpKksGdmQ5UUVqzRu0bmdrbeVffJetWvZLbamMe5ibF1GIHghO9I1gg98vzU",
-	"6kvxFqZ4k5o+znsF+Ea8UPsNv8qA8BmmzWw8073Fqim3rRxASD0x2xv5+d8jNjGWxcelnhbMIlmJ8zjm",
-	"WrCaaz6Vepp2d3fSwS9TfbC/QgAG87FrtHNZhZXN0bqU4f3J6clZoM40qHkjoYTTk+HJaVCV0ywKPuCN",
-	"HMzfD1KK8M8UI8Gh7OIKRwJK+FM6ukoh4WHLayS0Dsqvm8v6QypCmyGz2wXr6JRh+t6jDSRrXiep8mQ6",
-	"Hr/3sXITHOEao13aT34bDuO2YjTlCuZNo2SSdvDNJZM+YetK6leLEyjhl8HTIT/IJ/wg7V1bZbbc3Isi",
-	"qcxMMlfhid8TnvWwkSa0mivm0M7RMrTW2Ohu5+ua2wWU8AmJcabyC7lSKy8N9G0runJwQqoTdHRhxOJF",
-	"hOzjoedoXq7XJFmPyy1J3r8agqunpOuUpvJxvqrQuYlXasFauy0LOOtXYc6VFEzqxhMTnPhRgiVyGGca",
-	"H1hLTrFRjoPO8Pvq8jwHPa8+R5fBIaFnDK3gjrJsu8RNsVbr9GeqLdYSGdrmbu2HpPap1T66MHsw8Ixg",
-	"W3KH3Fazd5YL6Xfvx9cxKil+sficgg8o/xEDXqY4SfICd0ivOO2VvTt4J8rE0KyE9vVtWtGuvEZP9yaO",
-	"h+lrJk4ksUQlk5rdSWUyPf0YUuj4rj4OyQ9dCg+SZjLdGrPJDtXBiquOKYUsxzoM3oHYLoXH+DuWYrmz",
-	"Dj5haksuFiNxyP9ftLz37VV5dNlaILRCTw5oU77p1nfEGSaQuFRZw7NtYVKUNsQmxmvxOntZmzW0d2F/",
-	"3CddPsPiXa63EVn5GnJIwavvJN3r9z49n3ie1fsM/5Pep2sznnUiGtv29G9husRk94Frz8m54rmnC23D",
-	"qZr1dL/xU1fEed1eQf4n1uv7iveDeS9iY/lCf9B0b2i2xF02W5s3hsRnkjG8VVDCjKgpBwNlKq5mxlH5",
-	"YfhhmB0Jy5vlvwEAAP//hoaprQAWAAA=",
+	"H4sIAAAAAAAC/9xYW2/bOBP9KwS/71GNnW0XyOotabCFgV1g06BPRWBMpLHNhiIVcujUCPzfF7xIvki+",
+	"ZHPZbp8sSyPO4ZxzyKEeeaGrWitUZHn+yG0xwwrC5bm1YqquHFr6jPf+x9+tja7RkMAQ4yyasSj9ZYm2",
+	"MKImoRXP+ReLho0uGWkGYRxGM2RhFEaaZ5wWNfKcWzJCTflymXGD904YLHn+tR33pg3Ut9+wIL7M+McZ",
+	"qCleE5CzO4HZ8NhfoXKVH7IwCIQlz3itbbyIyMKlUOPa6KlBa3nGSyykiA98eST6+JtDoFPOXsxam1Io",
+	"IOxClUCCXIndIv6RnrBi9XrGJ9pUQDznE6mBeMYr+C4qP8nfhhmvhIp/3vl/CYhy1S0aD0RqNd2VrXl0",
+	"bLrTs4184e9Wwq0KtVNdB9Jbr0DWfu1toH/c5ibjpZhMROEkLdZlgGAXfhJYClfxjM/A9FGbcQ+7rlCF",
+	"zIKwsr1Z0g0wBhbhte9YOI9pLHUBDbj/G5zwnP9vsHLbIFltsKaNUK4Hj6gvlb0TUtqnwSEwU6R/iIUE",
+	"SexJs8VqDMs2CNkofxdGb536hHDVz31ybgCnnJRw64GScdjDZHL+GMJArZ5LIHxHokK+6x1t+oX1UwpP",
+	"9IvuhfX4JuvyK8k+464un6ikLasID/0Iv6QyHWmclVw3xL6Bt2suj02oie7uBOd/jdhEGxbGEmqaMYNk",
+	"BM7DNaiSVaBgKtQ07uj2pJ1VHh3L/vQB6FXMrtHMReEnPEdjY4bTk/cnH3xFdY0KasFz/v5kePLeqwBo",
+	"FgQygFoM5qeDmMLfmWKou18IwsRHpd+2hKWrGOJfNlAhobE8/7o9rd+FJDQJMrtdsLbKwj++d2h87RVU",
+	"kcH0MIrktVuJGy8UW2tl4wr3y3DofwqtKC0FUNdSRMYH32wU9Qpba8F9Oo+raceWy+1FLRSV6UmqlX/j",
+	"14hnM2ykCI0CySyaORqGxui461tXVWAWPOefkBgwmQYEKdcG9eXrMrq2+fNoH7R0ocvFkwqy1+/d9mK5",
+	"aVW/lSw7lJy+GIKrVdLNkkb7WFcUaO3ESblgjdyWGf/Qz8IcpCiZULUjVgLBswiLxWHAFD6wpjjZlh0H",
+	"reD3+fI8BR3nz9GlV4g/J/j2f4ctm5PBNlnrPv0veYs1hfRHpXbuh6h28Xj1bGP2YICEoEu5RTDF7J2B",
+	"Urjd6/F1iIqMXyw+x+ADzH9Ej5etHQ/6qJdAe2nvnFQ6h5FdeduzyI7EYY99ycSxSCyWkgnF7oTUqTz9",
+	"GGLo+K56HpIf2goPgmYifilIIjvkgzVVPccKiY5NGNCC6FrhMfyORbnc6YNPGNuSi8WoPKT/L0rcu+bz",
+	"yOiykYBvhVYKaFK+6dL3jD2sRAIhE4cfusTEKKWJTbRT5cusZU1W39759XEfdWkPC6fL3kZk7QvYIQav",
+	"Xom6l+99ej7rHdX7DP+V3qdtM47aEbVpevq3EF2sZPtRc8/Ouaa51QG4BipmPd1v+LwZcF43R5CfRHp9",
+	"X25/MO0FbCydmw+K7g3FFmuXxNbkDSHhnSgMZyTP+YyozgcDqQuQM20pPxueDZMi+fJm+XcAAAD//zbF",
+	"nmv0FwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

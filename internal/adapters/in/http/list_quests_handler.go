@@ -1,45 +1,29 @@
 package http
 
 import (
-	"encoding/json"
-	"net/http"
-
+	"context"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/domain/model/quest"
+	"quest-manager/internal/generated/servers"
 )
 
-// ListQuestsHTTPHandler handles GET /api/v1/quests requests.
-type ListQuestsHTTPHandler struct {
-	queryHandler queries.ListQuestsQueryHandler
-}
-
-// NewListQuestsHTTPHandler creates a new instance of ListQuestsHTTPHandler.
-func NewListQuestsHTTPHandler(handler queries.ListQuestsQueryHandler) *ListQuestsHTTPHandler {
-	return &ListQuestsHTTPHandler{queryHandler: handler}
-}
-
-// ServeHTTP processes the HTTP request to list quests with an optional status filter.
-func (h *ListQuestsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	statusParam := r.URL.Query().Get("status")
-
-	var listQuery queries.ListQuestsQuery
-	if statusParam != "" {
-		status := quest.Status(statusParam)
-		// Validate status
-		if !isValidStatus(status) {
-			http.Error(w, "invalid status value", http.StatusBadRequest)
-			return
-		}
-		listQuery.Status = &status
+// ListQuests implements GET /api/v1/quests from OpenAPI.
+func (a *ApiHandler) ListQuests(ctx context.Context, request servers.ListQuestsRequestObject) (servers.ListQuestsResponseObject, error) {
+	query := queries.ListQuestsQuery{}
+	if request.Params.Status != nil {
+		status := quest.Status(*request.Params.Status)
+		query.Status = &status
 	}
 
-	result, err := h.queryHandler.Handle(r.Context(), listQuery)
+	result, err := a.listQuestsHandler.Handle(ctx, query)
 	if err != nil {
-		http.Error(w, "failed to list quests: "+err.Error(), http.StatusInternalServerError)
-		return
+		return servers.ListQuests500Response{}, nil
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(result.Quests)
+	var apiQuests []servers.Quest
+	for _, q := range result.Quests {
+		apiQuests = append(apiQuests, QuestToAPI(q))
+	}
+
+	return servers.ListQuests200JSONResponse(apiQuests), nil
 }

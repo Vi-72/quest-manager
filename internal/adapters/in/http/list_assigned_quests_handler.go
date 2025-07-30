@@ -1,38 +1,27 @@
 package http
 
 import (
-	"encoding/json"
-	"net/http"
-
+	"context"
 	"quest-manager/internal/core/application/usecases/queries"
+	"quest-manager/internal/generated/servers"
 )
 
-// ListAssignedQuestsHTTPHandler handles GET /api/v1/quests/assigned requests.
-type ListAssignedQuestsHTTPHandler struct {
-	queryHandler queries.ListAssignedQuestsQueryHandler
-}
-
-// NewListAssignedQuestsHTTPHandler creates a new instance of ListAssignedQuestsHTTPHandler.
-func NewListAssignedQuestsHTTPHandler(handler queries.ListAssignedQuestsQueryHandler) *ListAssignedQuestsHTTPHandler {
-	return &ListAssignedQuestsHTTPHandler{queryHandler: handler}
-}
-
-// ServeHTTP processes the HTTP request to get quests assigned to a specific user.
-func (h *ListAssignedQuestsHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	userID := r.URL.Query().Get("user_id")
-	if userID == "" {
-		http.Error(w, "user_id query parameter is required", http.StatusBadRequest)
-		return
+// ListAssignedQuests implements GET /api/v1/quests/assigned from OpenAPI.
+func (a *ApiHandler) ListAssignedQuests(ctx context.Context, request servers.ListAssignedQuestsRequestObject) (servers.ListAssignedQuestsResponseObject, error) {
+	if request.Params.UserId == "" {
+		return servers.ListAssignedQuests400Response{}, nil
 	}
 
-	query := queries.ListAssignedQuestsQuery{UserID: userID}
-	result, err := h.queryHandler.Handle(r.Context(), query)
+	query := queries.ListAssignedQuestsQuery{UserID: request.Params.UserId}
+	result, err := a.listAssignedQuestsHandler.Handle(ctx, query)
 	if err != nil {
-		http.Error(w, "failed to get assigned quests: "+err.Error(), http.StatusInternalServerError)
-		return
+		return servers.ListAssignedQuests500Response{}, nil
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(result.Quests)
+	var apiQuests []servers.Quest
+	for _, q := range result.Quests {
+		apiQuests = append(apiQuests, QuestToAPI(q))
+	}
+
+	return servers.ListAssignedQuests200JSONResponse(apiQuests), nil
 }

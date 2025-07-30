@@ -204,6 +204,25 @@ paths:
 
 components:
   schemas:
+    Coordinate:
+      type: object
+      properties:
+        latitude:
+          type: number
+          format: float
+          minimum: -90
+          maximum: 90
+          description: Latitude coordinate
+        longitude:
+          type: number
+          format: float
+          minimum: -180
+          maximum: 180
+          description: Longitude coordinate
+      required:
+        - latitude
+        - longitude
+
     CreateQuestRequest:
       type: object
       properties:
@@ -217,9 +236,9 @@ components:
         reward:
           type: string
         target_location:
-          type: string
+          $ref: '#/components/schemas/Coordinate'
         execution_location:
-          type: string
+          $ref: '#/components/schemas/Coordinate'
         equipment:
           type: array
           items:
@@ -268,9 +287,9 @@ components:
         reward:
           type: string
         target_location:
-          type: string
+          $ref: '#/components/schemas/Coordinate'
         execution_location:
-          type: string
+          $ref: '#/components/schemas/Coordinate'
         equipment:
           type: array
           items:
@@ -282,6 +301,11 @@ components:
         status:
           type: string
           enum: [created, posted, assigned, in_progress, declined, completed]
+        creator:
+          type: string
+        assignee:
+          type: string
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -296,4 +320,6 @@ components:
         - status
         - target_location
         - execution_location
+        - creator
         - created_at
+        - updated_at

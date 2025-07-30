@@ -1,67 +1,41 @@
 package http
 
 import (
-	"encoding/json"
-	"net/http"
+	"context"
+	"quest-manager/internal/core/application/usecases/commands"
+	"quest-manager/internal/core/application/usecases/queries"
+	"quest-manager/internal/generated/servers"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"quest-manager/internal/core/application/usecases/commands"
 )
 
-// AssignQuestRequest represents the JSON payload for assigning a quest.
-type AssignQuestRequest struct {
-	UserID string `json:"user_id"`
-}
-
-// AssignQuestHTTPHandler handles POST /api/v1/quests/{quest_id}/assign requests.
-type AssignQuestHTTPHandler struct {
-	cmdHandler commands.AssignQuestCommandHandler
-}
-
-// NewAssignQuestHTTPHandler creates a new instance of AssignQuestHTTPHandler.
-func NewAssignQuestHTTPHandler(handler commands.AssignQuestCommandHandler) *AssignQuestHTTPHandler {
-	return &AssignQuestHTTPHandler{cmdHandler: handler}
-}
-
-// ServeHTTP processes the HTTP request to assign a quest to a user.
-func (h *AssignQuestHTTPHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	questIDStr, ok := vars["quest_id"]
-	if !ok {
-		http.Error(w, "quest_id path parameter is required", http.StatusBadRequest)
-		return
+// AssignQuest implements POST /api/v1/quests/{quest_id}/assign from OpenAPI.
+func (a *ApiHandler) AssignQuest(ctx context.Context, request servers.AssignQuestRequestObject) (servers.AssignQuestResponseObject, error) {
+	if request.Body == nil || request.Body.UserId == "" {
+		return servers.AssignQuest400Response{}, nil
 	}
 
-	questID, err := uuid.Parse(questIDStr)
+	questID, err := uuid.Parse(request.QuestId)
 	if err != nil {
-		http.Error(w, "invalid quest_id format", http.StatusBadRequest)
-		return
-	}
-
-	var req AssignQuestRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request body", http.StatusBadRequest)
-		return
-	}
-
-	if req.UserID == "" {
-		http.Error(w, "user_id is required", http.StatusBadRequest)
-		return
+		return servers.AssignQuest404Response{}, nil
 	}
 
 	cmd := commands.AssignQuestCommand{
 		ID:     questID,
-		UserID: req.UserID,
+		UserID: request.Body.UserId,
 	}
 
-	result, err := h.cmdHandler.Handle(r.Context(), cmd)
+	_, err = a.assignQuestHandler.Handle(ctx, cmd)
 	if err != nil {
-		http.Error(w, "failed to assign quest: "+err.Error(), http.StatusInternalServerError)
-		return
+		return servers.AssignQuest500Response{}, nil
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = json.NewEncoder(w).Encode(result)
+	// Get updated quest from repository
+	updatedQuest, err := a.getQuestByIDHandler.Handle(ctx, queries.GetQuestByIDQuery{ID: questID})
+	if err != nil {
+		return servers.AssignQuest500Response{}, nil
+	}
+
+	apiQuest := QuestToAPI(updatedQuest.Quest)
+	return servers.AssignQuest200JSONResponse(apiQuest), nil
 }
