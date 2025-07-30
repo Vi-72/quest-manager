@@ -18,7 +18,8 @@ func (a *ApiHandler) GetQuestById(ctx context.Context, request servers.GetQuestB
 	// Получаем квест напрямую
 	quest, err := a.getQuestByIDHandler.Handle(ctx, questID)
 	if err != nil {
-		return servers.GetQuestById404Response{}, nil
+		// Передаем ошибку в middleware для правильной обработки (404 для NotFoundError, 500 для остальных)
+		return nil, err
 	}
 
 	apiQuest := QuestToAPI(quest)

@@ -24,13 +24,15 @@ func (a *ApiHandler) AssignQuest(ctx context.Context, request servers.AssignQues
 
 	result, err := a.assignQuestHandler.Handle(ctx, cmd)
 	if err != nil {
-		return servers.AssignQuest500Response{}, nil
+		// Передаем ошибку в middleware для правильной обработки (400 для validation, 404 для not found, 500 для infrastructure)
+		return nil, err
 	}
 
 	// Получаем обновленный квест для возврата
 	quest, err := a.getQuestByIDHandler.Handle(ctx, result.ID)
 	if err != nil {
-		return servers.AssignQuest500Response{}, nil
+		// Передаем ошибку в middleware для правильной обработки
+		return nil, err
 	}
 
 	apiQuest := QuestToAPI(quest)

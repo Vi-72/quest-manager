@@ -58,17 +58,6 @@ func ValidateBody(body interface{}, bodyName string) *ValidationError {
 	return nil
 }
 
-// ValidateEnum проверяет что значение находится среди допустимых
-func ValidateEnum(value string, validValues []string, fieldName string) *ValidationError {
-	for _, valid := range validValues {
-		if value == valid {
-			return nil
-		}
-	}
-
-	return NewValidationError(fieldName, "must be one of: "+strings.Join(validValues, ", "))
-}
-
 // ValidateNotEmpty проверяет что строка не пустая
 func ValidateNotEmpty(value, fieldName string) *ValidationError {
 	if strings.TrimSpace(value) == "" {

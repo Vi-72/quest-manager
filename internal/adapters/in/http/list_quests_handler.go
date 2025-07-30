@@ -19,7 +19,8 @@ func (a *ApiHandler) ListQuests(ctx context.Context, request servers.ListQuestsR
 	// Получаем список квестов напрямую с опциональным фильтром
 	quests, err := a.listQuestsHandler.Handle(ctx, status)
 	if err != nil {
-		return servers.ListQuests500Response{}, nil
+		// Передаем ошибку в middleware для правильной обработки (например, 400 для невалидного статуса)
+		return nil, err
 	}
 
 	var apiQuests []servers.Quest

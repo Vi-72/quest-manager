@@ -33,13 +33,15 @@ func (a *ApiHandler) CreateQuest(ctx context.Context, request servers.CreateQues
 
 	result, err := a.createQuestHandler.Handle(ctx, cmd)
 	if err != nil {
-		return servers.CreateQuest500Response{}, nil
+		// Передаем ошибку в middleware для правильной обработки (400 для validation, 500 для infrastructure)
+		return nil, err
 	}
 
 	// Get the created quest from repository to return full object
 	createdQuest, err := a.getQuestByIDHandler.Handle(ctx, result.ID)
 	if err != nil {
-		return servers.CreateQuest500Response{}, nil
+		// Передаем ошибку в middleware для правильной обработки
+		return nil, err
 	}
 
 	return servers.CreateQuest201JSONResponse(QuestToAPI(createdQuest)), nil

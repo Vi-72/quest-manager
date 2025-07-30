@@ -2,9 +2,9 @@ package commands
 
 import (
 	"context"
-	"fmt"
 
 	"quest-manager/internal/core/ports"
+	"quest-manager/internal/pkg/errs"
 )
 
 // AssignQuestCommandHandler defines the interface for handling AssignQuestCommand.
@@ -26,18 +26,20 @@ func NewAssignQuestCommandHandler(repo ports.QuestRepository) AssignQuestCommand
 
 // Handle assigns a quest to a user using domain business rules.
 func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand) (AssignQuestResult, error) {
+	// Получаем квест - если не найден → 404
 	q, err := h.repo.GetByID(ctx, cmd.ID)
 	if err != nil {
-		return AssignQuestResult{}, fmt.Errorf("quest not found: %w", err)
+		return AssignQuestResult{}, errs.NewNotFoundErrorWithCause("quest", cmd.ID.String(), err)
 	}
 
-	// Используем доменную логику вместо прямого изменения полей
+	// Используем доменную логику - ошибки бизнес-правил → 400
 	if err := q.AssignTo(cmd.UserID); err != nil {
-		return AssignQuestResult{}, fmt.Errorf("failed to assign quest: %w", err)
+		return AssignQuestResult{}, errs.NewDomainValidationErrorWithCause("assignment", "failed to assign quest", err)
 	}
 
+	// Сохраняем квест - infrastructure ошибка → 500
 	if err := h.repo.Save(ctx, q); err != nil {
-		return AssignQuestResult{}, fmt.Errorf("failed to save quest: %w", err)
+		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
 	return AssignQuestResult{

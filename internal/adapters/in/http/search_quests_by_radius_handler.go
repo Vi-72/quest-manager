@@ -22,7 +22,8 @@ func (a *ApiHandler) SearchQuestsByRadius(ctx context.Context, request servers.S
 	// Получаем список квестов напрямую
 	quests, err := a.searchQuestsByRadius.Handle(ctx, validatedData.Center, validatedData.RadiusKm)
 	if err != nil {
-		return servers.SearchQuestsByRadius500Response{}, nil
+		// Передаем ошибку в middleware для правильной обработки
+		return nil, err
 	}
 
 	var apiQuests []servers.Quest

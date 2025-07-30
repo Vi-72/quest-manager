@@ -10,6 +10,7 @@ import (
 	"quest-manager/cmd"
 	"quest-manager/internal/adapters/in/http/problems"
 	"quest-manager/internal/generated/servers"
+	"quest-manager/internal/pkg/errs"
 )
 
 const apiV1Prefix = "/api/v1"
@@ -77,6 +78,24 @@ func NewRouter(root *cmd.CompositionRoot) http.Handler {
 			if errors.As(err, &validationErr) {
 				// Convert validation error to Problem Details and return
 				problem := validations.ConvertValidationErrorToProblem(validationErr)
+				problem.WriteResponse(w)
+				return
+			}
+
+			// Check if it's a domain validation error from application layer
+			var domainValidationErr *errs.DomainValidationError
+			if errors.As(err, &domainValidationErr) {
+				// Convert to 400 Bad Request
+				problem := validations.ConvertDomainValidationErrorToProblem(domainValidationErr)
+				problem.WriteResponse(w)
+				return
+			}
+
+			// Check if it's a not found error from application layer
+			var notFoundErr *errs.NotFoundError
+			if errors.As(err, &notFoundErr) {
+				// Convert to 404 Not Found
+				problem := validations.ConvertNotFoundErrorToProblem(notFoundErr)
 				problem.WriteResponse(w)
 				return
 			}

@@ -18,7 +18,8 @@ func (a *ApiHandler) ListAssignedQuests(ctx context.Context, request servers.Lis
 	// Получаем список квестов напрямую
 	quests, err := a.listAssignedQuestsHandler.Handle(ctx, request.Params.UserId)
 	if err != nil {
-		return servers.ListAssignedQuests500Response{}, nil
+		// Передаем ошибку в middleware для правильной обработки
+		return nil, err
 	}
 
 	var apiQuests []servers.Quest

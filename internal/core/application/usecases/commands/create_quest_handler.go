@@ -4,6 +4,7 @@ import (
 	"context"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
+	"quest-manager/internal/pkg/errs"
 )
 
 // CreateQuestCommandHandler defines a handler for creating a new quest.
@@ -23,7 +24,7 @@ func NewCreateQuestCommandHandler(repo ports.QuestRepository) CreateQuestCommand
 }
 
 func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand) (CreateQuestResult, error) {
-	// Создаем новый квест (домен теперь валидирует difficulty)
+	// Создаем новый квест (домен теперь валидирует difficulty и может вернуть domain errors)
 	q, err := quest.NewQuest(
 		cmd.Title,
 		cmd.Description,
@@ -36,12 +37,13 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 		cmd.Skills,
 	)
 	if err != nil {
+		// Ошибки от NewQuest уже являются domain errors
 		return CreateQuestResult{}, err
 	}
 
-	// Сохраняем квест
+	// Сохраняем квест - ошибки репозитория оборачиваем в infrastructure error
 	if err := h.repo.Save(ctx, q); err != nil {
-		return CreateQuestResult{}, err
+		return CreateQuestResult{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
 	return CreateQuestResult{

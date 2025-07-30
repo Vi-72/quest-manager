@@ -19,7 +19,8 @@ func (a *ApiHandler) ChangeQuestStatus(ctx context.Context, request servers.Chan
 	// Выполняем изменение статуса напрямую
 	updatedQuest, err := a.changeQuestStatusHandler.Handle(ctx, validatedData.QuestID, quest.Status(validatedData.Status))
 	if err != nil {
-		return servers.ChangeQuestStatus500Response{}, nil
+		// Передаем ошибку в middleware для правильной обработки (400, 404, 500)
+		return nil, err
 	}
 
 	// Возвращаем обновленный квест

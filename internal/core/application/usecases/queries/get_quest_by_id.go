@@ -5,6 +5,7 @@ import (
 
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
+	"quest-manager/internal/pkg/errs"
 
 	"github.com/google/uuid"
 )
@@ -26,5 +27,10 @@ func NewGetQuestByIDQueryHandler(repo ports.QuestRepository) GetQuestByIDQueryHa
 
 // Handle processes the query to fetch a quest by its unique ID.
 func (h *getQuestByIDHandler) Handle(ctx context.Context, questID uuid.UUID) (quest.Quest, error) {
-	return h.repo.GetByID(ctx, questID)
+	q, err := h.repo.GetByID(ctx, questID)
+	if err != nil {
+		// Если квест не найден, возвращаем NotFoundError для 404 ответа
+		return quest.Quest{}, errs.NewNotFoundErrorWithCause("quest", questID.String(), err)
+	}
+	return q, nil
 }

@@ -2,10 +2,10 @@ package queries
 
 import (
 	"context"
-	"fmt"
 
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
+	"quest-manager/internal/pkg/errs"
 )
 
 // ListQuestsQueryHandler defines the interface for handling quest listing.
@@ -26,9 +26,9 @@ func NewListQuestsQueryHandler(repo ports.QuestRepository) ListQuestsQueryHandle
 // Handle retrieves quests from the repository, optionally filtered by status.
 func (h *listQuestsHandler) Handle(ctx context.Context, status *quest.Status) ([]quest.Quest, error) {
 	if status != nil {
-		// Валидируем статус используя доменную логику
+		// Валидируем статус используя доменную логику - возвращаем DomainValidationError для 400
 		if !quest.IsValidStatus(string(*status)) {
-			return nil, fmt.Errorf("invalid quest status '%s': must be one of 'created', 'posted', 'assigned', 'in_progress', 'declined', 'completed'", *status)
+			return nil, errs.NewDomainValidationError("status", "must be one of 'created', 'posted', 'assigned', 'in_progress', 'declined', 'completed'")
 		}
 
 		// Фильтруем по статусу
