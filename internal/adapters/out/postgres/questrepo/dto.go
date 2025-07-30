@@ -9,15 +9,15 @@ type QuestDTO struct {
 	Description        string
 	Difficulty         string
 	Reward             string
-	TargetLatitude     float64
-	TargetLongitude    float64
-	ExecutionLatitude  float64
-	ExecutionLongitude float64
-	Equipment          string // stored as comma-separated string
-	Skills             string // stored as comma-separated string
-	Status             string
-	Creator            string
-	Assignee           *string
+	TargetLatitude     float64 `gorm:"index:idx_target_location"`
+	TargetLongitude    float64 `gorm:"index:idx_target_location"`
+	ExecutionLatitude  float64 `gorm:"index:idx_execution_location"`
+	ExecutionLongitude float64 `gorm:"index:idx_execution_location"`
+	Equipment          string  // stored as comma-separated string
+	Skills             string  // stored as comma-separated string
+	Status             string  `gorm:"index"`
+	Creator            string  `gorm:"index"`
+	Assignee           *string `gorm:"index"`
 	CreatedAt          time.Time
 	UpdatedAt          time.Time
 }

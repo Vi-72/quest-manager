@@ -5,6 +5,7 @@ import (
 
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/quest"
+	"quest-manager/internal/pkg/ddd"
 
 	"github.com/google/uuid"
 )
@@ -59,6 +60,7 @@ func DtoToDomain(dto QuestDTO) (quest.Quest, error) {
 	}
 
 	return quest.Quest{
+		BaseAggregate:     ddd.NewBaseAggregate(id),
 		ID:                id,
 		Title:             dto.Title,
 		Description:       dto.Description,

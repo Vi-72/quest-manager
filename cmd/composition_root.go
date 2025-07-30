@@ -58,9 +58,9 @@ func (cr *CompositionRoot) NewGetQuestByIDQueryHandler() queries.GetQuestByIDQue
 	return queries.NewGetQuestByIDQueryHandler(cr.QuestRepository())
 }
 
-// NewChangeQuestStatusCommandHandler creates a handler for changing quest status.
-func (cr *CompositionRoot) NewChangeQuestStatusCommandHandler() commands.ChangeQuestStatusCommandHandler {
-	return commands.NewChangeQuestStatusCommandHandler(cr.QuestRepository())
+// NewChangeQuestStatusHandler creates a handler for changing quest status.
+func (cr *CompositionRoot) NewChangeQuestStatusHandler() queries.ChangeQuestStatusHandler {
+	return queries.NewChangeQuestStatusHandler(cr.QuestRepository())
 }
 
 // NewAssignQuestCommandHandler creates a handler for assigning a quest.
@@ -84,7 +84,7 @@ func (cr *CompositionRoot) NewApiHandler() servers.StrictServerInterface {
 		cr.NewCreateQuestCommandHandler(),
 		cr.NewListQuestsQueryHandler(),
 		cr.NewGetQuestByIDQueryHandler(),
-		cr.NewChangeQuestStatusCommandHandler(),
+		cr.NewChangeQuestStatusHandler(),
 		cr.NewSearchQuestsByRadiusQueryHandler(),
 		cr.NewListAssignedQuestsQueryHandler(),
 		cr.NewAssignQuestCommandHandler(),
