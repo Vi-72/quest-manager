@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"quest-manager/internal/adapters/out/postgres/locationrepo"
 	"quest-manager/internal/adapters/out/postgres/questrepo"
 	"quest-manager/internal/core/ports"
 	"quest-manager/internal/pkg/errs"
@@ -12,9 +13,10 @@ import (
 var _ ports.UnitOfWork = &UnitOfWork{}
 
 type UnitOfWork struct {
-	tx              *gorm.DB
-	db              *gorm.DB
-	questRepository ports.QuestRepository
+	tx                 *gorm.DB
+	db                 *gorm.DB
+	questRepository    ports.QuestRepository
+	locationRepository ports.LocationRepository
 }
 
 func NewUnitOfWork(db *gorm.DB) (ports.UnitOfWork, error) {
@@ -29,6 +31,12 @@ func NewUnitOfWork(db *gorm.DB) (ports.UnitOfWork, error) {
 		return nil, err
 	}
 	uow.questRepository = questRepo
+
+	locationRepo, err := locationrepo.NewRepository(uow)
+	if err != nil {
+		return nil, err
+	}
+	uow.locationRepository = locationRepo
 
 	return uow, nil
 }
@@ -73,4 +81,8 @@ func (u *UnitOfWork) Commit(ctx context.Context) error {
 // Геттеры репозиториев
 func (u *UnitOfWork) QuestRepository() ports.QuestRepository {
 	return u.questRepository
+}
+
+func (u *UnitOfWork) LocationRepository() ports.LocationRepository {
+	return u.locationRepository
 }

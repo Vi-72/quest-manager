@@ -28,20 +28,35 @@ func QuestToAPI(q quest.Quest) servers.Quest {
 		skills = &q.Skills
 	}
 
+	// Convert location IDs to strings if present
+	var targetLocationId *string
+	if q.TargetLocationID != nil {
+		id := q.TargetLocationID.String()
+		targetLocationId = &id
+	}
+
+	var executionLocationId *string
+	if q.ExecutionLocationID != nil {
+		id := q.ExecutionLocationID.String()
+		executionLocationId = &id
+	}
+
 	return servers.Quest{
-		Id:                q.ID.String(),
-		Title:             q.Title,
-		Description:       q.Description,
-		Difficulty:        servers.QuestDifficulty(q.Difficulty),
-		Reward:            reward,
-		TargetLocation:    targetLocation,
-		ExecutionLocation: executionLocation,
-		Equipment:         equipment,
-		Skills:            skills,
-		Status:            servers.QuestStatus(q.Status),
-		Creator:           q.Creator,
-		Assignee:          q.Assignee,
-		CreatedAt:         q.CreatedAt,
-		UpdatedAt:         q.UpdatedAt,
+		Id:                  q.ID().String(),
+		Title:               q.Title,
+		Description:         q.Description,
+		Difficulty:          servers.QuestDifficulty(q.Difficulty),
+		Reward:              reward,
+		TargetLocation:      targetLocation,
+		ExecutionLocation:   executionLocation,
+		Equipment:           equipment,
+		Skills:              skills,
+		Status:              servers.QuestStatus(q.Status),
+		Creator:             q.Creator,
+		Assignee:            q.Assignee,
+		CreatedAt:           q.CreatedAt,
+		UpdatedAt:           q.UpdatedAt,
+		TargetLocationId:    targetLocationId,
+		ExecutionLocationId: executionLocationId,
 	}
 }

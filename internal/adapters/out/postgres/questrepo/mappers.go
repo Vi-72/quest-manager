@@ -12,8 +12,8 @@ import (
 
 // DomainToDTO converts Quest domain model to QuestDTO for DB.
 func DomainToDTO(q quest.Quest) QuestDTO {
-	return QuestDTO{
-		ID:                 q.ID.String(),
+	dto := QuestDTO{
+		ID:                 q.ID().String(),
 		Title:              q.Title,
 		Description:        q.Description,
 		Difficulty:         string(q.Difficulty),
@@ -30,6 +30,18 @@ func DomainToDTO(q quest.Quest) QuestDTO {
 		CreatedAt:          q.CreatedAt,
 		UpdatedAt:          q.UpdatedAt,
 	}
+
+	// Опциональные ссылки на локации
+	if q.TargetLocationID != nil {
+		targetLocationIDStr := q.TargetLocationID.String()
+		dto.TargetLocationID = &targetLocationIDStr
+	}
+	if q.ExecutionLocationID != nil {
+		executionLocationIDStr := q.ExecutionLocationID.String()
+		dto.ExecutionLocationID = &executionLocationIDStr
+	}
+
+	return dto
 }
 
 // DtoToDomain converts QuestDTO to domain model Quest.
@@ -59,9 +71,8 @@ func DtoToDomain(dto QuestDTO) (quest.Quest, error) {
 		skills = strings.Split(dto.Skills, ",")
 	}
 
-	return quest.Quest{
+	q := quest.Quest{
 		BaseAggregate:     ddd.NewBaseAggregate(id),
-		ID:                id,
 		Title:             dto.Title,
 		Description:       dto.Description,
 		Difficulty:        quest.Difficulty(dto.Difficulty),
@@ -75,5 +86,23 @@ func DtoToDomain(dto QuestDTO) (quest.Quest, error) {
 		Assignee:          dto.Assignee,
 		CreatedAt:         dto.CreatedAt,
 		UpdatedAt:         dto.UpdatedAt,
-	}, nil
+	}
+
+	// Опциональные ссылки на локации
+	if dto.TargetLocationID != nil {
+		targetLocationID, err := uuid.Parse(*dto.TargetLocationID)
+		if err != nil {
+			return quest.Quest{}, err
+		}
+		q.TargetLocationID = &targetLocationID
+	}
+	if dto.ExecutionLocationID != nil {
+		executionLocationID, err := uuid.Parse(*dto.ExecutionLocationID)
+		if err != nil {
+			return quest.Quest{}, err
+		}
+		q.ExecutionLocationID = &executionLocationID
+	}
+
+	return q, nil
 }

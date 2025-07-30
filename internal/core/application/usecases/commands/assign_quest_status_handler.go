@@ -43,7 +43,7 @@ func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand)
 	}
 
 	return AssignQuestResult{
-		ID:       q.ID,
+		ID:       q.ID(),
 		Assignee: cmd.UserID,
 		Status:   string(q.Status),
 	}, nil

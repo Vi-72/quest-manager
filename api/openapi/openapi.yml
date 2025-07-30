@@ -312,6 +312,14 @@ components:
         updated_at:
           type: string
           format: date-time
+        target_location_id:
+          type: string
+          nullable: true
+          description: ID of the target location in locations table (if any)
+        execution_location_id:
+          type: string
+          nullable: true
+          description: ID of the execution location in locations table (if any)
       required:
         - id
         - title

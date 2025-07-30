@@ -9,4 +9,5 @@ type UnitOfWork interface {
 	Commit(ctx context.Context) error
 	Rollback() error
 	QuestRepository() QuestRepository
+	LocationRepository() LocationRepository
 }

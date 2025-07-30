@@ -43,9 +43,14 @@ func (cr *CompositionRoot) QuestRepository() ports.QuestRepository {
 	return cr.unitOfWork.QuestRepository()
 }
 
+// LocationRepository возвращает репозиторий из единственного UoW
+func (cr *CompositionRoot) LocationRepository() ports.LocationRepository {
+	return cr.unitOfWork.LocationRepository()
+}
+
 // NewCreateQuestCommandHandler creates a handler for creating quests.
 func (cr *CompositionRoot) NewCreateQuestCommandHandler() commands.CreateQuestCommandHandler {
-	return commands.NewCreateQuestCommandHandler(cr.QuestRepository())
+	return commands.NewCreateQuestCommandHandler(cr.GetUnitOfWork())
 }
 
 // NewListQuestsQueryHandler creates a handler for listing quests.

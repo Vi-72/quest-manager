@@ -8,6 +8,7 @@ import (
 	"quest-manager/internal/pkg/errs"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 var _ ports.QuestRepository = &Repository{}
@@ -26,8 +27,25 @@ func NewRepository(tracker ports.Tracker) (*Repository, error) {
 // Save saves a single quest.
 func (r *Repository) Save(ctx context.Context, q quest.Quest) error {
 	dto := DomainToDTO(q)
-	if err := r.tracker.Db().WithContext(ctx).Save(&dto).Error; err != nil {
+
+	isInTransaction := r.tracker.InTx()
+	if !isInTransaction {
+		r.tracker.Begin(ctx)
+	}
+	tx := r.tracker.Tx()
+
+	err := tx.WithContext(ctx).Session(&gorm.Session{FullSaveAssociations: true}).Save(&dto).Error
+	if err != nil {
+		if !isInTransaction {
+			_ = r.tracker.Rollback()
+		}
 		return errs.WrapInfrastructureError("failed to save quest", err)
+	}
+
+	if !isInTransaction {
+		if err := r.tracker.Commit(ctx); err != nil {
+			return errs.WrapInfrastructureError("failed to commit quest transaction", err)
+		}
 	}
 	return nil
 }

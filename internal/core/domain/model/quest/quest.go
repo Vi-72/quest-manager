@@ -44,20 +44,26 @@ const (
 // Quest is the main domain aggregate representing a quest entity.
 type Quest struct {
 	*ddd.BaseAggregate[uuid.UUID]
-	ID                uuid.UUID
-	Title             string
-	Description       string
-	Difficulty        Difficulty
-	Reward            string
+	Title       string
+	Description string
+	Difficulty  Difficulty
+	Reward      string
+
+	// Основные координаты (денормализованные для производительности)
 	TargetLocation    kernel.GeoCoordinate
 	ExecutionLocation kernel.GeoCoordinate
-	Equipment         []string
-	Skills            []string
-	Status            Status
-	Creator           string
-	Assignee          *string
-	CreatedAt         time.Time
-	UpdatedAt         time.Time
+
+	// Опциональные ссылки на справочник локаций
+	TargetLocationID    *uuid.UUID
+	ExecutionLocationID *uuid.UUID
+
+	Equipment []string
+	Skills    []string
+	Status    Status
+	Creator   string
+	Assignee  *string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }
 
 // NewQuest creates a new quest instance with "created" status.
@@ -88,7 +94,6 @@ func NewQuest(
 
 	quest := Quest{
 		BaseAggregate:     ddd.NewBaseAggregate(questID),
-		ID:                questID,
 		Title:             title,
 		Description:       description,
 		Difficulty:        questDifficulty,
@@ -137,7 +142,7 @@ func (q *Quest) AssignTo(userID string) error {
 	q.RaiseDomainEvent(QuestAssigned{
 		ID:        uuid.New(),
 		EventID:   uuid.New(),
-		QuestID:   q.ID,
+		QuestID:   q.ID(),
 		UserID:    userID,
 		Timestamp: q.UpdatedAt,
 	})
@@ -145,7 +150,7 @@ func (q *Quest) AssignTo(userID string) error {
 	q.RaiseDomainEvent(QuestStatusChanged{
 		ID:        uuid.New(),
 		EventID:   uuid.New(),
-		QuestID:   q.ID,
+		QuestID:   q.ID(),
 		OldStatus: oldStatus,
 		NewStatus: q.Status,
 		Timestamp: q.UpdatedAt,
@@ -169,7 +174,7 @@ func (q *Quest) ChangeStatus(newStatus Status) error {
 	q.RaiseDomainEvent(QuestStatusChanged{
 		ID:        uuid.New(),
 		EventID:   uuid.New(),
-		QuestID:   q.ID,
+		QuestID:   q.ID(),
 		OldStatus: oldStatus,
 		NewStatus: newStatus,
 		Timestamp: q.UpdatedAt,

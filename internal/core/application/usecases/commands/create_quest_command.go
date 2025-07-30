@@ -22,7 +22,9 @@ type CreateQuestCommand struct {
 }
 
 type CreateQuestResult struct {
-	ID        uuid.UUID
-	CreatedAt time.Time
-	Status    quest.Status
+	ID                  uuid.UUID
+	CreatedAt           time.Time
+	Status              quest.Status
+	TargetLocationID    *uuid.UUID // ID created location (if any)
+	ExecutionLocationID *uuid.UUID // ID created location (if any)
 }
