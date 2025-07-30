@@ -5,10 +5,10 @@ info:
   description: API for creating, retrieving, and managing quests.
 
 servers:
-  - url: http://localhost:8080/api/v1
+  - url: http://localhost:8080
 
 paths:
-  /api/v1/quests:
+  /quests:
     post:
       summary: Create a new quest
       operationId: createQuest
@@ -52,7 +52,7 @@ paths:
         '500':
           description: Internal server error
 
-  /api/v1/quests/search-radius:
+  /quests/search-radius:
     get:
       summary: Search quests within a radius
       operationId: searchQuestsByRadius
@@ -92,7 +92,7 @@ paths:
         '500':
           description: Internal server error
 
-  /api/v1/quests/assigned:
+  /quests/assigned:
     get:
       summary: Get quests assigned to a user
       operationId: listAssignedQuests
@@ -117,7 +117,7 @@ paths:
         '500':
           description: Internal server error
 
-  /api/v1/quests/{quest_id}:
+  /quests/{quest_id}:
     get:
       summary: Get quest details by ID
       operationId: getQuestById
@@ -140,7 +140,7 @@ paths:
         '500':
           description: Internal server error
 
-  /api/v1/quests/{quest_id}/status:
+  /quests/{quest_id}/status:
     patch:
       summary: Change quest status
       operationId: changeQuestStatus
@@ -171,7 +171,7 @@ paths:
         '500':
           description: Internal server error
 
-  /api/v1/quests/{quest_id}/assign:
+  /quests/{quest_id}/assign:
     post:
       summary: Assign quest to a user
       operationId: assignQuest

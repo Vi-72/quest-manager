@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"quest-manager/cmd"
+	"quest-manager/internal/adapters/in/http/problems"
 	"quest-manager/internal/generated/servers"
 )
 
@@ -60,9 +61,22 @@ func NewRouter(root *cmd.CompositionRoot) http.Handler {
 	})
 
 	strictHandler := root.NewApiHandler()
-	apiHandler := servers.NewStrictHandler(strictHandler, nil)
+
+	// Create StrictHandler with custom error handling for parameter parsing
+	apiHandler := servers.NewStrictHandlerWithOptions(strictHandler, nil, servers.StrictHTTPServerOptions{
+		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			// Handle parameter parsing errors with detailed messages
+			problem := problems.NewBadRequest("Invalid request parameters: " + err.Error())
+			problem.WriteResponse(w)
+		},
+		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
+			// Handle response errors
+			problem := problems.NewBadRequest("Response error: " + err.Error())
+			problem.WriteResponse(w)
+		},
+	})
+
 	apiRouter := servers.HandlerFromMuxWithBaseURL(apiHandler, router, apiV1Prefix)
 
-	apiRouter = servers.HandlerFromMux(apiHandler, router)
 	return apiRouter
 }

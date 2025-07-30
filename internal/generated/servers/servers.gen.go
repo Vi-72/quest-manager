@@ -167,25 +167,25 @@ type ChangeQuestStatusJSONRequestBody = ChangeStatusRequest
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// Get a list of all quests
-	// (GET /api/v1/quests)
+	// (GET /quests)
 	ListQuests(w http.ResponseWriter, r *http.Request, params ListQuestsParams)
 	// Create a new quest
-	// (POST /api/v1/quests)
+	// (POST /quests)
 	CreateQuest(w http.ResponseWriter, r *http.Request)
 	// Get quests assigned to a user
-	// (GET /api/v1/quests/assigned)
+	// (GET /quests/assigned)
 	ListAssignedQuests(w http.ResponseWriter, r *http.Request, params ListAssignedQuestsParams)
 	// Search quests within a radius
-	// (GET /api/v1/quests/search-radius)
+	// (GET /quests/search-radius)
 	SearchQuestsByRadius(w http.ResponseWriter, r *http.Request, params SearchQuestsByRadiusParams)
 	// Get quest details by ID
-	// (GET /api/v1/quests/{quest_id})
+	// (GET /quests/{quest_id})
 	GetQuestById(w http.ResponseWriter, r *http.Request, questId string)
 	// Assign quest to a user
-	// (POST /api/v1/quests/{quest_id}/assign)
+	// (POST /quests/{quest_id}/assign)
 	AssignQuest(w http.ResponseWriter, r *http.Request, questId string)
 	// Change quest status
-	// (PATCH /api/v1/quests/{quest_id}/status)
+	// (PATCH /quests/{quest_id}/status)
 	ChangeQuestStatus(w http.ResponseWriter, r *http.Request, questId string)
 }
 
@@ -194,43 +194,43 @@ type ServerInterface interface {
 type Unimplemented struct{}
 
 // Get a list of all quests
-// (GET /api/v1/quests)
+// (GET /quests)
 func (_ Unimplemented) ListQuests(w http.ResponseWriter, r *http.Request, params ListQuestsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Create a new quest
-// (POST /api/v1/quests)
+// (POST /quests)
 func (_ Unimplemented) CreateQuest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get quests assigned to a user
-// (GET /api/v1/quests/assigned)
+// (GET /quests/assigned)
 func (_ Unimplemented) ListAssignedQuests(w http.ResponseWriter, r *http.Request, params ListAssignedQuestsParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Search quests within a radius
-// (GET /api/v1/quests/search-radius)
+// (GET /quests/search-radius)
 func (_ Unimplemented) SearchQuestsByRadius(w http.ResponseWriter, r *http.Request, params SearchQuestsByRadiusParams) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Get quest details by ID
-// (GET /api/v1/quests/{quest_id})
+// (GET /quests/{quest_id})
 func (_ Unimplemented) GetQuestById(w http.ResponseWriter, r *http.Request, questId string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Assign quest to a user
-// (POST /api/v1/quests/{quest_id}/assign)
+// (POST /quests/{quest_id}/assign)
 func (_ Unimplemented) AssignQuest(w http.ResponseWriter, r *http.Request, questId string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // Change quest status
-// (PATCH /api/v1/quests/{quest_id}/status)
+// (PATCH /quests/{quest_id}/status)
 func (_ Unimplemented) ChangeQuestStatus(w http.ResponseWriter, r *http.Request, questId string) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
@@ -572,25 +572,25 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 	}
 
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/quests", wrapper.ListQuests)
+		r.Get(options.BaseURL+"/quests", wrapper.ListQuests)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/quests", wrapper.CreateQuest)
+		r.Post(options.BaseURL+"/quests", wrapper.CreateQuest)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/quests/assigned", wrapper.ListAssignedQuests)
+		r.Get(options.BaseURL+"/quests/assigned", wrapper.ListAssignedQuests)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/quests/search-radius", wrapper.SearchQuestsByRadius)
+		r.Get(options.BaseURL+"/quests/search-radius", wrapper.SearchQuestsByRadius)
 	})
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/api/v1/quests/{quest_id}", wrapper.GetQuestById)
+		r.Get(options.BaseURL+"/quests/{quest_id}", wrapper.GetQuestById)
 	})
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/api/v1/quests/{quest_id}/assign", wrapper.AssignQuest)
+		r.Post(options.BaseURL+"/quests/{quest_id}/assign", wrapper.AssignQuest)
 	})
 	r.Group(func(r chi.Router) {
-		r.Patch(options.BaseURL+"/api/v1/quests/{quest_id}/status", wrapper.ChangeQuestStatus)
+		r.Patch(options.BaseURL+"/quests/{quest_id}/status", wrapper.ChangeQuestStatus)
 	})
 
 	return r
@@ -840,25 +840,25 @@ func (response ChangeQuestStatus500Response) VisitChangeQuestStatusResponse(w ht
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 	// Get a list of all quests
-	// (GET /api/v1/quests)
+	// (GET /quests)
 	ListQuests(ctx context.Context, request ListQuestsRequestObject) (ListQuestsResponseObject, error)
 	// Create a new quest
-	// (POST /api/v1/quests)
+	// (POST /quests)
 	CreateQuest(ctx context.Context, request CreateQuestRequestObject) (CreateQuestResponseObject, error)
 	// Get quests assigned to a user
-	// (GET /api/v1/quests/assigned)
+	// (GET /quests/assigned)
 	ListAssignedQuests(ctx context.Context, request ListAssignedQuestsRequestObject) (ListAssignedQuestsResponseObject, error)
 	// Search quests within a radius
-	// (GET /api/v1/quests/search-radius)
+	// (GET /quests/search-radius)
 	SearchQuestsByRadius(ctx context.Context, request SearchQuestsByRadiusRequestObject) (SearchQuestsByRadiusResponseObject, error)
 	// Get quest details by ID
-	// (GET /api/v1/quests/{quest_id})
+	// (GET /quests/{quest_id})
 	GetQuestById(ctx context.Context, request GetQuestByIdRequestObject) (GetQuestByIdResponseObject, error)
 	// Assign quest to a user
-	// (POST /api/v1/quests/{quest_id}/assign)
+	// (POST /quests/{quest_id}/assign)
 	AssignQuest(ctx context.Context, request AssignQuestRequestObject) (AssignQuestResponseObject, error)
 	// Change quest status
-	// (PATCH /api/v1/quests/{quest_id}/status)
+	// (PATCH /quests/{quest_id}/status)
 	ChangeQuestStatus(ctx context.Context, request ChangeQuestStatusRequestObject) (ChangeQuestStatusResponseObject, error)
 }
 
@@ -1095,27 +1095,26 @@ func (sh *strictHandler) ChangeQuestStatus(w http.ResponseWriter, r *http.Reques
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/9xYW2/bOBP9KwS/71GNnW0XyOotabCFgV1g06BPRWBMpLHNhiIVcujUCPzfF7xIvki+",
-	"ZHPZbp8sSyPO4ZxzyKEeeaGrWitUZHn+yG0xwwrC5bm1YqquHFr6jPf+x9+tja7RkMAQ4yyasSj9ZYm2",
-	"MKImoRXP+ReLho0uGWkGYRxGM2RhFEaaZ5wWNfKcWzJCTflymXGD904YLHn+tR33pg3Ut9+wIL7M+McZ",
-	"qCleE5CzO4HZ8NhfoXKVH7IwCIQlz3itbbyIyMKlUOPa6KlBa3nGSyykiA98eST6+JtDoFPOXsxam1Io",
-	"IOxClUCCXIndIv6RnrBi9XrGJ9pUQDznE6mBeMYr+C4qP8nfhhmvhIp/3vl/CYhy1S0aD0RqNd2VrXl0",
-	"bLrTs4184e9Wwq0KtVNdB9Jbr0DWfu1toH/c5ibjpZhMROEkLdZlgGAXfhJYClfxjM/A9FGbcQ+7rlCF",
-	"zIKwsr1Z0g0wBhbhte9YOI9pLHUBDbj/G5zwnP9vsHLbIFltsKaNUK4Hj6gvlb0TUtqnwSEwU6R/iIUE",
-	"SexJs8VqDMs2CNkofxdGb536hHDVz31ybgCnnJRw64GScdjDZHL+GMJArZ5LIHxHokK+6x1t+oX1UwpP",
-	"9IvuhfX4JuvyK8k+464un6ikLasID/0Iv6QyHWmclVw3xL6Bt2suj02oie7uBOd/jdhEGxbGEmqaMYNk",
-	"BM7DNaiSVaBgKtQ07uj2pJ1VHh3L/vQB6FXMrtHMReEnPEdjY4bTk/cnH3xFdY0KasFz/v5kePLeqwBo",
-	"FgQygFoM5qeDmMLfmWKou18IwsRHpd+2hKWrGOJfNlAhobE8/7o9rd+FJDQJMrtdsLbKwj++d2h87RVU",
-	"kcH0MIrktVuJGy8UW2tl4wr3y3DofwqtKC0FUNdSRMYH32wU9Qpba8F9Oo+raceWy+1FLRSV6UmqlX/j",
-	"14hnM2ykCI0CySyaORqGxui461tXVWAWPOefkBgwmQYEKdcG9eXrMrq2+fNoH7R0ocvFkwqy1+/d9mK5",
-	"aVW/lSw7lJy+GIKrVdLNkkb7WFcUaO3ESblgjdyWGf/Qz8IcpCiZULUjVgLBswiLxWHAFD6wpjjZlh0H",
-	"reD3+fI8BR3nz9GlV4g/J/j2f4ctm5PBNlnrPv0veYs1hfRHpXbuh6h28Xj1bGP2YICEoEu5RTDF7J2B",
-	"Urjd6/F1iIqMXyw+x+ADzH9Ej5etHQ/6qJdAe2nvnFQ6h5FdeduzyI7EYY99ycSxSCyWkgnF7oTUqTz9",
-	"GGLo+K56HpIf2goPgmYifilIIjvkgzVVPccKiY5NGNCC6FrhMfyORbnc6YNPGNuSi8WoPKT/L0rcu+bz",
-	"yOiykYBvhVYKaFK+6dL3jD2sRAIhE4cfusTEKKWJTbRT5cusZU1W39759XEfdWkPC6fL3kZk7QvYIQav",
-	"Xom6l+99ej7rHdX7DP+V3qdtM47aEbVpevq3EF2sZPtRc8/Ouaa51QG4BipmPd1v+LwZcF43R5CfRHp9",
-	"X25/MO0FbCydmw+K7g3FFmuXxNbkDSHhnSgMZyTP+YyozgcDqQuQM20pPxueDZMi+fJm+XcAAAD//zbF",
-	"nmv0FwAA",
+	"H4sIAAAAAAAC/9xYXW/bNhT9KwS3RyV2lgzI9JY0WGFgA5YGfSoCg5GubTYUqZCXSY3A/33gh2TJomNn",
+	"+VjbJ1MWxXt4zzkkLx9poapaSZBoaP5ITbGAivnmmTF8Li8tGPwEd+7H/VtrVYNGDr6PNaCnvHTNEkyh",
+	"eY1cSZrTzwY0mVwQVIT5cQgugPhRCCqaUVzWQHNqUHM5p6tVRjXcWa6hpPmXdtzrtqO6+QoF0lVGPyyY",
+	"nMMVMrRmKzDjX7sWSFu5IQsNDKGkGa2VCY2AzDe5nNZazTUYQzNaQiF4eOHSI8D1v94FOsZMYlZKl1wy",
+	"hCFUwZCjLWGYxL/iG1KsP8/oTOmKIc3pTCiGNKMV+8YrN8k/xhmtuAwPB+4pApG2ugHtgAgl59uiNa/2",
+	"DXd02ovnHzcCbmSonWoXSDJfnqyntddD/7jJTUZLPpvxwgpcdmUAzCzdJKDktqIZXTCdojajDnZdgfSR",
+	"OUJlklHiH0xrtvSffYPCOkxToQrWgPtVw4zm9JfR2m2jaLVRRxs+XQ8OUSqUueVCmOfBQabngP8RC3IU",
+	"kAizwWrolvUI6aV/CCOZp5QQLtPcR+d6cNIKwW4cUNQWEkxG50+ZH6jVc8kQDpBXQLd9o3RaWD+l8Hha",
+	"dK+sx3dZl99I9hm1dflMJW1YhTvoe/glpmlP46zl2hN7D+/QXA4blzM13AnO/pmQmdLEj8XlPCMaUHO4",
+	"920mS1IxyeZczsOObg7bWeXBseRv1wGciskV6HteuAnfgzYhwtHh8eGJy6iqQbKa05weH44Pj50KGC68",
+	"QEZhbNecg0+4WwH8jCel26+4wcvQxX2lWQUI2tD8y+Z8/uQCQUes5GZJ2vRy9/rOgnZJl6wK1MWXQR1v",
+	"fYa4dgoxtZImLG2/jcfup1AS4xrA6lrwQPXoqwlqXmNrvfeUwMMyOvDjanM180klahZz5b74PeDpd5tI",
+	"BC2ZIAb0PWgCWquw3RtbVUwvaU4/AhJGRByQCdEZ1KVvyGhn16fBN2DwXJXLZyXkSaMPzxWrvkfdHrIa",
+	"UHL0aggu10H7KQ2+MbYowJiZFWJJGrmtMnqSZuGeCV4SLmuLpGTIXkRYSA5hRMIDaZKTNT4ctUp/ypBn",
+	"sdN+xpxcOGm4ysAd+Lf4sakFNlnqGvRHMhVpEumKo3buuzi2oaB6sSMTGFhE0OHaANPF4kCzktvtK/CV",
+	"7xWoPl9+Cp13UP4BHFDSqQRSnAuGT/I9KEoGdce2uG3ZsSWw305fM3BIEgmpJFySWy5UTE8aQ+g6va1e",
+	"huS79sADxwUPlwJRZLsM0FHVSzwQ6ejDYC2Ijgce/e+Ul6utBvgI4QRyvpyUu4T/WfI721yBTC4a7t1x",
+	"Z019E/JdF7sXbFclIOMikncyZCT0kgrJTFlZvs7q1UR1Jzm3IiY5i9uVLx2Th43O9dYu6i7fiLPXP98k",
+	"7uz2Ot+M/5fzTXui2GvzU7o5t7+H2kIm2xvL1CbZEdu6rK0ZFovE0dZfWnqAV0198ZNoLnUf+52JzmMj",
+	"sRreqbZ3VFnIXVRZE9d38d8EYVgtaE4XiHU+GrmiXyyUwfx0fDqmq+vVvwEAAP//yM8SisMXAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file
