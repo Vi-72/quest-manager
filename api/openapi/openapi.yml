@@ -1,0 +1,299 @@
+openapi: 3.0.3
+info:
+  title: Quest Management Service
+  version: 1.3.4
+  description: API for creating, retrieving, and managing quests.
+
+servers:
+  - url: http://localhost:8080/api/v1
+
+paths:
+  /api/v1/quests:
+    post:
+      summary: Create a new quest
+      operationId: createQuest
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuestRequest'
+      responses:
+        '201':
+          description: Quest successfully created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quest'
+        '400':
+          description: Invalid input data
+        '500':
+          description: Internal server error
+
+    get:
+      summary: Get a list of all quests
+      operationId: listQuests
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [created, posted, assigned, in_progress, declined, completed]
+          description: Filter quests by status
+      responses:
+        '200':
+          description: List of quests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Quest'
+        '500':
+          description: Internal server error
+
+  /api/v1/quests/search-radius:
+    get:
+      summary: Search quests within a radius
+      operationId: searchQuestsByRadius
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+          description: Center latitude
+        - name: lon
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+          description: Center longitude
+        - name: radius_km
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+          description: Search radius in kilometers
+      responses:
+        '200':
+          description: List of quests within the radius
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Quest'
+        '400':
+          description: Invalid parameters
+        '500':
+          description: Internal server error
+
+  /api/v1/quests/assigned:
+    get:
+      summary: Get quests assigned to a user
+      operationId: listAssignedQuests
+      parameters:
+        - name: user_id
+          in: query
+          required: true
+          schema:
+            type: string
+          description: ID of the user
+      responses:
+        '200':
+          description: List of quests assigned to the user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Quest'
+        '400':
+          description: Invalid user ID
+        '500':
+          description: Internal server error
+
+  /api/v1/quests/{quest_id}:
+    get:
+      summary: Get quest details by ID
+      operationId: getQuestById
+      parameters:
+        - name: quest_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Unique quest ID
+      responses:
+        '200':
+          description: Quest details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quest'
+        '404':
+          description: Quest not found
+        '500':
+          description: Internal server error
+
+  /api/v1/quests/{quest_id}/status:
+    patch:
+      summary: Change quest status
+      operationId: changeQuestStatus
+      parameters:
+        - name: quest_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Quest ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeStatusRequest'
+      responses:
+        '200':
+          description: Quest status updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quest'
+        '400':
+          description: Invalid status
+        '404':
+          description: Quest not found
+        '500':
+          description: Internal server error
+
+  /api/v1/quests/{quest_id}/assign:
+    post:
+      summary: Assign quest to a user
+      operationId: assignQuest
+      parameters:
+        - name: quest_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Quest ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssignQuestRequest'
+      responses:
+        '200':
+          description: Quest successfully assigned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Quest'
+        '400':
+          description: Invalid user or status
+        '404':
+          description: Quest not found
+        '500':
+          description: Internal server error
+
+components:
+  schemas:
+    CreateQuestRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        reward:
+          type: string
+        target_location:
+          type: string
+        execution_location:
+          type: string
+        equipment:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            type: string
+      required:
+        - title
+        - description
+        - difficulty
+        - target_location
+        - execution_location
+
+    ChangeStatusRequest:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [created, posted, assigned, in_progress, declined, completed]
+      required:
+        - status
+
+    AssignQuestRequest:
+      type: object
+      properties:
+        user_id:
+          type: string
+          description: User ID to assign the quest to
+      required:
+        - user_id
+
+    Quest:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        difficulty:
+          type: string
+          enum: [easy, medium, hard]
+        reward:
+          type: string
+        target_location:
+          type: string
+        execution_location:
+          type: string
+        equipment:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [created, posted, assigned, in_progress, declined, completed]
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - title
+        - description
+        - difficulty
+        - status
+        - target_location
+        - execution_location
+        - created_at

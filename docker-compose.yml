@@ -1,0 +1,14 @@
+services:
+
+  postgres:
+    image: postgres:13.3
+    container_name: postgres-dataset
+    environment:
+      POSTGRES_USER: "username"
+      POSTGRES_PASSWORD: "secret"
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./init-db:/docker-entrypoint-initdb.d
+    command: [ "postgres", "-c", "log_statement=mod" ]
+

@@ -1,0 +1,15 @@
+# HTTP Server Configuration
+HTTP_PORT=8080
+
+# Database Configuration
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=password
+DB_NAME=quest_manager
+DB_SSLMODE=disable
+
+# Instructions:
+# 1. Copy this file to .env: cp config.example .env
+# 2. Update the values according to your environment
+# 3. Run the application: go run cmd/app/main.go 
