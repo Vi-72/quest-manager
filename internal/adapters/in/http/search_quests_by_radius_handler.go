@@ -25,13 +25,14 @@ func (a *ApiHandler) SearchQuestsByRadius(ctx context.Context, request servers.S
 		RadiusKm: validatedData.RadiusKm,
 	}
 
-	result, err := a.searchQuestsByRadius.Handle(ctx, query)
+	// Получаем список квестов напрямую
+	quests, err := a.searchQuestsByRadius.Handle(ctx, query)
 	if err != nil {
 		return servers.SearchQuestsByRadius500Response{}, nil
 	}
 
 	var apiQuests []servers.Quest
-	for _, q := range result.Quests {
+	for _, q := range quests {
 		apiQuests = append(apiQuests, QuestToAPI(q))
 	}
 

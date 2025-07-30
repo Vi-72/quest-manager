@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"quest-manager/internal/adapters/in/http/validations"
-	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/generated/servers"
 )
 
@@ -16,14 +15,14 @@ func (a *ApiHandler) ListAssignedQuests(ctx context.Context, request servers.Lis
 		return nil, validationErr
 	}
 
-	query := queries.ListAssignedQuestsQuery{UserID: request.Params.UserId}
-	result, err := a.listAssignedQuestsHandler.Handle(ctx, query)
+	// Получаем список квестов напрямую
+	quests, err := a.listAssignedQuestsHandler.Handle(ctx, request.Params.UserId)
 	if err != nil {
 		return servers.ListAssignedQuests500Response{}, nil
 	}
 
 	var apiQuests []servers.Quest
-	for _, q := range result.Quests {
+	for _, q := range quests {
 		apiQuests = append(apiQuests, QuestToAPI(q))
 	}
 

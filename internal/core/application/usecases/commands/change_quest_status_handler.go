@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
 )
 
@@ -33,7 +32,7 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 	}
 
 	// Используем доменную логику вместо switch/case
-	if err := q.ChangeStatus(quest.Status(cmd.Status)); err != nil {
+	if err := q.ChangeStatus(cmd.Status); err != nil {
 		return ChangeQuestStatusResult{}, fmt.Errorf("failed to change quest status: %w", err)
 	}
 

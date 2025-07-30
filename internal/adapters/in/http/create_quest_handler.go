@@ -4,7 +4,6 @@ import (
 	"context"
 	httpValidations "quest-manager/internal/adapters/in/http/validations"
 	"quest-manager/internal/core/application/usecases/commands"
-	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/generated/servers"
 )
 
@@ -38,10 +37,10 @@ func (a *ApiHandler) CreateQuest(ctx context.Context, request servers.CreateQues
 	}
 
 	// Get the created quest from repository to return full object
-	createdQuest, err := a.getQuestByIDHandler.Handle(ctx, queries.GetQuestByIDQuery{ID: result.ID})
+	createdQuest, err := a.getQuestByIDHandler.Handle(ctx, result.ID)
 	if err != nil {
 		return servers.CreateQuest500Response{}, nil
 	}
 
-	return servers.CreateQuest201JSONResponse(QuestToAPI(createdQuest.Quest)), nil
+	return servers.CreateQuest201JSONResponse(QuestToAPI(createdQuest)), nil
 }

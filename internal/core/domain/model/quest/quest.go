@@ -191,20 +191,3 @@ func (q *Quest) isValidStatusTransition(from, to Status) bool {
 	}
 	return false
 }
-
-// Deprecated: использовать ChangeStatus вместо этих методов
-func (q *Quest) MarkPosted() {
-	q.ChangeStatus(StatusPosted)
-}
-
-func (q *Quest) MarkInProgress() {
-	q.ChangeStatus(StatusInProgress)
-}
-
-func (q *Quest) MarkDeclined() {
-	q.ChangeStatus(StatusDeclined)
-}
-
-func (q *Quest) MarkCompleted() {
-	q.ChangeStatus(StatusCompleted)
-}

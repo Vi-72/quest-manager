@@ -17,13 +17,14 @@ func (a *ApiHandler) ListQuests(ctx context.Context, request servers.ListQuestsR
 		query.Status = &status
 	}
 
-	result, err := a.listQuestsHandler.Handle(ctx, query)
+	// Получаем список квестов напрямую
+	quests, err := a.listQuestsHandler.Handle(ctx, query)
 	if err != nil {
 		return servers.ListQuests500Response{}, nil
 	}
 
 	var apiQuests []servers.Quest
-	for _, q := range result.Quests {
+	for _, q := range quests {
 		apiQuests = append(apiQuests, QuestToAPI(q))
 	}
 

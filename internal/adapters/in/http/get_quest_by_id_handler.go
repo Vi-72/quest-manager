@@ -3,7 +3,6 @@ package http
 import (
 	"context"
 	"quest-manager/internal/adapters/in/http/validations"
-	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/generated/servers"
 )
 
@@ -16,12 +15,12 @@ func (a *ApiHandler) GetQuestById(ctx context.Context, request servers.GetQuestB
 		return nil, validationErr
 	}
 
-	query := queries.GetQuestByIDQuery{ID: questID}
-	result, err := a.getQuestByIDHandler.Handle(ctx, query)
+	// Получаем квест напрямую
+	quest, err := a.getQuestByIDHandler.Handle(ctx, questID)
 	if err != nil {
 		return servers.GetQuestById404Response{}, nil
 	}
 
-	apiQuest := QuestToAPI(result.Quest)
+	apiQuest := QuestToAPI(quest)
 	return servers.GetQuestById200JSONResponse(apiQuest), nil
 }

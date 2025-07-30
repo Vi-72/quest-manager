@@ -3,24 +3,15 @@ package queries
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
+
+	"github.com/google/uuid"
 )
 
-// GetQuestByIDQuery represents the input data required to fetch a quest by its ID.
-type GetQuestByIDQuery struct {
-	ID uuid.UUID
-}
-
-// GetQuestByIDResult represents the result of fetching a quest by its ID.
-type GetQuestByIDResult struct {
-	Quest quest.Quest
-}
-
-// GetQuestByIDQueryHandler defines the interface for handling GetQuestByIDQuery.
+// GetQuestByIDQueryHandler defines the interface for handling quest retrieval by ID.
 type GetQuestByIDQueryHandler interface {
-	Handle(ctx context.Context, query GetQuestByIDQuery) (GetQuestByIDResult, error)
+	Handle(ctx context.Context, questID uuid.UUID) (quest.Quest, error)
 }
 
 // getQuestByIDHandler is the implementation of GetQuestByIDQueryHandler.
@@ -34,11 +25,6 @@ func NewGetQuestByIDQueryHandler(repo ports.QuestRepository) GetQuestByIDQueryHa
 }
 
 // Handle processes the query to fetch a quest by its unique ID.
-func (h *getQuestByIDHandler) Handle(ctx context.Context, query GetQuestByIDQuery) (GetQuestByIDResult, error) {
-	q, err := h.repo.GetByID(ctx, query.ID)
-	if err != nil {
-		return GetQuestByIDResult{}, err
-	}
-
-	return GetQuestByIDResult{Quest: q}, nil
+func (h *getQuestByIDHandler) Handle(ctx context.Context, questID uuid.UUID) (quest.Quest, error) {
+	return h.repo.GetByID(ctx, questID)
 }
