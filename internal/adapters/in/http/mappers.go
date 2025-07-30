@@ -1,9 +1,9 @@
 package http
 
 import (
+	"quest-manager/internal/adapters/in/http/validations"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/generated/servers"
-	"quest-manager/internal/pkg/validations"
 )
 
 // QuestToAPI конвертирует доменный квест в API формат

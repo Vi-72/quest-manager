@@ -3,13 +3,13 @@ package web
 import (
 	"errors"
 	"net/http"
+	"quest-manager/internal/adapters/in/http/validations"
 
 	"github.com/go-chi/chi/v5"
 
 	"quest-manager/cmd"
 	"quest-manager/internal/adapters/in/http/problems"
 	"quest-manager/internal/generated/servers"
-	"quest-manager/internal/pkg/validations"
 )
 
 const apiV1Prefix = "/api/v1"

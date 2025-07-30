@@ -50,6 +50,14 @@ func ConvertValidationErrorToProblem(err *ValidationError) *problems.BadRequest 
 	return problems.NewBadRequest(err.Error())
 }
 
+// ValidateBody проверяет что body запроса не nil
+func ValidateBody(body interface{}, bodyName string) *ValidationError {
+	if body == nil {
+		return NewValidationError(bodyName, "is required")
+	}
+	return nil
+}
+
 // ValidateEnum проверяет что значение находится среди допустимых
 func ValidateEnum(value string, validValues []string, fieldName string) *ValidationError {
 	for _, valid := range validValues {
