@@ -79,6 +79,7 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 		cmd.Description,
 		cmd.Difficulty,
 		cmd.Reward,
+		cmd.DurationMinutes,
 		cmd.TargetLocation,
 		cmd.ExecutionLocation,
 		cmd.Creator,

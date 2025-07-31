@@ -4,11 +4,12 @@ import "time"
 
 // QuestDTO is the database model for Quest.
 type QuestDTO struct {
-	ID          string `gorm:"primaryKey"`
-	Title       string
-	Description string
-	Difficulty  string
-	Reward      string
+	ID              string `gorm:"primaryKey"`
+	Title           string
+	Description     string
+	Difficulty      string
+	Reward          string
+	DurationMinutes int // Храним duration в минутах
 
 	// Денормализованные координаты (главные данные для производительности)
 	TargetLatitude     float64 `gorm:"index:idx_target_location"`

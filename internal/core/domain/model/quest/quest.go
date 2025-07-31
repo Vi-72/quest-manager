@@ -44,10 +44,11 @@ const (
 // Quest is the main domain aggregate representing a quest entity.
 type Quest struct {
 	*ddd.BaseAggregate[uuid.UUID]
-	Title       string
-	Description string
-	Difficulty  Difficulty
-	Reward      string
+	Title           string
+	Description     string
+	Difficulty      Difficulty
+	Reward          string
+	DurationMinutes int
 
 	// Основные координаты (денормализованные для производительности)
 	TargetLocation    kernel.GeoCoordinate
@@ -72,6 +73,7 @@ func NewQuest(
 	title, description string,
 	difficulty string, // Принимаем string для валидации
 	reward string,
+	durationMinutes int,
 	targetLocation, executionLocation kernel.GeoCoordinate,
 	creator string,
 	equipment, skills []string,
@@ -89,6 +91,11 @@ func NewQuest(
 		return Quest{}, errors.New("invalid difficulty: must be one of 'easy', 'medium', 'hard'")
 	}
 
+	// Валидация duration
+	if durationMinutes <= 0 {
+		return Quest{}, errors.New("duration must be greater than 0 minutes")
+	}
+
 	questID := uuid.New()
 	now := time.Now()
 
@@ -98,6 +105,7 @@ func NewQuest(
 		Description:       description,
 		Difficulty:        questDifficulty,
 		Reward:            reward,
+		DurationMinutes:   durationMinutes,
 		TargetLocation:    targetLocation,
 		ExecutionLocation: executionLocation,
 		Equipment:         equipment,

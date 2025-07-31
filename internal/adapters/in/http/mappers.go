@@ -13,11 +13,6 @@ func QuestToAPI(q quest.Quest) servers.Quest {
 	executionLocation := validations.ConvertKernelCoordinateToAPI(q.ExecutionLocation)
 
 	// Convert optional fields to pointers
-	var reward *string
-	if q.Reward != "" {
-		reward = &q.Reward
-	}
-
 	var equipment *[]string
 	if len(q.Equipment) > 0 {
 		equipment = &q.Equipment
@@ -46,7 +41,8 @@ func QuestToAPI(q quest.Quest) servers.Quest {
 		Title:               q.Title,
 		Description:         q.Description,
 		Difficulty:          servers.QuestDifficulty(q.Difficulty),
-		Reward:              reward,
+		Reward:              q.Reward,
+		DurationMinutes:     q.DurationMinutes,
 		TargetLocation:      targetLocation,
 		ExecutionLocation:   executionLocation,
 		Equipment:           equipment,

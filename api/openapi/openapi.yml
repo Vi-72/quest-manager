@@ -235,6 +235,10 @@ components:
           enum: [easy, medium, hard]
         reward:
           type: string
+        duration_minutes:
+          type: integer
+          minimum: 1
+          description: Quest duration in minutes
         target_location:
           $ref: '#/components/schemas/Coordinate'
         execution_location:
@@ -251,6 +255,7 @@ components:
         - title
         - description
         - difficulty
+        - duration_minutes
         - target_location
         - execution_location
 
@@ -286,6 +291,10 @@ components:
           enum: [easy, medium, hard]
         reward:
           type: string
+        duration_minutes:
+          type: integer
+          minimum: 1
+          description: Quest duration in minutes
         target_location:
           $ref: '#/components/schemas/Coordinate'
         execution_location:
@@ -325,6 +334,8 @@ components:
         - title
         - description
         - difficulty
+        - reward
+        - duration_minutes
         - status
         - target_location
         - execution_location

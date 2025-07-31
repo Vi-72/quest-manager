@@ -24,6 +24,7 @@ func (a *ApiHandler) CreateQuest(ctx context.Context, request servers.CreateQues
 		Description:       validatedData.Description,
 		Difficulty:        validatedData.Difficulty, // Передаем string напрямую
 		Reward:            validatedData.Reward,
+		DurationMinutes:   validatedData.DurationMinutes,
 		TargetLocation:    validatedData.TargetLocation,
 		ExecutionLocation: validatedData.ExecutionLocation,
 		Equipment:         validatedData.Equipment,

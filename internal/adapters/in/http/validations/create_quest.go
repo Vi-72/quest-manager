@@ -12,6 +12,7 @@ type ValidatedCreateQuestData struct {
 	Description       string
 	Difficulty        string
 	Reward            string
+	DurationMinutes   int
 	TargetLocation    kernel.GeoCoordinate
 	ExecutionLocation kernel.GeoCoordinate
 	Equipment         []string
@@ -40,6 +41,14 @@ func ValidateCreateQuestRequest(req *servers.CreateQuestRequest) (*ValidatedCrea
 	// Техническая валидация difficulty (только не пустое)
 	if err := ValidateNotEmpty(string(req.Difficulty), "difficulty"); err != nil {
 		return nil, err
+	}
+
+	// Валидация duration_minutes
+	if req.DurationMinutes <= 0 {
+		return nil, NewValidationError("duration_minutes", "must be greater than 0")
+	}
+	if req.DurationMinutes > 525600 { // 1 год в минутах
+		return nil, NewValidationError("duration_minutes", "duration too long, maximum is 1 year (525600 minutes)")
 	}
 
 	// Валидация и конвертация target_location
@@ -75,6 +84,7 @@ func ValidateCreateQuestRequest(req *servers.CreateQuestRequest) (*ValidatedCrea
 		Description:       description,
 		Difficulty:        string(req.Difficulty), // Передаем как есть, домен проверит
 		Reward:            reward,
+		DurationMinutes:   req.DurationMinutes,
 		TargetLocation:    targetLocation,
 		ExecutionLocation: executionLocation,
 		Equipment:         equipment,
