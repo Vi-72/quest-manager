@@ -3,7 +3,6 @@ package validations
 import (
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/generated/servers"
-	"strings"
 )
 
 // ValidatedCreateQuestData содержит валидированные и обработанные данные
@@ -11,7 +10,7 @@ type ValidatedCreateQuestData struct {
 	Title             string
 	Description       string
 	Difficulty        string
-	Reward            string
+	Reward            int
 	DurationMinutes   int
 	TargetLocation    kernel.GeoCoordinate
 	ExecutionLocation kernel.GeoCoordinate
@@ -51,6 +50,11 @@ func ValidateCreateQuestRequest(req *servers.CreateQuestRequest) (*ValidatedCrea
 		return nil, NewValidationError("duration_minutes", "duration too long, maximum is 1 year (525600 minutes)")
 	}
 
+	// Валидация reward
+	if req.Reward < 1 || req.Reward > 5 {
+		return nil, NewValidationError("reward", "must be between 1 and 5")
+	}
+
 	// Валидация и конвертация target_location
 	targetLocation, err := ConvertAPICoordinateToKernel(req.TargetLocation)
 	if err != nil {
@@ -74,16 +78,11 @@ func ValidateCreateQuestRequest(req *servers.CreateQuestRequest) (*ValidatedCrea
 		skills = *req.Skills
 	}
 
-	reward := ""
-	if req.Reward != nil {
-		reward = strings.TrimSpace(*req.Reward)
-	}
-
 	return &ValidatedCreateQuestData{
 		Title:             title,
 		Description:       description,
 		Difficulty:        string(req.Difficulty), // Передаем как есть, домен проверит
-		Reward:            reward,
+		Reward:            req.Reward,
 		DurationMinutes:   req.DurationMinutes,
 		TargetLocation:    targetLocation,
 		ExecutionLocation: executionLocation,

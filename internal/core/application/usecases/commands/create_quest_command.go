@@ -13,7 +13,7 @@ type CreateQuestCommand struct {
 	Title             string
 	Description       string
 	Difficulty        string // Изменено на string, валидация в домене
-	Reward            string
+	Reward            int
 	DurationMinutes   int
 	TargetLocation    kernel.GeoCoordinate
 	ExecutionLocation kernel.GeoCoordinate

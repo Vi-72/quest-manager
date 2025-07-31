@@ -98,10 +98,12 @@ type CreateQuestRequest struct {
 	DurationMinutes   int        `json:"duration_minutes"`
 	Equipment         *[]string  `json:"equipment,omitempty"`
 	ExecutionLocation Coordinate `json:"execution_location"`
-	Reward            *string    `json:"reward,omitempty"`
-	Skills            *[]string  `json:"skills,omitempty"`
-	TargetLocation    Coordinate `json:"target_location"`
-	Title             string     `json:"title"`
+
+	// Reward Reward level from 1 to 5
+	Reward         int        `json:"reward"`
+	Skills         *[]string  `json:"skills,omitempty"`
+	TargetLocation Coordinate `json:"target_location"`
+	Title          string     `json:"title"`
 }
 
 // CreateQuestRequestDifficulty defines model for CreateQuestRequest.Difficulty.
@@ -121,12 +123,14 @@ type Quest struct {
 	ExecutionLocation Coordinate `json:"execution_location"`
 
 	// ExecutionLocationId ID of the execution location in locations table (if any)
-	ExecutionLocationId *string     `json:"execution_location_id"`
-	Id                  string      `json:"id"`
-	Reward              string      `json:"reward"`
-	Skills              *[]string   `json:"skills,omitempty"`
-	Status              QuestStatus `json:"status"`
-	TargetLocation      Coordinate  `json:"target_location"`
+	ExecutionLocationId *string `json:"execution_location_id"`
+	Id                  string  `json:"id"`
+
+	// Reward Reward level from 1 to 5
+	Reward         int         `json:"reward"`
+	Skills         *[]string   `json:"skills,omitempty"`
+	Status         QuestStatus `json:"status"`
+	TargetLocation Coordinate  `json:"target_location"`
 
 	// TargetLocationId ID of the target location in locations table (if any)
 	TargetLocationId *string   `json:"target_location_id"`
@@ -1107,28 +1111,28 @@ func (sh *strictHandler) ChangeQuestStatus(w http.ResponseWriter, r *http.Reques
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xY32/bNhD+VwhuDxugxM6SAZnekgYrDGzA0qBPRWAw0tlmQ5EKeUxqBP7fB/6QLFt0",
-	"7Mxu1g19MmWRvI/3fXe80zMtVFUrCRINzZ+pKWZQMT+8MIZP5bUFgx/gwf24f2utatDIwc+xBvSYl25Y",
-	"gik0r5ErSXP60YAmoyuCijC/D8EZEL8LQUUzivMaaE4Nai6ndLHIqIYHyzWUNP/U7nvbTlR3n6FAusjo",
-	"uxmTU7hBhtZsBGb8azcCaSu3ZaGBIZQ0o7UyYRCQ+SGX41qrqQZjaEZLKAQPL5x7BLj5t9tAR5tJzErp",
-	"kkuG0IcqGHK0JfSd+Ed8Q4rl8oxOlK4Y0pxOhGJIM1qxL7xyh/xtmNGKy/Bw5J4iEGmrO9AOiFByusla",
-	"82pXcyfnK/b845rBNQ+1R+0CSfrLk/Wy9lbQP69zk9GSTya8sALnXRkAM3N3CCi5rWhGZ0ynqM1oaTVz",
-	"e48rLi0mTFIPjzTzCJekmdpxy0m7NZcI08CCc0ldgfSn4giVSZ4g/sG0ZnO/7AsU1mMSqmDNwX/UMKE5",
-	"/WGwjORBDONBR3eeiid32pQpc8+FMK+Dg0xPAf8hFuQoIGFmTTFhWrbi+RVqE0T1kSVdl9LddVpqMVF4",
-	"vNIKwe4cdtQWEsKJiWbM/EZt+JQM4Qh5BXTTGqXTOv6u81dqq78+eUeNroia+HupXUCaBe6UzdgQdIST",
-	"n/iEMDn/mWbbRcDTYXbgCHyTW27fQF9dvIWJMPtgNGzKMhm1dfnKKF3LTNz5bYf0FClP5qnI344Ja5km",
-	"VpLMyln6Sc3h5nKi+l6/+GtEJkoTvxeX04xoQM3h0Y+ZLEnFJJtyOQ2FmzluT9wkhT/dBHARTm5AP/LC",
-	"OeMRtAkWTo5Pj8+ct1UNktWc5vT0eHh86uTJcOaVOwh7u+EUPBku8/oTj0pXlnCD12GKW6VZBQja0PzT",
-	"+nl+5wJBR6zkbk5a93L3+sGCdoRIVgVa48sg269dKt46JZhaSRNS7C/DofsplMSYH1ldCx6oHnw2IcyW",
-	"2Nqk8FLkheurlygW67eId6oLuej7RUZ/DXjW4lIiaMkEMaAfQRPQWoWqztiqYnpOc/oekDAi4oZMiM6m",
-	"zn19RjvFHQ0xBQYvVTl/lUNezED98nGxGr8uXyx6lJwcDMH10mjqMjW2KMCYiRViThq5LTJ6lmbhkQle",
-	"Ei5ri6RkyPYiLDiHMCLhiTTOyZo4HLRKfykgL+Kk3QJzmd5dX7chHpuWb52lboD+l4KKNI50PXB79m0c",
-	"29A37x2RCQwsIuhwbYDpYnakWcnt5gx842cFqi/nH8LkLZS/AweUdBq+FOeC4Yt893rPXnu5yW7bXW4w",
-	"7K/TQxoOTiLBla5suedCRfekMYSp4/tqPyTfdAw8cZzx8O0nimxbAHRUtU8MRDpWYbAWRCcGnv3vmJeL",
-	"jQHwHkIFcjkflduE/1HyB9t86RpdNdy7cmdJfWPyTZPdHtdVCci4iOSdbeoQpUIyUVaWh8lejVVXybmM",
-	"mOQsXle+ZU8WG52vmNuou/5KnB2+vkl8mt2pvhn+K/VNW1HsdPkp3dTtb6G24Mn2w3TqkuyIbdlv1wyL",
-	"WaK09d+mPcCbpr/4n2gu9dn9GxOdx0ZiN7xVbW+osuC7qLLGrp/i1wRhWC1oTmeIdT4YuKZfzJTB/Hx4",
-	"PqSL28XfAQAA//8QQTLyqhkAAA==",
+	"H4sIAAAAAAAC/+xZUU/kNhD+K5bbh1bKsUsBieYNDvW0UisV0D2d0Mokk10fjh3s8XIrlP9e2U6y2Y2X",
+	"hS5HadUnvInt+Wa+b8bj8EgzVVZKgkRD00dqsjmUzA/PjOEzeWnB4BXcuz/uaaVVBRo5+DnWgJ7y3A1z",
+	"MJnmFXIlaUo/G9BkckFQEeb3ITgH4nchqGhCcVkBTalBzeWM1nVCNdxbriGn6Zdu35tuorr9ChnSOqEf",
+	"50zO4BoZWrMVmPGv3QikLd2WmQaGkNOEVsqEQUDmh1xOK61mGoyhCc0hEzy8cOER4Obf7ALd2IxiVkrn",
+	"XDKEIVTBkKPNYRjE35s3JFstT2ihdMmQprQQiiFNaMm+8dI5+es4oSWX4ccH96sBIm15C9oBEUrOtllr",
+	"Xz3X3OHpmj3/c8PgRoQ6V/tAovHyZD2tvTX0j5vcJDTnRcEzK3DZlwEws3ROQM5tSRM6ZzpGbUJzq5nb",
+	"e1pyaTFiknp4pJ1HuCTt1F5YDrutuUSYBRZcSKoSpPeKI5Qm6kHzgGnNln7ZN8isxyRUxlrHf9RQ0JT+",
+	"MFpl8qhJ41FPd56KB+ftwJEr/5wIWIAghVYlOXSJe9In+2SXT+aOC2Fe5hAyPQP8m94gRwERMxuaC9OS",
+	"NZfXxNHFJcL5EGKUhZiEL+OqbWqOBy6tEOzWOYHaQkSDTc2aMr9Rl4k5Q/iAvAS6bY3S8ZT4P2VeKLLh",
+	"+uhxN7kgqvBHXLeAtAucl+3YEHSEk594QZhc/kyT3SII9gaP310yv8mRu2/NWF+8g8sw+9WI3FawEmqr",
+	"/IV5vlHkuIvbnpWu4e+ZJW9VaNbK1Jovw7LocHNZqGHUz/6ckEJp4vficpYQDag5LPyYyZyUTLIZl7PQ",
+	"RZqDzuO2rPzhJoCrEeQa9IJnLhgL0CZYODw4Ojh20VYVSFZxmtKjg/HBkZMnw7lX7ijs7YYz8GS42u09",
+	"nuSuR+IGL8MUt0qzEhC0oemXTX9+4wJBN1jJ7ZJ04eXu9b0F7QiRrAy0Ni+DbL9333rjlGAqJU0o0r+M",
+	"x+5PpiQ2FZZVleCB6tFXE9Jsha0rCk9lXjgAB4Wi3jyHfFBdyjWxrxN6EvBs5KVE0JIJYkAvQBPQWoUW",
+	"09iyZHpJU/oJkDAimg2ZEL1NXfiGjPY6TRpyCgyeq3z5ooA8WYGGvWy9nr+uXtQDSg5fDcHlymjsODY2",
+	"y8CYwgqxJK3c6oQex1lYMMFzwmVlkeQM2V6EheAQRiQ8kDY4SZuHo07pTyXkWTPpeYm5Ku/ukrklH9v7",
+	"5yZL/QT9NyUVaQPpWoHO910c23CJ3zsjIxhYg6DHtQGms/kHzXJut1fgaz8rUH2+vAqTd1D+ERxQ0rt9",
+	"xjgXDJ/ke3ARHtx1t9ntrrpbDPvj9DUNhyCREErXttxxoZrwxDGEqdO7cj8k7zoHHjjOefgQ1YhsVwL0",
+	"VLVPDjR0rMNgHYheDjz6v1Oe11sT4BOEDuR8Ocl3Cf+z5Pe2/ew2uWi5d+3OivrW5JsWuz2OqxyQcdGQ",
+	"d7ztjikVkkJZmb9O9Wqtuk7OVcQoZ81x5S/90Waj90l1F3WX34mz1+9vIt+Jn9XfjP+R/qbrKJ51+Cnd",
+	"9u1vobYQye4reeyQ7Iltdd+uGGbzSGvrP5R7gNft/eI/ornY/wDemeg8NtLchneq7Q1VFmLXqKy166f4",
+	"NUEYVgua0jlilY5G7tIv5spgejo+HdP6pv4rAAD//3iO6yI3GgAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

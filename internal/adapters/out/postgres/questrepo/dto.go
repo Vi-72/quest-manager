@@ -8,7 +8,7 @@ type QuestDTO struct {
 	Title           string
 	Description     string
 	Difficulty      string
-	Reward          string
+	Reward          int // Уровень награды от 1 до 5
 	DurationMinutes int // Храним duration в минутах
 
 	// Денормализованные координаты (главные данные для производительности)

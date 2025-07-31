@@ -234,7 +234,10 @@ components:
           type: string
           enum: [easy, medium, hard]
         reward:
-          type: string
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Reward level from 1 to 5
         duration_minutes:
           type: integer
           minimum: 1
@@ -255,6 +258,7 @@ components:
         - title
         - description
         - difficulty
+        - reward
         - duration_minutes
         - target_location
         - execution_location
@@ -290,7 +294,10 @@ components:
           type: string
           enum: [easy, medium, hard]
         reward:
-          type: string
+          type: integer
+          minimum: 1
+          maximum: 5
+          description: Reward level from 1 to 5
         duration_minutes:
           type: integer
           minimum: 1

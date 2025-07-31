@@ -47,7 +47,7 @@ type Quest struct {
 	Title           string
 	Description     string
 	Difficulty      Difficulty
-	Reward          string
+	Reward          int
 	DurationMinutes int
 
 	// Основные координаты (денормализованные для производительности)
@@ -72,7 +72,7 @@ type Quest struct {
 func NewQuest(
 	title, description string,
 	difficulty string, // Принимаем string для валидации
-	reward string,
+	reward int,
 	durationMinutes int,
 	targetLocation, executionLocation kernel.GeoCoordinate,
 	creator string,
@@ -89,6 +89,11 @@ func NewQuest(
 		questDifficulty = DifficultyHard
 	default:
 		return Quest{}, errors.New("invalid difficulty: must be one of 'easy', 'medium', 'hard'")
+	}
+
+	// Валидация reward
+	if reward < 1 || reward > 5 {
+		return Quest{}, errors.New("reward must be between 1 and 5")
 	}
 
 	// Валидация duration
