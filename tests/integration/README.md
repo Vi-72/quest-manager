@@ -1,6 +1,7 @@
 # Integration Tests
 
 Эта папка содержит интеграционные тесты для Quest Manager Service.
+oapi-codegen -config configs/server.cfg.yaml api/openapi/openapi.yml
 
 ## Структура
 
@@ -71,7 +72,7 @@ go test -tags=integration ./tests/integration/...
 
 Запуск конкретного тестового набора:
 ```bash
-go test -tags=integration ./tests/integration/cases/quest_operations/
+go test -tags=integration ./tests/integration/cases/quest/
 ```
 
 Запуск с подробным выводом:

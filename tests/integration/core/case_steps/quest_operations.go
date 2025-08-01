@@ -9,6 +9,7 @@ import (
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/quest"
+	"quest-manager/internal/core/ports"
 )
 
 // CreateQuestStep выполняет создание квеста
@@ -56,6 +57,7 @@ func AssignQuestStep(
 func ChangeQuestStatusStep(
 	ctx context.Context,
 	handler commands.ChangeQuestStatusCommandHandler,
+	questRepo ports.QuestRepository,
 	questID uuid.UUID,
 	newStatus quest.Status,
 ) (quest.Quest, error) {
@@ -64,7 +66,13 @@ func ChangeQuestStatusStep(
 		Status:  newStatus,
 	}
 
-	return handler.Handle(ctx, cmd)
+	result, err := handler.Handle(ctx, cmd)
+	if err != nil {
+		return quest.Quest{}, err
+	}
+
+	// Для тестов получаем полный квест
+	return questRepo.GetByID(ctx, result.ID)
 }
 
 // GetQuestByIDStep получает квест по ID

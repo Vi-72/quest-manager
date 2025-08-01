@@ -22,13 +22,17 @@ func (a *ApiHandler) ChangeQuestStatus(ctx context.Context, request servers.Chan
 		QuestID: validatedData.QuestID,
 		Status:  quest.Status(validatedData.Status),
 	}
-	updatedQuest, err := a.changeQuestStatusHandler.Handle(ctx, cmd)
+	result, err := a.changeQuestStatusHandler.Handle(ctx, cmd)
 	if err != nil {
 		// Передаем ошибку в middleware для правильной обработки (400, 404, 500)
 		return nil, err
 	}
 
-	// Возвращаем обновленный квест
-	apiQuest := QuestToAPI(updatedQuest)
-	return servers.ChangeQuestStatus200JSONResponse(apiQuest), nil
+	// Формируем ответ из результата операции
+	apiResult := servers.ChangeQuestStatusResult{
+		Id:       result.ID.String(),
+		Assignee: result.Assignee,
+		Status:   servers.QuestStatus(result.Status),
+	}
+	return servers.ChangeQuestStatus200JSONResponse(apiResult), nil
 }

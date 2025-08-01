@@ -22,16 +22,6 @@ import (
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
 )
 
-// Defines values for ChangeStatusRequestStatus.
-const (
-	ChangeStatusRequestStatusAssigned   ChangeStatusRequestStatus = "assigned"
-	ChangeStatusRequestStatusCompleted  ChangeStatusRequestStatus = "completed"
-	ChangeStatusRequestStatusCreated    ChangeStatusRequestStatus = "created"
-	ChangeStatusRequestStatusDeclined   ChangeStatusRequestStatus = "declined"
-	ChangeStatusRequestStatusInProgress ChangeStatusRequestStatus = "in_progress"
-	ChangeStatusRequestStatusPosted     ChangeStatusRequestStatus = "posted"
-)
-
 // Defines values for CreateQuestRequestDifficulty.
 const (
 	CreateQuestRequestDifficultyEasy   CreateQuestRequestDifficulty = "easy"
@@ -58,12 +48,12 @@ const (
 
 // Defines values for ListQuestsParamsStatus.
 const (
-	Assigned   ListQuestsParamsStatus = "assigned"
-	Completed  ListQuestsParamsStatus = "completed"
-	Created    ListQuestsParamsStatus = "created"
-	Declined   ListQuestsParamsStatus = "declined"
-	InProgress ListQuestsParamsStatus = "in_progress"
-	Posted     ListQuestsParamsStatus = "posted"
+	ListQuestsParamsStatusAssigned   ListQuestsParamsStatus = "assigned"
+	ListQuestsParamsStatusCompleted  ListQuestsParamsStatus = "completed"
+	ListQuestsParamsStatusCreated    ListQuestsParamsStatus = "created"
+	ListQuestsParamsStatusDeclined   ListQuestsParamsStatus = "declined"
+	ListQuestsParamsStatusInProgress ListQuestsParamsStatus = "in_progress"
+	ListQuestsParamsStatusPosted     ListQuestsParamsStatus = "posted"
 )
 
 // AssignQuestRequest defines model for AssignQuestRequest.
@@ -72,13 +62,35 @@ type AssignQuestRequest struct {
 	UserId string `json:"user_id"`
 }
 
-// ChangeStatusRequest defines model for ChangeStatusRequest.
-type ChangeStatusRequest struct {
-	Status ChangeStatusRequestStatus `json:"status"`
+// AssignQuestResult defines model for AssignQuestResult.
+type AssignQuestResult struct {
+	// Assignee User ID who was assigned to the quest
+	Assignee string `json:"assignee"`
+
+	// Id Quest ID
+	Id string `json:"id"`
+
+	// Status Quest status
+	Status QuestStatus `json:"status"`
 }
 
-// ChangeStatusRequestStatus defines model for ChangeStatusRequest.Status.
-type ChangeStatusRequestStatus string
+// ChangeQuestStatusResult defines model for ChangeQuestStatusResult.
+type ChangeQuestStatusResult struct {
+	// Assignee User ID who is assigned to the quest (null if not assigned)
+	Assignee *string `json:"assignee"`
+
+	// Id Quest ID
+	Id string `json:"id"`
+
+	// Status Quest status
+	Status QuestStatus `json:"status"`
+}
+
+// ChangeStatusRequest defines model for ChangeStatusRequest.
+type ChangeStatusRequest struct {
+	// Status Quest status
+	Status QuestStatus `json:"status"`
+}
 
 // Coordinate defines model for Coordinate.
 type Coordinate struct {
@@ -130,8 +142,10 @@ type Quest struct {
 	Id                  string  `json:"id"`
 
 	// Reward Reward level from 1 to 5
-	Reward         int         `json:"reward"`
-	Skills         *[]string   `json:"skills,omitempty"`
+	Reward int       `json:"reward"`
+	Skills *[]string `json:"skills,omitempty"`
+
+	// Status Quest status
 	Status         QuestStatus `json:"status"`
 	TargetLocation Coordinate  `json:"target_location"`
 
@@ -144,7 +158,7 @@ type Quest struct {
 // QuestDifficulty defines model for Quest.Difficulty.
 type QuestDifficulty string
 
-// QuestStatus defines model for Quest.Status.
+// QuestStatus Quest status
 type QuestStatus string
 
 // ListQuestsParams defines parameters for ListQuests.
@@ -781,7 +795,7 @@ type AssignQuestResponseObject interface {
 	VisitAssignQuestResponse(w http.ResponseWriter) error
 }
 
-type AssignQuest200JSONResponse Quest
+type AssignQuest200JSONResponse AssignQuestResult
 
 func (response AssignQuest200JSONResponse) VisitAssignQuestResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -823,7 +837,7 @@ type ChangeQuestStatusResponseObject interface {
 	VisitChangeQuestStatusResponse(w http.ResponseWriter) error
 }
 
-type ChangeQuestStatus200JSONResponse Quest
+type ChangeQuestStatus200JSONResponse ChangeQuestStatusResult
 
 func (response ChangeQuestStatus200JSONResponse) VisitChangeQuestStatusResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
@@ -1114,29 +1128,30 @@ func (sh *strictHandler) ChangeQuestStatus(w http.ResponseWriter, r *http.Reques
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/+xZ32/bthP/Vwh+vw8boMbO2gKd3pIGKwxs2JKgT0VgMOLJZkORCnl0agT+3weSkixb",
-	"dJzMaZYNezIlHXk/Pp87Hul7Wuiq1goUWprfU1vMoWJheGKtmKlzBxYv4Nb/+Le10TUYFBBknAUzFdwP",
-	"OdjCiBqFVjSnny0YMjkjqAkL6xCcAwmrENQ0o7isgebUohFqRlerjBq4dcIAp/mXbt2rTlBff4UC6Sqj",
-	"H+dMzeASGTq70zAbPvsRKFf5JQsDDIHTjNbaxkG0LAyFmtZGzwxYSzPKoZAifvDhkeDlr/YZ3ehM2qy1",
-	"4UIxhKGpjPOgdhDD38OASdJIkFIbgnNhidQFC0IDkzIqGQp0HIbr/dp8IcXamoyW2lQMaU5LqRnSjFbs",
-	"m6h8zH4eZ7QSKj688U+NMuWqazBBmVazXdraT49Vd/xhQ1943FK4FfDO1b4hyfAH7B+m8ob198O4clGW",
-	"onASl31WAbNL7wRw4Sqa0TkzKaZklDsTIJtWQjlMqKTBPNLKEaFIK9oLy3G3tFAIs4iCD0ldgQpeCYTK",
-	"Jj1oXjBj2DJM+waFCzZ1fMrv6f8NlDSn/xutC8OoqQqjHo0DFHfe24EjF+E9kbAASUqjK3Ls68D7Ptjv",
-	"9/lkb4SU9mkOITMzwL/oDQqUkFCzxbkolm24vEGOLi4JzIcmJlFIUfg8zdqmhAXDlZOSXXsn0DhIcLAp",
-	"gVMWFuoykTOENygqoLvmaJNOif9S5okkG85P7p6TM6LLsGN2E7qa771sx5agB5z8IErC1PJHmu0nQdQ3",
-	"eP3qkvlFdvBDa8bm5D1YRulnA3JXwcqoq/kT83yryAkftwMrXYPfI0veutBslKkNX4Zl0dstVKmHUT/5",
-	"YxLapbCWULOMGEAjYBHGTHFSMcVmQs1iU2qPOo/bsvKbFwBfI8glmIUofDAWYGzUcHz09uidj7auQbFa",
-	"0Jy+PRofvfX0ZDgPzB3Ftf1wBgEMX7uDxxPueyRh8TyK+FmGVYBgLM2/bPvzi5AIprGVXC9JF17hP986",
-	"MB4QxaoIa/Mx0vZ7t8FXngm21srGIv3TeOx/Cq2wqbCsrqWIUI++2phma9u6ovBQ5sUNcFAoVtv7UAiq",
-	"T7km9quMvo/2bOWlQjC+u7ZgFmAIGKNji2ldVTGzpDn9BEgYkc2CTMreoj58Q0R7nSaNOQUWTzVfPikg",
-	"D1agYS+72sxfXy9WA0iOn82C87XS1HZsXVGAtaWTcklauq0y+i6NwoJJwYlQtUPCGbKDAIvBIYwouCNt",
-	"cLI2D0cd0x9KyJNG6HGJuS7v/sy6Ix/b4+w2Sv0E/SclFWkD6VuBzvd9GLt4J3BwRiZsYI0FPawtMFPM",
-	"3xjGhdtdgS+DVIT6dHkRhfdA/hG8oaR3+kxhLhk+iPfgIDw46+7S2x11dygO2+lzKo5BIjGUvm25EVI3",
-	"4UnbEEWnN9VhlrzqHLgTOBfxXqsh2b4E6LHqkBxo4Ng0g3VG9HLgPvxOBV/tTIBPEDuQ0+WE7yP+ZyVu",
-	"XXuLNzlrsfftzhr6VuWLFrsDtisOyIRswHu364ypNJJSO8Wfp3q1Wn0n5ytiErNmuwqH/mSz0buh3Qfd",
-	"+XfC7Pn7m8S186P6m/Hf0t90HcWjNj9t2r79JdgWI9lduqc2yR7Z1uftmmExT7S24d49GHjZni/+JZxL",
-	"/aXwykgXbCPNaXgv216QZTF2DctavUEkzInEcEbSnM4R63w08od+OdcW8w/jD2O6ulr9GQAA//8+azNU",
-	"hhoAAA==",
+	"H4sIAAAAAAAC/+xZ32/bNhD+VwhuDx2gxs7aAp3e+gMrAmzY0qBPRREw4sliS5EKeUxqBP7fB5KSLFtU",
+	"lNRp0A17siydeN99393xJN3QQteNVqDQ0vyG2qKCmoXDV9aKlTp1YPE9XPoff7YxugGDAoKNs2DOBfeH",
+	"HGxhRINCK5rTDxYMOXlLUBMW1iFYAQmrENQ0o7hugObUohFqRTebjBq4dMIAp/nHft1PvaG++AwF0k22",
+	"i8s6mYAVXQJM47quNLlmtgUH3APtEY7hZTQVZMBATt6m7C0ydAHMzwZKmtOfFlumFy3Ni7DCWTTd50Bw",
+	"mm0j6VdMUfKmYmoFg8UOI0ZM8EKeKCclESVRGnuTX2hG/Xl2IYHmaBz8OPTNctbRNZHfh8O4DYHWhgvF",
+	"EBJCcW7A2jFpf4UDJklrQUptCFbCEqkLFowSdEqGAh1P6P5He4UUWzQZLbWpGdKcllIzXw81+ypqV9P8",
+	"t2VGa6Hin6f+X+tMufoCTHCm1WrKW3fpru6OX+74C3/3HO4R3oc6BJKk3wBDuL2/7aC/GfPKRVmKwklc",
+	"+8ugPMiPFJhd+yCAC1fTjFbMDFvZ4HZngmTntVAOEy7bGunsiFCkMx3QctwvLRTCKqrgKWlqUCEqgVDb",
+	"ZATtCWYMW4fbvkLhAqY+n2ayf5DGQYprH+0okPfhPJFwBZKURtfk2PeWF0OxX8zFZL8IKe39AkJmVoDf",
+	"GA0KlJBws5dz0SzbCXknOXpeEpqPISZVSKXwaTprh11+tjMXoQz4OQsL9ZXIGcJTFDXQqXu0SZfE/yVz",
+	"zyQb358cqU7eEl2Gzbi/oe/5Psru2BL0gpMnoiRMre+xPY9O/3DF/A378aEdYPfmGWWi9YPJMtV+Muoa",
+	"fs+qTY1HB/atVo07NrBt29hpOjuxTDa5s174VLH3QLp20q5PM9poGw+6cZVmVKjzxuhVGLB88IUU8YLP",
+	"Bgneftx6PIFClXqM4dXfJ2EKC06FWmXEABoBV+GYKU5qpthKqFUco+1RT30XwJ/eAHzrIWdgrkThVbkC",
+	"Y6OH46NnR889F7oBxRpBc/rsaHn0zMfHsAq8LOLa/nAFISv8lhCoP+F+9BIWT6OJv8uwGhCMpfnH/Xh+",
+	"FxLBtFjJxXpLr/CXLx0YnxmK1ZGf9mKsn2FT/x4qfPIpaRutbOz9vy6X/qfQCtvGzZpGiphzi8821vsW",
+	"W99rZhvIuP9s9re3QKqv/Zb7TUZfRDx7DUIhGD+0WzBXYAgYo+Pkal1dM7OmOX0HSBiR7YJMysGinr6x",
+	"ooMBlsbiBouvNV/fi5BbW+F4RN7sNhLfuDYjSY4fDMHp1mmy8F1RgLWlk3JNunTbZPR5WoUrJgUnQjUO",
+	"CWfIDhIskkMYUXBNOnKyrg4XfabfVpCvWqO7FeZ2n3EWzEQ9dq9O9lUaFui/qahGryJC7HMau/g64+CK",
+	"TGBgLYKB1haYKaqnhnHhpjvwWbCKUr9ev4/GM5K/AQ+UDB5qU5pLhrfqPXq+Hj1CT/ntn6AnHId9/SEd",
+	"R5JIpNLPT1+E1C09aQzR9PxLfRiSH7oGrgVWIr5DbZNsrgAGWXVIDbRy7MJgPYhBDdyE33PBN5MF8A7i",
+	"BPJ6fcLnEv+DEpeue+8Y3hEG7f24s5W+c/moze6A7YoDMiFb8Z5PTbNKIym1U/xhulfn1U9yviMmNWu3",
+	"q/AuITlsDN66z0l3+p00e/j5JvGJ407zzfL7IAjv7O826/TTxZ02Qm26Gf4xMi/G1H/sSW2Yg8TbPtI3",
+	"DIsqMebuf9z47+Rf6hvEIyfg1Kej6TQMVqR9aJ/Nv0fMuxhKm3ed32AS7omp4oykOa0Qm3yxkLpgstIW",
+	"85fLl0u6+bT5JwAA//+Y1UY4EB0AAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

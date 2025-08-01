@@ -10,7 +10,7 @@ import (
 
 // ChangeQuestStatusCommandHandler defines the interface for handling quest status changes.
 type ChangeQuestStatusCommandHandler interface {
-	Handle(ctx context.Context, cmd ChangeQuestStatusCommand) (quest.Quest, error)
+	Handle(ctx context.Context, cmd ChangeQuestStatusCommand) (ChangeQuestStatusResult, error)
 }
 
 type changeQuestStatusHandler struct {
@@ -27,10 +27,10 @@ func NewChangeQuestStatusCommandHandler(unitOfWork ports.UnitOfWork, eventPublis
 }
 
 // Handle updates the quest status with validation and domain business rules.
-func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestStatusCommand) (quest.Quest, error) {
+func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestStatusCommand) (ChangeQuestStatusResult, error) {
 	// Валидируем статус - это domain validation ошибка → 400
 	if !quest.IsValidStatus(string(cmd.Status)) {
-		return quest.Quest{}, errs.NewDomainValidationError("status", "must be one of 'created', 'posted', 'assigned', 'in_progress', 'declined', 'completed'")
+		return ChangeQuestStatusResult{}, errs.NewDomainValidationError("status", "must be one of 'created', 'posted', 'assigned', 'in_progress', 'declined', 'completed'")
 	}
 
 	// Начинаем транзакцию
@@ -40,37 +40,47 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 	q, err := h.unitOfWork.QuestRepository().GetByID(ctx, cmd.QuestID)
 	if err != nil {
 		_ = h.unitOfWork.Rollback()
-		return quest.Quest{}, errs.NewNotFoundErrorWithCause("quest", cmd.QuestID.String(), err)
+		return ChangeQuestStatusResult{}, errs.NewNotFoundErrorWithCause("quest", cmd.QuestID.String(), err)
 	}
 
 	// Используем доменную логику для изменения статуса - domain validation ошибка → 400
 	if err := q.ChangeStatus(cmd.Status); err != nil {
 		_ = h.unitOfWork.Rollback()
-		return quest.Quest{}, errs.NewDomainValidationErrorWithCause("status", "invalid status transition", err)
+		return ChangeQuestStatusResult{}, errs.NewDomainValidationErrorWithCause("status", "invalid status transition", err)
 	}
 
 	// Сохраняем квест - infrastructure ошибка → 500
 	if err := h.unitOfWork.QuestRepository().Save(ctx, q); err != nil {
 		_ = h.unitOfWork.Rollback()
-		return quest.Quest{}, errs.WrapInfrastructureError("failed to save quest", err)
+		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
 	// Публикуем доменные события в рамках той же транзакции
 	if h.eventPublisher != nil {
 		if err := h.eventPublisher.Publish(ctx, q.GetDomainEvents()...); err != nil {
 			_ = h.unitOfWork.Rollback()
-			return quest.Quest{}, errs.WrapInfrastructureError("failed to publish events", err)
+			return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to publish events", err)
 		}
 	}
 
 	// Коммитим транзакцию
 	err = h.unitOfWork.Commit(ctx)
 	if err != nil {
-		return quest.Quest{}, errs.WrapInfrastructureError("failed to commit quest status change transaction", err)
+		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to commit quest status change transaction", err)
 	}
 
 	// Очищаем события после успешного коммита
 	q.ClearDomainEvents()
 
-	return q, nil
+	// Формируем результат из обновленного квеста
+	var assignee *string
+	if q.Assignee != nil {
+		assignee = q.Assignee
+	}
+
+	return ChangeQuestStatusResult{
+		ID:       q.ID(),
+		Assignee: assignee,
+		Status:   string(q.Status),
+	}, nil
 }

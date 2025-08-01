@@ -1,4 +1,4 @@
-package quest_operations
+package quest
 
 import (
 	"context"

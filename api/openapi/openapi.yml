@@ -163,7 +163,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quest'
+                $ref: '#/components/schemas/ChangeQuestStatusResult'
         '400':
           description: Invalid status
         '404':
@@ -194,7 +194,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Quest'
+                $ref: '#/components/schemas/AssignQuestResult'
         '400':
           description: Invalid user or status
         '404':
@@ -204,6 +204,11 @@ paths:
 
 components:
   schemas:
+    QuestStatus:
+      type: string
+      enum: [created, posted, assigned, in_progress, declined, completed]
+      description: Quest status
+
     Coordinate:
       type: object
       properties:
@@ -270,8 +275,7 @@ components:
       type: object
       properties:
         status:
-          type: string
-          enum: [created, posted, assigned, in_progress, declined, completed]
+          $ref: '#/components/schemas/QuestStatus'
       required:
         - status
 
@@ -283,6 +287,38 @@ components:
           description: User ID to assign the quest to
       required:
         - user_id
+
+    AssignQuestResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Quest ID
+        assignee:
+          type: string
+          description: User ID who was assigned to the quest
+        status:
+          $ref: '#/components/schemas/QuestStatus'
+      required:
+        - id
+        - assignee
+        - status
+
+    ChangeQuestStatusResult:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Quest ID
+        assignee:
+          type: string
+          nullable: true
+          description: User ID who is assigned to the quest (null if not assigned)
+        status:
+          $ref: '#/components/schemas/QuestStatus'
+      required:
+        - id
+        - status
 
     Quest:
       type: object
@@ -318,8 +354,7 @@ components:
           items:
             type: string
         status:
-          type: string
-          enum: [created, posted, assigned, in_progress, declined, completed]
+          $ref: '#/components/schemas/QuestStatus'
         creator:
           type: string
         assignee:

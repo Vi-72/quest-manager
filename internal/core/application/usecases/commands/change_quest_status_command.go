@@ -10,3 +10,10 @@ type ChangeQuestStatusCommand struct {
 	QuestID uuid.UUID
 	Status  quest.Status
 }
+
+// ChangeQuestStatusResult represents the output after status change.
+type ChangeQuestStatusResult struct {
+	ID       uuid.UUID
+	Assignee *string // может быть nil если квест не назначен
+	Status   string
+}

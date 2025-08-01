@@ -21,5 +21,8 @@ func (p *ProblemDetails) Error() string {
 func (p *ProblemDetails) WriteResponse(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/problem+json")
 	w.WriteHeader(p.Status)
-	json.NewEncoder(w).Encode(p)
+	err := json.NewEncoder(w).Encode(p)
+	if err != nil {
+		return
+	}
 }

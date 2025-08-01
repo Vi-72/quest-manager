@@ -28,13 +28,11 @@ func (a *ApiHandler) AssignQuest(ctx context.Context, request servers.AssignQues
 		return nil, err
 	}
 
-	// Получаем обновленный квест для возврата
-	quest, err := a.getQuestByIDHandler.Handle(ctx, result.ID)
-	if err != nil {
-		// Передаем ошибку в middleware для правильной обработки
-		return nil, err
+	// Формируем ответ из результата операции
+	apiResult := servers.AssignQuestResult{
+		Id:       result.ID.String(),
+		Assignee: result.Assignee,
+		Status:   servers.QuestStatus(result.Status),
 	}
-
-	apiQuest := QuestToAPI(quest)
-	return servers.AssignQuest200JSONResponse(apiQuest), nil
+	return servers.AssignQuest200JSONResponse(apiResult), nil
 }

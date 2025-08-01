@@ -9,9 +9,9 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
-	eventrepo "quest-manager/internal/adapters/out/postgres/eventrepo"
-	locationrepo "quest-manager/internal/adapters/out/postgres/locationrepo"
-	questrepo "quest-manager/internal/adapters/out/postgres/questrepo"
+	"quest-manager/internal/adapters/out/postgres/eventrepo"
+	"quest-manager/internal/adapters/out/postgres/locationrepo"
+	"quest-manager/internal/adapters/out/postgres/questrepo"
 	"quest-manager/internal/pkg/errs"
 
 	_ "github.com/lib/pq"
