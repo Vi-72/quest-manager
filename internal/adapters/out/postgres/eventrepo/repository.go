@@ -2,10 +2,12 @@ package eventrepo
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
 
+	postgres "quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/core/domain/model/location"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
@@ -16,8 +18,10 @@ import (
 var _ ports.EventPublisher = &Repository{}
 
 type Repository struct {
+	trackerFactory     func() (ports.Tracker, error)
 	tracker            ports.Tracker
 	goroutineSemaphore chan struct{} // Semaphore for limiting goroutines
+	mu                 sync.Mutex
 }
 
 func NewRepository(tracker ports.Tracker, goroutineLimit int) (*Repository, error) {
@@ -28,8 +32,17 @@ func NewRepository(tracker ports.Tracker, goroutineLimit int) (*Repository, erro
 		goroutineLimit = 5 // default value
 	}
 
+	db := tracker.Db()
+
 	return &Repository{
-		tracker:            tracker,
+		tracker: tracker,
+		trackerFactory: func() (ports.Tracker, error) {
+			uow, err := postgres.NewUnitOfWork(db)
+			if err != nil {
+				return nil, err
+			}
+			return uow.(ports.Tracker), nil
+		},
 		goroutineSemaphore: make(chan struct{}, goroutineLimit),
 	}, nil
 }
@@ -49,8 +62,13 @@ func (r *Repository) PublishAsync(ctx context.Context, events ...ddd.DomainEvent
 			<-r.goroutineSemaphore
 		}()
 
-		// Публикуем события
-		if err := r.Publish(ctx, events...); err != nil {
+		tracker, err := r.trackerFactory()
+		if err != nil {
+			// TODO: добавить логгер для записи ошибок
+			return
+		}
+
+		if err := r.publishWithTracker(ctx, tracker, events...); err != nil {
 			// TODO: добавить логгер для записи ошибок
 			_ = err
 		}
@@ -63,17 +81,28 @@ func (r *Repository) Publish(ctx context.Context, events ...ddd.DomainEvent) err
 		return nil
 	}
 
-	isInTransaction := r.tracker.InTx()
-	if !isInTransaction {
-		r.tracker.Begin(ctx)
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	return r.publishWithTracker(ctx, r.tracker, events...)
+}
+
+func (r *Repository) publishWithTracker(ctx context.Context, tracker ports.Tracker, events ...ddd.DomainEvent) error {
+	if len(events) == 0 {
+		return nil
 	}
-	tx := r.tracker.Tx()
+
+	isInTransaction := tracker.InTx()
+	if !isInTransaction {
+		tracker.Begin(ctx)
+	}
+	tx := tracker.Tx()
 
 	for _, event := range events {
 		dto, err := r.domainEventToDTO(event)
 		if err != nil {
 			if !isInTransaction {
-				_ = r.tracker.Rollback()
+				_ = tracker.Rollback()
 			}
 			return errs.WrapInfrastructureError("failed to convert event to DTO", err)
 		}
@@ -81,14 +110,14 @@ func (r *Repository) Publish(ctx context.Context, events ...ddd.DomainEvent) err
 		err = tx.WithContext(ctx).Create(&dto).Error
 		if err != nil {
 			if !isInTransaction {
-				_ = r.tracker.Rollback()
+				_ = tracker.Rollback()
 			}
 			return errs.WrapInfrastructureError("failed to save event", err)
 		}
 	}
 
 	if !isInTransaction {
-		if err := r.tracker.Commit(ctx); err != nil {
+		if err := tracker.Commit(ctx); err != nil {
 			return errs.WrapInfrastructureError("failed to commit event transaction", err)
 		}
 	}
