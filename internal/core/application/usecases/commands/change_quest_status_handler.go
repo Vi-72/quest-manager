@@ -34,7 +34,9 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 	}
 
 	// Begin transaction
-	h.unitOfWork.Begin(ctx)
+	if err := h.unitOfWork.Begin(ctx); err != nil {
+		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to begin quest status change transaction", err)
+	}
 
 	// Get quest - if not found → 404
 	q, err := h.unitOfWork.QuestRepository().GetByID(ctx, cmd.QuestID)

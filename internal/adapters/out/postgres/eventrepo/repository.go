@@ -94,7 +94,9 @@ func (r *Repository) publishWithTracker(ctx context.Context, tracker ports.Track
 
 	isInTransaction := tracker.InTx()
 	if !isInTransaction {
-		tracker.Begin(ctx)
+		if err := tracker.Begin(ctx); err != nil {
+			return errs.WrapInfrastructureError("failed to begin event transaction", err)
+		}
 	}
 	tx := tracker.Tx()
 
