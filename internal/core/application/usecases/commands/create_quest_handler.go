@@ -36,7 +36,9 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 	var executionLocationID *uuid.UUID
 
 	// Begin transaction
-	h.unitOfWork.Begin(ctx)
+	if err := h.unitOfWork.Begin(ctx); err != nil {
+		return quest.Quest{}, errs.WrapInfrastructureError("failed to begin quest creation transaction", err)
+	}
 
 	// Create or find target location
 	targetLoc, err := location.NewLocation(

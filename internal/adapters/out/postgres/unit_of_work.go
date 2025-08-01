@@ -53,8 +53,13 @@ func (u *UnitOfWork) InTx() bool {
 	return u.tx != nil
 }
 
-func (u *UnitOfWork) Begin(ctx context.Context) {
-	u.tx = u.db.WithContext(ctx).Begin()
+func (u *UnitOfWork) Begin(ctx context.Context) error {
+	tx := u.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return tx.Error
+	}
+	u.tx = tx
+	return nil
 }
 
 func (u *UnitOfWork) Rollback() error {

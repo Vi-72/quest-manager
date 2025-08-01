@@ -30,7 +30,9 @@ func (r *Repository) Save(ctx context.Context, l *location.Location) error {
 
 	isInTransaction := r.tracker.InTx()
 	if !isInTransaction {
-		r.tracker.Begin(ctx)
+		if err := r.tracker.Begin(ctx); err != nil {
+			return errs.WrapInfrastructureError("failed to begin location transaction", err)
+		}
 	}
 	tx := r.tracker.Tx()
 
