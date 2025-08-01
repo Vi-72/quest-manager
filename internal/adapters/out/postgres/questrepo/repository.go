@@ -52,14 +52,19 @@ func (r *Repository) Save(ctx context.Context, q quest.Quest) error {
 
 // GetByID retrieves a quest by its ID.
 func (r *Repository) GetByID(ctx context.Context, questID uuid.UUID) (quest.Quest, error) {
-	var dto QuestDTO
+	var dto QuestWithAddressDTO
 	db := r.tracker.Db()
 	if err := db.WithContext(ctx).
-		Where("id = ?", questID.String()).
+		Select("quests.*, target_loc.address as target_address, exec_loc.address as execution_address").
+		Table("quests").
+		Joins("LEFT JOIN locations target_loc ON quests.target_location_id = target_loc.id").
+		Joins("LEFT JOIN locations exec_loc ON quests.execution_location_id = exec_loc.id").
+		Where("quests.id = ?", questID.String()).
 		First(&dto).Error; err != nil {
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to get quest by ID", err)
 	}
-	return DtoToDomain(dto)
+
+	return DtoToDomainWithAddress(dto)
 }
 
 // FindByBoundingBox retrieves quests within a bounding box area.

@@ -219,6 +219,9 @@ components:
           minimum: -180
           maximum: 180
           description: Longitude coordinate
+        address:
+          type: string
+          description: Optional address for this location
       required:
         - latitude
         - longitude

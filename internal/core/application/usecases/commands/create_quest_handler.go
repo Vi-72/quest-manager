@@ -12,7 +12,7 @@ import (
 
 // CreateQuestCommandHandler defines a handler for creating a new quest.
 type CreateQuestCommandHandler interface {
-	Handle(ctx context.Context, cmd CreateQuestCommand) (CreateQuestResult, error)
+	Handle(ctx context.Context, cmd CreateQuestCommand) (quest.Quest, error)
 }
 
 var _ CreateQuestCommandHandler = &createQuestHandler{}
@@ -26,48 +26,60 @@ func NewCreateQuestCommandHandler(unitOfWork ports.UnitOfWork) CreateQuestComman
 	return &createQuestHandler{unitOfWork: unitOfWork}
 }
 
-func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand) (CreateQuestResult, error) {
+func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand) (quest.Quest, error) {
 	var targetLocationID *uuid.UUID
 	var executionLocationID *uuid.UUID
 
 	// Начинаем транзакцию
 	h.unitOfWork.Begin(ctx)
 
+	// Получаем адрес для target location
+	var targetAddress string
+	if cmd.TargetLocation.GetAddress() != nil {
+		targetAddress = *cmd.TargetLocation.GetAddress()
+	}
+
 	// Всегда создаем локацию для target с пустым именем
 	targetLoc, err := location.NewLocation(
 		"", // пустое имя
 		cmd.TargetLocation,
-		"", // пустой адрес
-		"", // пустое описание
+		targetAddress, // адрес из координат
+		"",            // пустое описание
 	)
 	if err != nil {
 		_ = h.unitOfWork.Rollback()
-		return CreateQuestResult{}, err
+		return quest.Quest{}, err
 	}
 
 	if err := h.unitOfWork.LocationRepository().Save(ctx, targetLoc); err != nil {
 		_ = h.unitOfWork.Rollback()
-		return CreateQuestResult{}, errs.WrapInfrastructureError("failed to save target location", err)
+		return quest.Quest{}, errs.WrapInfrastructureError("failed to save target location", err)
 	}
 
 	locID := targetLoc.ID()
 	targetLocationID = &locID
 
+	// Получаем адрес для execution location
+	var executionAddress string
+	if cmd.ExecutionLocation.GetAddress() != nil {
+		executionAddress = *cmd.ExecutionLocation.GetAddress()
+	}
+
 	// Всегда создаем локацию для execution с пустым именем
 	executionLoc, err := location.NewLocation(
 		"", // пустое имя
 		cmd.ExecutionLocation,
-		"", // пустой адрес
-		"", // пустое описание
+		executionAddress, // адрес из координат
+		"",               // пустое описание
 	)
 	if err != nil {
 		_ = h.unitOfWork.Rollback()
-		return CreateQuestResult{}, err
+		return quest.Quest{}, err
 	}
 
 	if err := h.unitOfWork.LocationRepository().Save(ctx, executionLoc); err != nil {
 		_ = h.unitOfWork.Rollback()
-		return CreateQuestResult{}, errs.WrapInfrastructureError("failed to save execution location", err)
+		return quest.Quest{}, errs.WrapInfrastructureError("failed to save execution location", err)
 	}
 
 	locID = executionLoc.ID()
@@ -88,7 +100,7 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 	)
 	if err != nil {
 		_ = h.unitOfWork.Rollback()
-		return CreateQuestResult{}, err
+		return quest.Quest{}, err
 	}
 
 	// Связываем квест с созданными локациями
@@ -98,19 +110,13 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 	// Сохраняем квест
 	if err := h.unitOfWork.QuestRepository().Save(ctx, q); err != nil {
 		_ = h.unitOfWork.Rollback()
-		return CreateQuestResult{}, errs.WrapInfrastructureError("failed to save quest", err)
+		return quest.Quest{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
 	// Коммитим транзакцию
 	if err := h.unitOfWork.Commit(ctx); err != nil {
-		return CreateQuestResult{}, errs.WrapInfrastructureError("failed to commit transaction", err)
+		return quest.Quest{}, errs.WrapInfrastructureError("failed to commit transaction", err)
 	}
 
-	return CreateQuestResult{
-		ID:                  q.ID(),
-		CreatedAt:           q.CreatedAt,
-		Status:              q.Status,
-		TargetLocationID:    targetLocationID,
-		ExecutionLocationID: executionLocationID,
-	}, nil
+	return q, nil
 }

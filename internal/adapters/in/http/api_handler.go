@@ -10,7 +10,7 @@ type ApiHandler struct {
 	createQuestHandler        commands.CreateQuestCommandHandler
 	listQuestsHandler         queries.ListQuestsQueryHandler
 	getQuestByIDHandler       queries.GetQuestByIDQueryHandler
-	changeQuestStatusHandler  queries.ChangeQuestStatusHandler
+	changeQuestStatusHandler  commands.ChangeQuestStatusCommandHandler
 	searchQuestsByRadius      queries.SearchQuestsByRadiusQueryHandler
 	listAssignedQuestsHandler queries.ListAssignedQuestsQueryHandler
 	assignQuestHandler        commands.AssignQuestCommandHandler
@@ -20,7 +20,7 @@ func NewApiHandler(
 	createQuestHandler commands.CreateQuestCommandHandler,
 	listQuestsHandler queries.ListQuestsQueryHandler,
 	getQuestByIDHandler queries.GetQuestByIDQueryHandler,
-	changeQuestStatusHandler queries.ChangeQuestStatusHandler,
+	changeQuestStatusHandler commands.ChangeQuestStatusCommandHandler,
 	searchQuestsByRadius queries.SearchQuestsByRadiusQueryHandler,
 	listAssignedQuestsHandler queries.ListAssignedQuestsQueryHandler,
 	assignQuestHandler commands.AssignQuestCommandHandler,

@@ -45,6 +45,26 @@ func DomainToDTO(q quest.Quest) QuestDTO {
 	return dto
 }
 
+// DtoToDomainWithAddress converts QuestWithAddressDTO to Quest domain model
+func DtoToDomainWithAddress(dto QuestWithAddressDTO) (quest.Quest, error) {
+	id, err := uuid.Parse(dto.ID)
+	if err != nil {
+		return quest.Quest{}, err
+	}
+
+	targetCoord, err := kernel.NewGeoCoordinate(dto.TargetLatitude, dto.TargetLongitude, dto.TargetAddress)
+	if err != nil {
+		return quest.Quest{}, err
+	}
+
+	execCoord, err := kernel.NewGeoCoordinate(dto.ExecutionLatitude, dto.ExecutionLongitude, dto.ExecutionAddress)
+	if err != nil {
+		return quest.Quest{}, err
+	}
+
+	return dtoToDomainCommon(dto.QuestDTO, id, targetCoord, execCoord)
+}
+
 // DtoToDomain converts QuestDTO to domain model Quest.
 func DtoToDomain(dto QuestDTO) (quest.Quest, error) {
 	id, err := uuid.Parse(dto.ID)
@@ -52,15 +72,21 @@ func DtoToDomain(dto QuestDTO) (quest.Quest, error) {
 		return quest.Quest{}, err
 	}
 
-	targetCoord, err := kernel.NewGeoCoordinate(dto.TargetLatitude, dto.TargetLongitude)
+	targetCoord, err := kernel.NewGeoCoordinate(dto.TargetLatitude, dto.TargetLongitude, nil)
 	if err != nil {
 		return quest.Quest{}, err
 	}
 
-	execCoord, err := kernel.NewGeoCoordinate(dto.ExecutionLatitude, dto.ExecutionLongitude)
+	execCoord, err := kernel.NewGeoCoordinate(dto.ExecutionLatitude, dto.ExecutionLongitude, nil)
 	if err != nil {
 		return quest.Quest{}, err
 	}
+
+	return dtoToDomainCommon(dto, id, targetCoord, execCoord)
+}
+
+// dtoToDomainCommon contains shared logic for converting DTO to domain
+func dtoToDomainCommon(dto QuestDTO, id uuid.UUID, targetCoord, execCoord kernel.GeoCoordinate) (quest.Quest, error) {
 
 	var equipment []string
 	if dto.Equipment != "" {

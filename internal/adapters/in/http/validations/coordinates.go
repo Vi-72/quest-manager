@@ -35,7 +35,7 @@ func ValidateSearchByRadiusParams(lat, lon, radiusKm float32) (*ValidatedSearchB
 	}
 
 	// Создаем доменную координату
-	center, err := kernel.NewGeoCoordinate(latF64, lonF64)
+	center, err := kernel.NewGeoCoordinate(latF64, lonF64, nil)
 	if err != nil {
 		return nil, NewValidationErrorWithCause("coordinates", "invalid coordinate values", err)
 	}
@@ -59,7 +59,7 @@ func ConvertAPICoordinateToKernel(apiCoord servers.Coordinate) (kernel.GeoCoordi
 	}
 
 	// Создаем доменную координату (конвертируем float32 в float64)
-	coord, err := kernel.NewGeoCoordinate(float64(apiCoord.Latitude), float64(apiCoord.Longitude))
+	coord, err := kernel.NewGeoCoordinate(float64(apiCoord.Latitude), float64(apiCoord.Longitude), apiCoord.Address)
 	if err != nil {
 		return kernel.GeoCoordinate{}, NewValidationErrorWithCause("coordinate", "invalid coordinate values", err)
 	}
@@ -69,8 +69,11 @@ func ConvertAPICoordinateToKernel(apiCoord servers.Coordinate) (kernel.GeoCoordi
 
 // ConvertKernelCoordinateToAPI конвертирует доменные координаты в API формат
 func ConvertKernelCoordinateToAPI(kernelCoord kernel.GeoCoordinate) servers.Coordinate {
-	return servers.Coordinate{
+	coord := servers.Coordinate{
 		Latitude:  float32(kernelCoord.Latitude()),
 		Longitude: float32(kernelCoord.Longitude()),
+		Address:   kernelCoord.GetAddress(),
 	}
+
+	return coord
 }

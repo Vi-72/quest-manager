@@ -64,8 +64,8 @@ func (cr *CompositionRoot) NewGetQuestByIDQueryHandler() queries.GetQuestByIDQue
 }
 
 // NewChangeQuestStatusHandler creates a handler for changing quest status.
-func (cr *CompositionRoot) NewChangeQuestStatusHandler() queries.ChangeQuestStatusHandler {
-	return queries.NewChangeQuestStatusHandler(cr.QuestRepository())
+func (cr *CompositionRoot) NewChangeQuestStatusHandler() commands.ChangeQuestStatusCommandHandler {
+	return commands.NewChangeQuestStatusCommandHandler(cr.QuestRepository())
 }
 
 // NewAssignQuestCommandHandler creates a handler for assigning a quest.

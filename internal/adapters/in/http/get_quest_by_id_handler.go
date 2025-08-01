@@ -23,5 +23,6 @@ func (a *ApiHandler) GetQuestById(ctx context.Context, request servers.GetQuestB
 	}
 
 	apiQuest := QuestToAPI(quest)
+
 	return servers.GetQuestById200JSONResponse(apiQuest), nil
 }

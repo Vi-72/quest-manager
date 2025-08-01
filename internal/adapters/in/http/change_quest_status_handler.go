@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"quest-manager/internal/adapters/in/http/validations"
+	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/generated/servers"
 )
@@ -16,8 +17,12 @@ func (a *ApiHandler) ChangeQuestStatus(ctx context.Context, request servers.Chan
 		return nil, validationErr
 	}
 
-	// Выполняем изменение статуса напрямую
-	updatedQuest, err := a.changeQuestStatusHandler.Handle(ctx, validatedData.QuestID, quest.Status(validatedData.Status))
+	// Выполняем изменение статуса через команду
+	cmd := commands.ChangeQuestStatusCommand{
+		QuestID: validatedData.QuestID,
+		Status:  quest.Status(validatedData.Status),
+	}
+	updatedQuest, err := a.changeQuestStatusHandler.Handle(ctx, cmd)
 	if err != nil {
 		// Передаем ошибку в middleware для правильной обработки (400, 404, 500)
 		return nil, err

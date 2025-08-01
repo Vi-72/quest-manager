@@ -1,4 +1,4 @@
-package queries
+package commands
 
 import (
 	"context"
@@ -6,39 +6,37 @@ import (
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
 	"quest-manager/internal/pkg/errs"
-
-	"github.com/google/uuid"
 )
 
-// ChangeQuestStatusHandler defines the interface for handling quest status changes.
-type ChangeQuestStatusHandler interface {
-	Handle(ctx context.Context, questID uuid.UUID, status quest.Status) (quest.Quest, error)
+// ChangeQuestStatusCommandHandler defines the interface for handling quest status changes.
+type ChangeQuestStatusCommandHandler interface {
+	Handle(ctx context.Context, cmd ChangeQuestStatusCommand) (quest.Quest, error)
 }
 
 type changeQuestStatusHandler struct {
 	repo ports.QuestRepository
 }
 
-// NewChangeQuestStatusHandler creates a new ChangeQuestStatusHandler instance.
-func NewChangeQuestStatusHandler(repo ports.QuestRepository) ChangeQuestStatusHandler {
+// NewChangeQuestStatusCommandHandler creates a new ChangeQuestStatusCommandHandler instance.
+func NewChangeQuestStatusCommandHandler(repo ports.QuestRepository) ChangeQuestStatusCommandHandler {
 	return &changeQuestStatusHandler{repo: repo}
 }
 
 // Handle updates the quest status with validation and domain business rules.
-func (h *changeQuestStatusHandler) Handle(ctx context.Context, questID uuid.UUID, status quest.Status) (quest.Quest, error) {
+func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestStatusCommand) (quest.Quest, error) {
 	// Валидируем статус - это domain validation ошибка → 400
-	if !quest.IsValidStatus(string(status)) {
+	if !quest.IsValidStatus(string(cmd.Status)) {
 		return quest.Quest{}, errs.NewDomainValidationError("status", "must be one of 'created', 'posted', 'assigned', 'in_progress', 'declined', 'completed'")
 	}
 
 	// Получаем квест - если не найден → 404
-	q, err := h.repo.GetByID(ctx, questID)
+	q, err := h.repo.GetByID(ctx, cmd.QuestID)
 	if err != nil {
-		return quest.Quest{}, errs.NewNotFoundErrorWithCause("quest", questID.String(), err)
+		return quest.Quest{}, errs.NewNotFoundErrorWithCause("quest", cmd.QuestID.String(), err)
 	}
 
 	// Используем доменную логику для изменения статуса - domain validation ошибка → 400
-	if err := q.ChangeStatus(status); err != nil {
+	if err := q.ChangeStatus(cmd.Status); err != nil {
 		return quest.Quest{}, errs.NewDomainValidationErrorWithCause("status", "invalid status transition", err)
 	}
 

@@ -1,12 +1,7 @@
 package commands
 
 import (
-	"time"
-
 	"quest-manager/internal/core/domain/model/kernel"
-	"quest-manager/internal/core/domain/model/quest"
-
-	"github.com/google/uuid"
 )
 
 type CreateQuestCommand struct {
@@ -20,12 +15,4 @@ type CreateQuestCommand struct {
 	Equipment         []string
 	Skills            []string
 	Creator           string
-}
-
-type CreateQuestResult struct {
-	ID                  uuid.UUID
-	CreatedAt           time.Time
-	Status              quest.Status
-	TargetLocationID    *uuid.UUID // ID created location (if any)
-	ExecutionLocationID *uuid.UUID // ID created location (if any)
 }

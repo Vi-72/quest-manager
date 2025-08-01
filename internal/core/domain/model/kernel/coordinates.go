@@ -14,8 +14,9 @@ const (
 )
 
 type GeoCoordinate struct {
-	Lat float64 `json:"lat"`
-	Lon float64 `json:"lon"`
+	Lat     float64 `json:"lat"`
+	Lon     float64 `json:"lon"`
+	Address *string `json:"address,omitempty"`
 }
 
 // BoundingBox represents a geographical bounding box.
@@ -27,14 +28,14 @@ type BoundingBox struct {
 }
 
 // NewGeoCoordinate creates a new coordinate with validation.
-func NewGeoCoordinate(lat, lon float64) (GeoCoordinate, error) {
+func NewGeoCoordinate(lat, lon float64, address *string) (GeoCoordinate, error) {
 	if lat < MinLatitude || lat > MaxLatitude {
 		return GeoCoordinate{}, fmt.Errorf("latitude %.6f is out of range (%f–%f)", lat, MinLatitude, MaxLatitude)
 	}
 	if lon < MinLongitude || lon > MaxLongitude {
 		return GeoCoordinate{}, fmt.Errorf("longitude %.6f is out of range (%f–%f)", lon, MinLongitude, MaxLongitude)
 	}
-	return GeoCoordinate{Lat: lat, Lon: lon}, nil
+	return GeoCoordinate{Lat: lat, Lon: lon, Address: address}, nil
 }
 
 func (g GeoCoordinate) Latitude() float64 {
@@ -43,6 +44,10 @@ func (g GeoCoordinate) Latitude() float64 {
 
 func (g GeoCoordinate) Longitude() float64 {
 	return g.Lon
+}
+
+func (g GeoCoordinate) GetAddress() *string {
+	return g.Address
 }
 
 // DistanceTo calculates the great-circle distance to another coordinate in kilometers.
@@ -79,5 +84,7 @@ func (g GeoCoordinate) BoundingBoxForRadius(radiusKm float64) BoundingBox {
 }
 
 func (g GeoCoordinate) Equals(other GeoCoordinate) bool {
-	return g.Lat == other.Lat && g.Lon == other.Lon
+	addressEqual := (g.Address == nil && other.Address == nil) ||
+		(g.Address != nil && other.Address != nil && *g.Address == *other.Address)
+	return g.Lat == other.Lat && g.Lon == other.Lon && addressEqual
 }

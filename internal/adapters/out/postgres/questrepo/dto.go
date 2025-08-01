@@ -33,3 +33,10 @@ type QuestDTO struct {
 func (QuestDTO) TableName() string {
 	return "quests"
 }
+
+// QuestWithAddressDTO extends QuestDTO for JOIN queries with addresses
+type QuestWithAddressDTO struct {
+	QuestDTO
+	TargetAddress    *string `gorm:"column:target_address"`
+	ExecutionAddress *string `gorm:"column:execution_address"`
+}

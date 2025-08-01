@@ -38,12 +38,8 @@ func (a *ApiHandler) CreateQuest(ctx context.Context, request servers.CreateQues
 		return nil, err
 	}
 
-	// Get the created quest from repository to return full object
-	createdQuest, err := a.getQuestByIDHandler.Handle(ctx, result.ID)
-	if err != nil {
-		// Передаем ошибку в middleware для правильной обработки
-		return nil, err
-	}
+	// Возвращаем полный ответ с использованием маппера
+	response := QuestToAPI(result)
 
-	return servers.CreateQuest201JSONResponse(QuestToAPI(createdQuest)), nil
+	return servers.CreateQuest201JSONResponse(response), nil
 }

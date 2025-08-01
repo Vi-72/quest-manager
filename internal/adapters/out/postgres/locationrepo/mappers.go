@@ -15,7 +15,7 @@ func DomainToDTO(l *location.Location) LocationDTO {
 		Name:        l.Name,
 		Latitude:    l.Coordinate.Latitude(),
 		Longitude:   l.Coordinate.Longitude(),
-		Address:     l.Address,
+		Address:     l.Coordinate.GetAddress(),
 		Description: l.Description,
 		CreatedAt:   l.CreatedAt,
 		UpdatedAt:   l.UpdatedAt,
@@ -29,16 +29,22 @@ func DtoToDomain(dto LocationDTO) (*location.Location, error) {
 		return nil, err
 	}
 
-	coordinate, err := kernel.NewGeoCoordinate(dto.Latitude, dto.Longitude)
+	coordinate, err := kernel.NewGeoCoordinate(dto.Latitude, dto.Longitude, dto.Address)
 	if err != nil {
 		return nil, err
+	}
+
+	// Получаем адрес из координат
+	var locationAddress string
+	if coordinate.GetAddress() != nil {
+		locationAddress = *coordinate.GetAddress()
 	}
 
 	l := &location.Location{
 		BaseAggregate: ddd.NewBaseAggregate(id),
 		Name:          dto.Name,
 		Coordinate:    coordinate,
-		Address:       dto.Address,
+		Address:       locationAddress,
 		Description:   dto.Description,
 		CreatedAt:     dto.CreatedAt,
 		UpdatedAt:     dto.UpdatedAt,
