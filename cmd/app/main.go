@@ -13,6 +13,7 @@ import (
 )
 
 func main() {
+	_ = godotenv.Load(".env")
 	configs := getConfigs()
 
 	connectionString, err := cmd.MakeConnectionString(
@@ -64,7 +65,6 @@ func getConfigs() cmd.Config {
 }
 
 func getEnv(key string) string {
-	_ = godotenv.Load(".env")
 	val := os.Getenv(key)
 	if val == "" {
 		log.Fatalf("Missing env var: %s", key)
@@ -73,7 +73,6 @@ func getEnv(key string) string {
 }
 
 func getEnvInt(key string) int {
-	_ = godotenv.Load(".env")
 	val := os.Getenv(key)
 	if val == "" {
 		log.Fatalf("Missing env var: %s", key)
