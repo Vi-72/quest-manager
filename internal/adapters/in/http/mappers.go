@@ -9,8 +9,9 @@ import (
 // QuestToAPI converts domain quest to API format
 func QuestToAPI(q quest.Quest) servers.Quest {
 	// Convert target and execution locations
-	targetLocation := validations.ConvertKernelCoordinateToAPI(q.TargetLocation)
-	executionLocation := validations.ConvertKernelCoordinateToAPI(q.ExecutionLocation)
+	// Note: addresses are not denormalized in Quest, they're in separate Location entities
+	targetLocation := validations.ConvertKernelCoordinateToAPI(q.TargetLocation, nil)
+	executionLocation := validations.ConvertKernelCoordinateToAPI(q.ExecutionLocation, nil)
 
 	// Convert optional fields to pointers
 	var equipment *[]string

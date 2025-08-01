@@ -35,7 +35,7 @@ func ValidateSearchByRadiusParams(lat, lon, radiusKm float32) (*ValidatedSearchB
 	}
 
 	// Create domain coordinate
-	center, err := kernel.NewGeoCoordinate(latF64, lonF64, nil)
+	center, err := kernel.NewGeoCoordinate(latF64, lonF64)
 	if err != nil {
 		return nil, NewValidationErrorWithCause("coordinates", "invalid coordinate values", err)
 	}
@@ -59,7 +59,7 @@ func ConvertAPICoordinateToKernel(apiCoord servers.Coordinate) (kernel.GeoCoordi
 	}
 
 	// Create domain coordinate (convert float32 to float64)
-	coord, err := kernel.NewGeoCoordinate(float64(apiCoord.Latitude), float64(apiCoord.Longitude), apiCoord.Address)
+	coord, err := kernel.NewGeoCoordinate(float64(apiCoord.Latitude), float64(apiCoord.Longitude))
 	if err != nil {
 		return kernel.GeoCoordinate{}, NewValidationErrorWithCause("coordinate", "invalid coordinate values", err)
 	}
@@ -68,11 +68,11 @@ func ConvertAPICoordinateToKernel(apiCoord servers.Coordinate) (kernel.GeoCoordi
 }
 
 // ConvertKernelCoordinateToAPI converts domain coordinates to API format
-func ConvertKernelCoordinateToAPI(kernelCoord kernel.GeoCoordinate) servers.Coordinate {
+func ConvertKernelCoordinateToAPI(kernelCoord kernel.GeoCoordinate, address *string) servers.Coordinate {
 	coord := servers.Coordinate{
 		Latitude:  float32(kernelCoord.Latitude()),
 		Longitude: float32(kernelCoord.Longitude()),
-		Address:   kernelCoord.GetAddress(),
+		Address:   address,
 	}
 
 	return coord

@@ -35,26 +35,20 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 	var targetLocationID *uuid.UUID
 	var executionLocationID *uuid.UUID
 
-	// Начинаем транзакцию
+	// Begin transaction
 	h.unitOfWork.Begin(ctx)
 
-	// Получаем адрес для target location
-	var targetAddress string
-	if cmd.TargetLocation.GetAddress() != nil {
-		targetAddress = *cmd.TargetLocation.GetAddress()
-	}
-
-	// Создаем или находим target location
+	// Create or find target location
 	targetLoc, err := location.NewLocation(
 		cmd.TargetLocation,
-		targetAddress,
+		cmd.TargetAddress,
 	)
 	if err != nil {
 		_ = h.unitOfWork.Rollback()
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to create target location", err)
 	}
 
-	// Сохраняем target location
+	// Save target location
 	err = h.unitOfWork.LocationRepository().Save(ctx, targetLoc)
 	if err != nil {
 		_ = h.unitOfWork.Rollback()
@@ -63,13 +57,7 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 	locID := targetLoc.ID()
 	targetLocationID = &locID
 
-	// Получаем адрес для execution location
-	var executionAddress string
-	if cmd.ExecutionLocation.GetAddress() != nil {
-		executionAddress = *cmd.ExecutionLocation.GetAddress()
-	}
-
-	// Создаем или находим execution location (может быть такой же как target)
+	// Create or find execution location (can be the same as target)
 	var executionLoc *location.Location
 	if cmd.TargetLocation.Equals(cmd.ExecutionLocation) {
 		executionLoc = targetLoc
@@ -77,14 +65,14 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 	} else {
 		executionLoc, err = location.NewLocation(
 			cmd.ExecutionLocation,
-			executionAddress,
+			cmd.ExecutionAddress,
 		)
 		if err != nil {
 			_ = h.unitOfWork.Rollback()
 			return quest.Quest{}, errs.WrapInfrastructureError("failed to create execution location", err)
 		}
 
-		// Сохраняем execution location
+		// Save execution location
 		err = h.unitOfWork.LocationRepository().Save(ctx, executionLoc)
 		if err != nil {
 			_ = h.unitOfWork.Rollback()
@@ -94,7 +82,7 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 		executionLocationID = &locID
 	}
 
-	// Создаем квест
+	// Create quest
 	q, err := quest.NewQuest(
 		cmd.Title,
 		cmd.Description,
@@ -112,43 +100,43 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 		return quest.Quest{}, errs.NewDomainValidationErrorWithCause("quest", "invalid quest data", err)
 	}
 
-	// Связываем квест с созданными локациями
+	// Link quest with created locations
 	q.TargetLocationID = targetLocationID
 	q.ExecutionLocationID = executionLocationID
 
-	// Сохраняем квест
+	// Save quest
 	err = h.unitOfWork.QuestRepository().Save(ctx, q)
 	if err != nil {
 		_ = h.unitOfWork.Rollback()
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
-	// Коммитим транзакцию
+	// Commit transaction
 	err = h.unitOfWork.Commit(ctx)
 	if err != nil {
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to commit quest creation transaction", err)
 	}
 
-	// Публикуем все доменные события асинхронно после успешного коммита
+	// Publish all domain events asynchronously after successful commit
 	if h.eventPublisher != nil {
 		var allEvents []ddd.DomainEvent
 
-		// Добавляем события квеста
+		// Add quest events
 		allEvents = append(allEvents, q.GetDomainEvents()...)
 
-		// Добавляем события target location
+		// Add target location events
 		allEvents = append(allEvents, targetLoc.GetDomainEvents()...)
 
-		// Добавляем события execution location (если это не та же локация)
+		// Add execution location events (if it's not the same location)
 		if executionLoc != targetLoc {
 			allEvents = append(allEvents, executionLoc.GetDomainEvents()...)
 		}
 
-		// Отправляем события асинхронно с ограничением горутин
+		// Send events asynchronously with goroutine limiting
 		h.eventPublisher.PublishAsync(context.Background(), allEvents...)
 	}
 
-	// Очищаем события после постановки в очередь на публикацию
+	// Clear events after queuing for publication
 	q.ClearDomainEvents()
 	targetLoc.ClearDomainEvents()
 	if executionLoc != targetLoc {

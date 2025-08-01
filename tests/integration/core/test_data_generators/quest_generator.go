@@ -35,14 +35,12 @@ func DefaultQuestData() QuestTestData {
 		DurationMinutes: 60,
 		Creator:         "test-creator",
 		TargetLocation: kernel.GeoCoordinate{
-			Lat:     55.7558,
-			Lon:     37.6176,
-			Address: stringPtr("Red Square, Moscow"),
+			Lat: 55.7558,
+			Lon: 37.6176,
 		},
 		ExecutionLocation: kernel.GeoCoordinate{
-			Lat:     55.7539,
-			Lon:     37.6208,
-			Address: stringPtr("GUM, Moscow"),
+			Lat: 55.7539,
+			Lon: 37.6208,
 		},
 		Equipment: []string{"map", "compass"},
 		Skills:    []string{"navigation", "observation"},
@@ -88,14 +86,12 @@ func RandomQuestData() QuestTestData {
 		DurationMinutes: (r.Intn(6) + 1) * 30, // 30, 60, 90, 120, 150, 180 minutes
 		Creator:         fmt.Sprintf("test-creator-%d", r.Intn(100)),
 		TargetLocation: kernel.GeoCoordinate{
-			Lat:     55.7 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
-			Lon:     37.6 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
-			Address: stringPtr(fmt.Sprintf("Test Target Location %d", r.Intn(1000))),
+			Lat: 55.7 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
+			Lon: 37.6 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
 		},
 		ExecutionLocation: kernel.GeoCoordinate{
-			Lat:     55.7 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
-			Lon:     37.6 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
-			Address: stringPtr(fmt.Sprintf("Test Execution Location %d", r.Intn(1000))),
+			Lat: 55.7 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
+			Lon: 37.6 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
 		},
 		Equipment: equipment[r.Intn(len(equipment))],
 		Skills:    skills[r.Intn(len(skills))],

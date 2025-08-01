@@ -11,12 +11,14 @@ import (
 type LocationCreated struct {
 	ddd.BaseEvent
 	Coordinate kernel.GeoCoordinate `json:"coordinate"`
+	Address    *string              `json:"address,omitempty"`
 }
 
-func NewLocationCreated(locationID uuid.UUID, coordinate kernel.GeoCoordinate, address string) LocationCreated {
+func NewLocationCreated(locationID uuid.UUID, coordinate kernel.GeoCoordinate, address *string) LocationCreated {
 	return LocationCreated{
 		BaseEvent:  ddd.NewBaseEvent(locationID, "location.created"),
 		Coordinate: coordinate,
+		Address:    address,
 	}
 }
 
@@ -24,11 +26,13 @@ func NewLocationCreated(locationID uuid.UUID, coordinate kernel.GeoCoordinate, a
 type LocationUpdated struct {
 	ddd.BaseEvent
 	Coordinate kernel.GeoCoordinate `json:"coordinate"`
+	Address    *string              `json:"address,omitempty"`
 }
 
-func NewLocationUpdated(locationID uuid.UUID, coordinate kernel.GeoCoordinate, address string) LocationUpdated {
+func NewLocationUpdated(locationID uuid.UUID, coordinate kernel.GeoCoordinate, address *string) LocationUpdated {
 	return LocationUpdated{
 		BaseEvent:  ddd.NewBaseEvent(locationID, "location.updated"),
 		Coordinate: coordinate,
+		Address:    address,
 	}
 }

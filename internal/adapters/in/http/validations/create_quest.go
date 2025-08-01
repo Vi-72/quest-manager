@@ -13,7 +13,9 @@ type ValidatedCreateQuestData struct {
 	Reward            int
 	DurationMinutes   int
 	TargetLocation    kernel.GeoCoordinate
+	TargetAddress     *string
 	ExecutionLocation kernel.GeoCoordinate
+	ExecutionAddress  *string
 	Equipment         []string
 	Skills            []string
 }
@@ -82,7 +84,9 @@ func ValidateCreateQuestRequest(req *servers.CreateQuestRequest) (*ValidatedCrea
 		Reward:            req.Reward,
 		DurationMinutes:   req.DurationMinutes,
 		TargetLocation:    targetLocation,
+		TargetAddress:     req.TargetLocation.Address,
 		ExecutionLocation: executionLocation,
+		ExecutionAddress:  req.ExecutionLocation.Address,
 		Equipment:         equipment,
 		Skills:            skills,
 	}, nil

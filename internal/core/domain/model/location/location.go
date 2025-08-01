@@ -12,13 +12,13 @@ import (
 type Location struct {
 	*ddd.BaseAggregate[uuid.UUID]
 	Coordinate kernel.GeoCoordinate
-	Address    string
+	Address    *string
 	CreatedAt  time.Time
 	UpdatedAt  time.Time
 }
 
 // NewLocation creates a new location with validation
-func NewLocation(coordinate kernel.GeoCoordinate, address string) (*Location, error) {
+func NewLocation(coordinate kernel.GeoCoordinate, address *string) (*Location, error) {
 	id := uuid.New()
 	now := time.Now()
 
@@ -37,7 +37,7 @@ func NewLocation(coordinate kernel.GeoCoordinate, address string) (*Location, er
 }
 
 // Update updates location information
-func (l *Location) Update(coordinate kernel.GeoCoordinate, address string) error {
+func (l *Location) Update(coordinate kernel.GeoCoordinate, address *string) error {
 	l.Coordinate = coordinate
 	l.Address = address
 	l.UpdatedAt = time.Now()

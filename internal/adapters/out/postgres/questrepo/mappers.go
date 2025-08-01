@@ -52,12 +52,12 @@ func DtoToDomainWithAddress(dto QuestWithAddressDTO) (quest.Quest, error) {
 		return quest.Quest{}, err
 	}
 
-	targetCoord, err := kernel.NewGeoCoordinate(dto.TargetLatitude, dto.TargetLongitude, dto.TargetAddress)
+	targetCoord, err := kernel.NewGeoCoordinate(dto.TargetLatitude, dto.TargetLongitude)
 	if err != nil {
 		return quest.Quest{}, err
 	}
 
-	execCoord, err := kernel.NewGeoCoordinate(dto.ExecutionLatitude, dto.ExecutionLongitude, dto.ExecutionAddress)
+	execCoord, err := kernel.NewGeoCoordinate(dto.ExecutionLatitude, dto.ExecutionLongitude)
 	if err != nil {
 		return quest.Quest{}, err
 	}
@@ -72,12 +72,12 @@ func DtoToDomain(dto QuestDTO) (quest.Quest, error) {
 		return quest.Quest{}, err
 	}
 
-	targetCoord, err := kernel.NewGeoCoordinate(dto.TargetLatitude, dto.TargetLongitude, nil)
+	targetCoord, err := kernel.NewGeoCoordinate(dto.TargetLatitude, dto.TargetLongitude)
 	if err != nil {
 		return quest.Quest{}, err
 	}
 
-	execCoord, err := kernel.NewGeoCoordinate(dto.ExecutionLatitude, dto.ExecutionLongitude, nil)
+	execCoord, err := kernel.NewGeoCoordinate(dto.ExecutionLatitude, dto.ExecutionLongitude)
 	if err != nil {
 		return quest.Quest{}, err
 	}
