@@ -5,7 +5,6 @@ import (
 	"quest-manager/internal/core/domain/model/location"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
-	"quest-manager/internal/pkg/ddd"
 	"quest-manager/internal/pkg/errs"
 
 	"github.com/google/uuid"
@@ -118,29 +117,10 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 	}
 
 	// Publish all domain events asynchronously after successful commit
-	if h.eventPublisher != nil {
-		var allEvents []ddd.DomainEvent
-
-		// Add quest events
-		allEvents = append(allEvents, q.GetDomainEvents()...)
-
-		// Add target location events
-		allEvents = append(allEvents, targetLoc.GetDomainEvents()...)
-
-		// Add execution location events (if it's not the same location)
-		if executionLoc != targetLoc {
-			allEvents = append(allEvents, executionLoc.GetDomainEvents()...)
-		}
-
-		// Send events asynchronously with goroutine limiting
-		h.eventPublisher.PublishAsync(context.Background(), allEvents...)
-	}
-
-	// Clear events after queuing for publication
-	q.ClearDomainEvents()
-	targetLoc.ClearDomainEvents()
 	if executionLoc != targetLoc {
-		executionLoc.ClearDomainEvents()
+		PublishDomainEventsAsync(context.Background(), h.eventPublisher, q, targetLoc, executionLoc)
+	} else {
+		PublishDomainEventsAsync(context.Background(), h.eventPublisher, q, targetLoc)
 	}
 
 	return q, nil
