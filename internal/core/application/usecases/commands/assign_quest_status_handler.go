@@ -30,29 +30,29 @@ func NewAssignQuestCommandHandler(unitOfWork ports.UnitOfWork, eventPublisher po
 
 // Handle assigns a quest to a user using domain business rules.
 func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand) (AssignQuestResult, error) {
-	// Начинаем транзакцию
+	// Begin transaction
 	h.unitOfWork.Begin(ctx)
 
-	// Получаем квест - если не найден → 404
+	// Get quest - if not found → 404
 	q, err := h.unitOfWork.QuestRepository().GetByID(ctx, cmd.ID)
 	if err != nil {
 		_ = h.unitOfWork.Rollback()
 		return AssignQuestResult{}, errs.NewNotFoundErrorWithCause("quest", cmd.ID.String(), err)
 	}
 
-	// Используем доменную логику - ошибки бизнес-правил → 400
+	// Use domain logic - business rules errors → 400
 	if err := q.AssignTo(cmd.UserID); err != nil {
 		_ = h.unitOfWork.Rollback()
 		return AssignQuestResult{}, errs.NewDomainValidationErrorWithCause("assignment", "failed to assign quest", err)
 	}
 
-	// Сохраняем квест - infrastructure ошибка → 500
+	// Save quest - infrastructure error → 500
 	if err := h.unitOfWork.QuestRepository().Save(ctx, q); err != nil {
 		_ = h.unitOfWork.Rollback()
 		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
-	// Публикуем доменные события в рамках той же транзакции
+	// Publish domain events within the same transaction
 	if h.eventPublisher != nil {
 		if err := h.eventPublisher.Publish(ctx, q.GetDomainEvents()...); err != nil {
 			_ = h.unitOfWork.Rollback()
@@ -60,13 +60,13 @@ func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand)
 		}
 	}
 
-	// Коммитим транзакцию
+	// Commit transaction
 	err = h.unitOfWork.Commit(ctx)
 	if err != nil {
 		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to commit quest assignment transaction", err)
 	}
 
-	// Очищаем события после успешного коммита
+	// Clear events after successful commit
 	q.ClearDomainEvents()
 
 	return AssignQuestResult{

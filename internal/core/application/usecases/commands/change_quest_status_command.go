@@ -14,6 +14,6 @@ type ChangeQuestStatusCommand struct {
 // ChangeQuestStatusResult represents the output after status change.
 type ChangeQuestStatusResult struct {
 	ID       uuid.UUID
-	Assignee *string // может быть nil если квест не назначен
+	Assignee *string // can be nil if quest is not assigned
 	Status   string
 }

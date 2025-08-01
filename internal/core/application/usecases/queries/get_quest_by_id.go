@@ -29,7 +29,7 @@ func NewGetQuestByIDQueryHandler(repo ports.QuestRepository) GetQuestByIDQueryHa
 func (h *getQuestByIDHandler) Handle(ctx context.Context, questID uuid.UUID) (quest.Quest, error) {
 	q, err := h.repo.GetByID(ctx, questID)
 	if err != nil {
-		// Если квест не найден, возвращаем NotFoundError для 404 ответа
+		// If quest not found, return NotFoundError for 404 response
 		return quest.Quest{}, errs.NewNotFoundErrorWithCause("quest", questID.String(), err)
 	}
 	return q, nil

@@ -7,11 +7,13 @@ import (
 type CreateQuestCommand struct {
 	Title             string
 	Description       string
-	Difficulty        string // Изменено на string, валидация в домене
+	Difficulty        string // Changed to string, validation in domain
 	Reward            int
 	DurationMinutes   int
 	TargetLocation    kernel.GeoCoordinate
+	TargetAddress     *string
 	ExecutionLocation kernel.GeoCoordinate
+	ExecutionAddress  *string
 	Equipment         []string
 	Skills            []string
 	Creator           string

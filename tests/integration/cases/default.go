@@ -6,44 +6,44 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// DefaultSuite базовый тестовый набор для интеграционных тестов
+// DefaultSuite basic test suite for integration tests
 type DefaultSuite struct {
 	SuiteDIContainer
 	TestDIContainer
 }
 
-// NewDefault создает новый DefaultSuite
+// NewDefault creates new DefaultSuite
 func NewDefault(s suite.TestingSuite) DefaultSuite {
 	return DefaultSuite{
 		SuiteDIContainer: NewSuite(s),
 	}
 }
 
-// SetupSuite инициализирует ресурсы перед запуском всех тестов в наборе
+// SetupSuite initializes resources before running all tests in the suite
 func (s *DefaultSuite) SetupSuite() {
 	s.TestDIContainer = NewTestDIContainer(s.SuiteDIContainer)
 
-	// Выполняем миграции
+	// Run migrations
 	cmd.MustAutoMigrate(s.TestDIContainer.DB)
 }
 
-// TearDownSuite очищает ресурсы после завершения всех тестов в наборе
+// TearDownSuite cleans up resources after completing all tests in the suite
 func (s *DefaultSuite) TearDownSuite() {
 	s.TestDIContainer.TearDownTest()
 }
 
-// SetupTest подготавливает состояние перед каждым тестом
+// SetupTest prepares state before each test
 func (s *DefaultSuite) SetupTest() {
-	// Очищаем базу данных перед каждым тестом
+	// Clean database before each test
 	err := s.TestDIContainer.CleanupDatabase()
 	s.Require().NoError(err, "Failed to cleanup database")
 
-	// Пересоздаем TestDIContainer для каждого теста чтобы избежать проблем с транзакциями
+	// Recreate TestDIContainer for each test to avoid transaction issues
 	s.TestDIContainer = NewTestDIContainer(s.SuiteDIContainer)
 }
 
-// TearDownTest очищает состояние после каждого теста
+// TearDownTest cleans state after each test
 func (s *DefaultSuite) TearDownTest() {
-	// Ждем завершения обработки событий
+	// Wait for event processing completion
 	s.TestDIContainer.WaitForEventProcessing()
 }

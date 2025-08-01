@@ -15,16 +15,16 @@ type EventPublisher interface {
 type NullEventPublisher struct{}
 
 func (p *NullEventPublisher) Publish(ctx context.Context, events ...ddd.DomainEvent) error {
-	// В production здесь была бы интеграция с message broker (RabbitMQ, Kafka и т.д.)
-	// Пока что просто логируем события
+	// In production there would be integration with message broker (RabbitMQ, Kafka, etc.)
+	// For now just log events
 	for _, event := range events {
-		// TODO: добавить структурированное логирование
+		// TODO: add structured logging
 		_ = event
 	}
 	return nil
 }
 
 func (p *NullEventPublisher) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
-	// Асинхронная версия - просто вызываем синхронную
+	// Async version - just call synchronous
 	_ = p.Publish(ctx, events...)
 }

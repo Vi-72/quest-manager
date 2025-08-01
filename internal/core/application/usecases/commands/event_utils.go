@@ -6,7 +6,7 @@ import (
 	"quest-manager/internal/pkg/ddd"
 )
 
-// PublishDomainEventsAsync публикует доменные события асинхронно и очищает их
+// PublishDomainEventsAsync publishes domain events asynchronously and clears them
 func PublishDomainEventsAsync(ctx context.Context, eventPublisher ports.EventPublisher, aggregates ...ddd.AggregateRoot) {
 	if eventPublisher == nil {
 		return
@@ -14,17 +14,17 @@ func PublishDomainEventsAsync(ctx context.Context, eventPublisher ports.EventPub
 
 	var allEvents []ddd.DomainEvent
 
-	// Собираем события от всех агрегатов
+	// Collect events from all aggregates
 	for _, aggregate := range aggregates {
 		allEvents = append(allEvents, aggregate.GetDomainEvents()...)
 	}
 
-	// Публикуем события асинхронно
+	// Publish events asynchronously
 	if len(allEvents) > 0 {
 		eventPublisher.PublishAsync(ctx, allEvents...)
 	}
 
-	// Очищаем события после постановки в очередь на публикацию
+	// Clear events after queuing for publication
 	for _, aggregate := range aggregates {
 		aggregate.ClearDomainEvents()
 	}

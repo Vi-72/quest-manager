@@ -28,34 +28,34 @@ func NewChangeQuestStatusCommandHandler(unitOfWork ports.UnitOfWork, eventPublis
 
 // Handle updates the quest status with validation and domain business rules.
 func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestStatusCommand) (ChangeQuestStatusResult, error) {
-	// Валидируем статус - это domain validation ошибка → 400
+	// Validate status - this is domain validation error → 400
 	if !quest.IsValidStatus(string(cmd.Status)) {
 		return ChangeQuestStatusResult{}, errs.NewDomainValidationError("status", "must be one of 'created', 'posted', 'assigned', 'in_progress', 'declined', 'completed'")
 	}
 
-	// Начинаем транзакцию
+	// Begin transaction
 	h.unitOfWork.Begin(ctx)
 
-	// Получаем квест - если не найден → 404
+	// Get quest - if not found → 404
 	q, err := h.unitOfWork.QuestRepository().GetByID(ctx, cmd.QuestID)
 	if err != nil {
 		_ = h.unitOfWork.Rollback()
 		return ChangeQuestStatusResult{}, errs.NewNotFoundErrorWithCause("quest", cmd.QuestID.String(), err)
 	}
 
-	// Используем доменную логику для изменения статуса - domain validation ошибка → 400
+	// Use domain logic for status change - domain validation error → 400
 	if err := q.ChangeStatus(cmd.Status); err != nil {
 		_ = h.unitOfWork.Rollback()
 		return ChangeQuestStatusResult{}, errs.NewDomainValidationErrorWithCause("status", "invalid status transition", err)
 	}
 
-	// Сохраняем квест - infrastructure ошибка → 500
+	// Save quest - infrastructure error → 500
 	if err := h.unitOfWork.QuestRepository().Save(ctx, q); err != nil {
 		_ = h.unitOfWork.Rollback()
 		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
-	// Публикуем доменные события в рамках той же транзакции
+	// Publish domain events within the same transaction
 	if h.eventPublisher != nil {
 		if err := h.eventPublisher.Publish(ctx, q.GetDomainEvents()...); err != nil {
 			_ = h.unitOfWork.Rollback()
@@ -63,16 +63,16 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 		}
 	}
 
-	// Коммитим транзакцию
+	// Commit transaction
 	err = h.unitOfWork.Commit(ctx)
 	if err != nil {
 		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to commit quest status change transaction", err)
 	}
 
-	// Очищаем события после успешного коммита
+	// Clear events after successful commit
 	q.ClearDomainEvents()
 
-	// Формируем результат из обновленного квеста
+	// Form result from updated quest
 	var assignee *string
 	if q.Assignee != nil {
 		assignee = q.Assignee

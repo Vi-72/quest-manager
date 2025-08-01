@@ -26,14 +26,14 @@ func NewListQuestsQueryHandler(repo ports.QuestRepository) ListQuestsQueryHandle
 // Handle retrieves quests from the repository, optionally filtered by status.
 func (h *listQuestsHandler) Handle(ctx context.Context, status *quest.Status) ([]quest.Quest, error) {
 	if status != nil {
-		// Валидируем статус используя доменную логику - возвращаем DomainValidationError для 400
+		// Validate status using domain logic - return DomainValidationError for 400
 		if !quest.IsValidStatus(string(*status)) {
 			return nil, errs.NewDomainValidationError("status", "must be one of 'created', 'posted', 'assigned', 'in_progress', 'declined', 'completed'")
 		}
 
-		// Фильтруем по статусу
+		// Filter by status
 		return h.repo.FindByStatus(ctx, *status)
 	}
-	// Возвращаем все квесты
+	// Return all quests
 	return h.repo.FindAll(ctx)
 }
