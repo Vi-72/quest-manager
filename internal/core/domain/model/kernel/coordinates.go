@@ -11,6 +11,7 @@ const (
 	MinLongitude  = -180.0
 	MaxLongitude  = 180.0
 	earthRadiusKm = 6371.0
+	epsilon       = 1e-12
 )
 
 type GeoCoordinate struct {
@@ -67,13 +68,23 @@ func (g GeoCoordinate) DistanceTo(other GeoCoordinate) float64 {
 
 // BoundingBoxForRadius calculates a bounding box for the given radius in kilometers.
 // This provides an approximate rectangular area that encompasses all points within the radius.
+//
+// Near the poles (|latitude| ≈ 90°), the longitude radius approaches infinity as
+// meridians converge. In these cases the longitude radius is clamped to cover the
+// full range of longitudes (180°).
 func (g GeoCoordinate) BoundingBoxForRadius(radiusKm float64) BoundingBox {
 	// Calculate latitude radius in degrees (1 degree latitude ≈ 111.32 km)
 	latRadiusInDegrees := radiusKm / 111.32
 
 	// Calculate longitude radius in degrees, adjusted for latitude distortion
 	// At latitude, 1 degree longitude = cos(latitude) * 111.32 km
-	lonRadiusInDegrees := radiusKm / (111.32 * math.Cos(g.Lat*math.Pi/180.0))
+	cosLat := math.Cos(g.Lat * math.Pi / 180.0)
+	var lonRadiusInDegrees float64
+	if math.Abs(cosLat) < epsilon {
+		lonRadiusInDegrees = 180.0
+	} else {
+		lonRadiusInDegrees = radiusKm / (111.32 * cosLat)
+	}
 
 	return BoundingBox{
 		MinLat: g.Lat - latRadiusInDegrees,
