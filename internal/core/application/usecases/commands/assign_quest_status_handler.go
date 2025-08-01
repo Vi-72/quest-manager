@@ -31,7 +31,9 @@ func NewAssignQuestCommandHandler(unitOfWork ports.UnitOfWork, eventPublisher po
 // Handle assigns a quest to a user using domain business rules.
 func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand) (AssignQuestResult, error) {
 	// Begin transaction
-	h.unitOfWork.Begin(ctx)
+	if err := h.unitOfWork.Begin(ctx); err != nil {
+		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to begin quest assignment transaction", err)
+	}
 
 	// Get quest - if not found → 404
 	q, err := h.unitOfWork.QuestRepository().GetByID(ctx, cmd.ID)
