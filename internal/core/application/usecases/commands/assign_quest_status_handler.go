@@ -16,42 +16,57 @@ var _ AssignQuestCommandHandler = &assignQuestHandler{}
 
 // assignQuestHandler implements AssignQuestCommandHandler.
 type assignQuestHandler struct {
-	repo           ports.QuestRepository
+	unitOfWork     ports.UnitOfWork
 	eventPublisher ports.EventPublisher
 }
 
 // NewAssignQuestCommandHandler creates a new instance of AssignQuestCommandHandler.
-func NewAssignQuestCommandHandler(repo ports.QuestRepository, eventPublisher ports.EventPublisher) AssignQuestCommandHandler {
+func NewAssignQuestCommandHandler(unitOfWork ports.UnitOfWork, eventPublisher ports.EventPublisher) AssignQuestCommandHandler {
 	return &assignQuestHandler{
-		repo:           repo,
+		unitOfWork:     unitOfWork,
 		eventPublisher: eventPublisher,
 	}
 }
 
 // Handle assigns a quest to a user using domain business rules.
 func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand) (AssignQuestResult, error) {
+	// Начинаем транзакцию
+	h.unitOfWork.Begin(ctx)
+
 	// Получаем квест - если не найден → 404
-	q, err := h.repo.GetByID(ctx, cmd.ID)
+	q, err := h.unitOfWork.QuestRepository().GetByID(ctx, cmd.ID)
 	if err != nil {
+		_ = h.unitOfWork.Rollback()
 		return AssignQuestResult{}, errs.NewNotFoundErrorWithCause("quest", cmd.ID.String(), err)
 	}
 
 	// Используем доменную логику - ошибки бизнес-правил → 400
 	if err := q.AssignTo(cmd.UserID); err != nil {
+		_ = h.unitOfWork.Rollback()
 		return AssignQuestResult{}, errs.NewDomainValidationErrorWithCause("assignment", "failed to assign quest", err)
 	}
 
 	// Сохраняем квест - infrastructure ошибка → 500
-	if err := h.repo.Save(ctx, q); err != nil {
+	if err := h.unitOfWork.QuestRepository().Save(ctx, q); err != nil {
+		_ = h.unitOfWork.Rollback()
 		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
-	// Публикуем доменные события асинхронно (включая QuestAssigned и QuestStatusChanged)
+	// Публикуем доменные события в рамках той же транзакции
 	if h.eventPublisher != nil {
-		h.eventPublisher.PublishAsync(ctx, q.GetDomainEvents()...)
+		if err := h.eventPublisher.Publish(ctx, q.GetDomainEvents()...); err != nil {
+			_ = h.unitOfWork.Rollback()
+			return AssignQuestResult{}, errs.WrapInfrastructureError("failed to publish events", err)
+		}
 	}
 
-	// Очищаем события после постановки в очередь на публикацию
+	// Коммитим транзакцию
+	err = h.unitOfWork.Commit(ctx)
+	if err != nil {
+		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to commit quest assignment transaction", err)
+	}
+
+	// Очищаем события после успешного коммита
 	q.ClearDomainEvents()
 
 	return AssignQuestResult{

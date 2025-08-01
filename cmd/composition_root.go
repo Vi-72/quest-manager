@@ -79,12 +79,12 @@ func (cr *CompositionRoot) NewGetQuestByIDQueryHandler() queries.GetQuestByIDQue
 
 // NewChangeQuestStatusHandler creates a handler for changing quest status.
 func (cr *CompositionRoot) NewChangeQuestStatusHandler() commands.ChangeQuestStatusCommandHandler {
-	return commands.NewChangeQuestStatusCommandHandler(cr.QuestRepository(), cr.EventPublisher())
+	return commands.NewChangeQuestStatusCommandHandler(cr.GetUnitOfWork(), cr.EventPublisher())
 }
 
 // NewAssignQuestCommandHandler creates a handler for assigning a quest.
 func (cr *CompositionRoot) NewAssignQuestCommandHandler() commands.AssignQuestCommandHandler {
-	return commands.NewAssignQuestCommandHandler(cr.QuestRepository(), cr.EventPublisher())
+	return commands.NewAssignQuestCommandHandler(cr.GetUnitOfWork(), cr.EventPublisher())
 }
 
 // NewSearchQuestsByRadiusQueryHandler creates a handler for searching quests in a radius.

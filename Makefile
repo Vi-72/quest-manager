@@ -36,6 +36,31 @@ clean:
 	rm -rf $(BINARY_NAME) $(GEN_DIR)
 
 # ========================
+# TESTS
+# ========================
+
+.PHONY: test
+test:
+	go test ./...
+
+.PHONY: test-unit
+test-unit:
+	go test -short ./...
+
+.PHONY: test-integration
+test-integration:
+	go test -tags=integration ./tests/integration/...
+
+.PHONY: test-integration-verbose
+test-integration-verbose:
+	go test -tags=integration -v ./tests/integration/...
+
+.PHONY: test-coverage
+test-coverage:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out
+
+# ========================
 # DEV SHORTCUT
 # ========================
 

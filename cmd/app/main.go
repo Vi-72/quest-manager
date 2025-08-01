@@ -1,33 +1,21 @@
 package main
 
 import (
-	"database/sql"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/joho/godotenv"
-	"gorm.io/gorm"
 
 	"quest-manager/cmd"
-	"quest-manager/internal/adapters/out/postgres/eventrepo"
-	"quest-manager/internal/adapters/out/postgres/locationrepo"
-	"quest-manager/internal/adapters/out/postgres/questrepo"
-	"quest-manager/internal/pkg/errs"
 	"quest-manager/internal/web"
-
-	_ "github.com/lib/pq"
-
-	"gorm.io/driver/postgres"
 )
 
 func main() {
 	configs := getConfigs()
 
-	connectionString, err := makeConnectionString(
+	connectionString, err := cmd.MakeConnectionString(
 		configs.DbHost,
 		configs.DbPort,
 		configs.DbUser,
@@ -38,14 +26,14 @@ func main() {
 		log.Fatal(err.Error())
 	}
 
-	createDbIfNotExists(configs.DbHost,
+	cmd.CreateDbIfNotExists(configs.DbHost,
 		configs.DbPort,
 		configs.DbUser,
 		configs.DbPassword,
 		configs.DbName,
 		configs.DbSslMode)
-	gormDb := mustGormOpen(connectionString)
-	mustAutoMigrate(gormDb)
+	gormDb := cmd.MustGormOpen(connectionString)
+	cmd.MustAutoMigrate(gormDb)
 
 	compositionRoot := cmd.NewCompositionRoot(
 		configs,
@@ -95,88 +83,4 @@ func getEnvInt(key string) int {
 		log.Fatalf("Invalid integer value for env var %s: %s", key, val)
 	}
 	return intVal
-}
-
-func createDbIfNotExists(host string, port string, user string,
-	password string, dbName string, sslMode string) {
-	dsn, err := makeConnectionString(host, port, user, password, "postgres", sslMode)
-	if err != nil {
-		log.Fatalf("Ошибка подключения к PostgreSQL: %v", err)
-	}
-	db, err := sql.Open("postgres", dsn)
-	if err != nil {
-		log.Fatalf("Ошибка подключения к PostgreSQL: %v", err)
-	}
-	defer func(db *sql.DB) {
-		err := db.Close()
-		if err != nil {
-			log.Println("Ошибка закрытия соединения с БД:", err)
-		}
-	}(db)
-
-	_, err = db.Exec(fmt.Sprintf(`CREATE DATABASE "%s"`, dbName))
-	if err != nil {
-		if strings.Contains(err.Error(), "already exists") {
-			log.Printf("БД уже существует, продолжаем.")
-		} else {
-			log.Fatalf("Ошибка создания БД: %v", err)
-		}
-	}
-}
-
-func makeConnectionString(host string, port string, user string,
-	password string, dbName string, sslMode string) (string, error) {
-	if host == "" {
-		return "", errs.NewValueIsRequiredError("host")
-	}
-	if port == "" {
-		return "", errs.NewValueIsRequiredError("port")
-	}
-	if user == "" {
-		return "", errs.NewValueIsRequiredError("user")
-	}
-	if password == "" {
-		return "", errs.NewValueIsRequiredError("password")
-	}
-	if dbName == "" {
-		return "", errs.NewValueIsRequiredError("dbName")
-	}
-	if sslMode == "" {
-		return "", errs.NewValueIsRequiredError("sslMode")
-	}
-	return fmt.Sprintf("host=%v port=%v user=%v password=%v dbname=%v sslmode=%v",
-		host,
-		port,
-		user,
-		password,
-		dbName,
-		sslMode), nil
-}
-
-func mustGormOpen(connectionString string) *gorm.DB {
-	pgGorm, err := gorm.Open(postgres.New(
-		postgres.Config{
-			DSN:                  connectionString,
-			PreferSimpleProtocol: true,
-		},
-	), &gorm.Config{})
-	if err != nil {
-		log.Fatalf("connection to postgres through gorm\n: %s", err)
-	}
-	return pgGorm
-}
-
-func mustAutoMigrate(db *gorm.DB) {
-	err := db.AutoMigrate(&questrepo.QuestDTO{})
-	if err != nil {
-		log.Fatalf("Ошибка миграции QuestDTO: %v", err)
-	}
-	err = db.AutoMigrate(&locationrepo.LocationDTO{})
-	if err != nil {
-		log.Fatalf("Ошибка миграции LocationDTO: %v", err)
-	}
-	err = db.AutoMigrate(&eventrepo.EventDTO{})
-	if err != nil {
-		log.Fatalf("Ошибка миграции EventDTO: %v", err)
-	}
 }
