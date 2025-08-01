@@ -14,12 +14,16 @@ type ChangeQuestStatusCommandHandler interface {
 }
 
 type changeQuestStatusHandler struct {
-	repo ports.QuestRepository
+	repo           ports.QuestRepository
+	eventPublisher ports.EventPublisher
 }
 
 // NewChangeQuestStatusCommandHandler creates a new ChangeQuestStatusCommandHandler instance.
-func NewChangeQuestStatusCommandHandler(repo ports.QuestRepository) ChangeQuestStatusCommandHandler {
-	return &changeQuestStatusHandler{repo: repo}
+func NewChangeQuestStatusCommandHandler(repo ports.QuestRepository, eventPublisher ports.EventPublisher) ChangeQuestStatusCommandHandler {
+	return &changeQuestStatusHandler{
+		repo:           repo,
+		eventPublisher: eventPublisher,
+	}
 }
 
 // Handle updates the quest status with validation and domain business rules.
@@ -44,6 +48,17 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 	if err := h.repo.Save(ctx, q); err != nil {
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
+
+	// Публикуем доменные события (включая QuestStatusChanged)
+	if h.eventPublisher != nil {
+		err = h.eventPublisher.Publish(ctx, q.GetDomainEvents()...)
+		if err != nil {
+			return quest.Quest{}, errs.WrapInfrastructureError("failed to publish quest events", err)
+		}
+	}
+
+	// Очищаем события после успешной публикации
+	q.ClearDomainEvents()
 
 	return q, nil
 }

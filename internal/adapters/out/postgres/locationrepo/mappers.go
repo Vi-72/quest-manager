@@ -11,14 +11,12 @@ import (
 // DomainToDTO converts Location domain model to LocationDTO
 func DomainToDTO(l *location.Location) LocationDTO {
 	return LocationDTO{
-		ID:          l.ID().String(),
-		Name:        l.Name,
-		Latitude:    l.Coordinate.Latitude(),
-		Longitude:   l.Coordinate.Longitude(),
-		Address:     l.Coordinate.GetAddress(),
-		Description: l.Description,
-		CreatedAt:   l.CreatedAt,
-		UpdatedAt:   l.UpdatedAt,
+		ID:        l.ID().String(),
+		Latitude:  l.Coordinate.Latitude(),
+		Longitude: l.Coordinate.Longitude(),
+		Address:   l.Coordinate.GetAddress(),
+		CreatedAt: l.CreatedAt,
+		UpdatedAt: l.UpdatedAt,
 	}
 }
 
@@ -42,10 +40,8 @@ func DtoToDomain(dto LocationDTO) (*location.Location, error) {
 
 	l := &location.Location{
 		BaseAggregate: ddd.NewBaseAggregate(id),
-		Name:          dto.Name,
 		Coordinate:    coordinate,
 		Address:       locationAddress,
-		Description:   dto.Description,
 		CreatedAt:     dto.CreatedAt,
 		UpdatedAt:     dto.UpdatedAt,
 	}

@@ -8,59 +8,55 @@ import (
 	"github.com/google/uuid"
 )
 
-// Location represents a named geographic location that can be reused across quests
+// Location represents a geographic location that can be reused across quests
 type Location struct {
 	*ddd.BaseAggregate[uuid.UUID]
-	Name        string
-	Coordinate  kernel.GeoCoordinate
-	Address     string
-	Description string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	Coordinate kernel.GeoCoordinate
+	Address    string
+	CreatedAt  time.Time
+	UpdatedAt  time.Time
 }
 
 // NewLocation creates a new location with validation
-func NewLocation(name string, coordinate kernel.GeoCoordinate, address, description string) (*Location, error) {
+func NewLocation(coordinate kernel.GeoCoordinate, address string) (*Location, error) {
 	id := uuid.New()
 	now := time.Now()
 
 	location := &Location{
 		BaseAggregate: ddd.NewBaseAggregate(id),
-		Name:          name,
 		Coordinate:    coordinate,
 		Address:       address,
-		Description:   description,
 		CreatedAt:     now,
 		UpdatedAt:     now,
 	}
 
 	// Raise domain event
 	location.RaiseDomainEvent(LocationCreated{
-		ID:         id,
-		EventID:    uuid.New(),
-		Name:       name,
-		Coordinate: coordinate,
-		Timestamp:  now,
+		ID: uuid.New(),
+		Coordinate: LocationCoordinate{
+			GeoCoordinate: coordinate,
+			LocationID:    id,
+		},
+		Timestamp: now,
 	})
 
 	return location, nil
 }
 
 // Update updates location information
-func (l *Location) Update(name string, coordinate kernel.GeoCoordinate, address, description string) error {
-	l.Name = name
+func (l *Location) Update(coordinate kernel.GeoCoordinate, address string) error {
 	l.Coordinate = coordinate
 	l.Address = address
-	l.Description = description
 	l.UpdatedAt = time.Now()
 
 	// Raise domain event
 	l.RaiseDomainEvent(LocationUpdated{
-		ID:         l.ID(),
-		EventID:    uuid.New(),
-		Name:       name,
-		Coordinate: coordinate,
-		Timestamp:  l.UpdatedAt,
+		ID: uuid.New(),
+		Coordinate: LocationCoordinate{
+			GeoCoordinate: coordinate,
+			LocationID:    l.ID(),
+		},
+		Timestamp: l.UpdatedAt,
 	})
 
 	return nil

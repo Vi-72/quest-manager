@@ -123,12 +123,10 @@ func NewQuest(
 
 	// Создаем доменное событие
 	quest.RaiseDomainEvent(QuestCreated{
-		ID:         uuid.New(),
-		EventID:    uuid.New(),
-		Title:      title,
-		Creator:    creator,
-		Difficulty: difficulty,
-		Timestamp:  now,
+		ID:        uuid.New(),
+		QuestID:   questID,
+		Creator:   creator,
+		Timestamp: now,
 	})
 
 	return quest, nil
@@ -154,7 +152,6 @@ func (q *Quest) AssignTo(userID string) error {
 	// Создаем доменные события
 	q.RaiseDomainEvent(QuestAssigned{
 		ID:        uuid.New(),
-		EventID:   uuid.New(),
 		QuestID:   q.ID(),
 		UserID:    userID,
 		Timestamp: q.UpdatedAt,
@@ -162,7 +159,6 @@ func (q *Quest) AssignTo(userID string) error {
 
 	q.RaiseDomainEvent(QuestStatusChanged{
 		ID:        uuid.New(),
-		EventID:   uuid.New(),
 		QuestID:   q.ID(),
 		OldStatus: oldStatus,
 		NewStatus: q.Status,
@@ -186,7 +182,6 @@ func (q *Quest) ChangeStatus(newStatus Status) error {
 	// Создаем доменное событие
 	q.RaiseDomainEvent(QuestStatusChanged{
 		ID:        uuid.New(),
-		EventID:   uuid.New(),
 		QuestID:   q.ID(),
 		OldStatus: oldStatus,
 		NewStatus: newStatus,

@@ -7,17 +7,21 @@ import (
 	"github.com/google/uuid"
 )
 
+// LocationCoordinate представляет координаты с ID локации для событий
+type LocationCoordinate struct {
+	kernel.GeoCoordinate
+	LocationID uuid.UUID `json:"location_id"` // ID локации
+}
+
 // LocationCreated представляет событие создания локации
 type LocationCreated struct {
-	ID         uuid.UUID            `json:"id"`       // ID локации
-	EventID    uuid.UUID            `json:"event_id"` // ID события
-	Name       string               `json:"name"`
-	Coordinate kernel.GeoCoordinate `json:"coordinate"`
-	Timestamp  time.Time            `json:"timestamp"`
+	ID         uuid.UUID          `json:"id"` // ID события
+	Coordinate LocationCoordinate `json:"coordinate"`
+	Timestamp  time.Time          `json:"timestamp"`
 }
 
 func (e LocationCreated) GetID() uuid.UUID {
-	return e.EventID
+	return e.ID
 }
 
 func (e LocationCreated) GetName() string {
@@ -26,32 +30,15 @@ func (e LocationCreated) GetName() string {
 
 // LocationUpdated представляет событие обновления локации
 type LocationUpdated struct {
-	ID         uuid.UUID            `json:"id"`       // ID локации
-	EventID    uuid.UUID            `json:"event_id"` // ID события
-	Name       string               `json:"name"`
-	Coordinate kernel.GeoCoordinate `json:"coordinate"`
-	Timestamp  time.Time            `json:"timestamp"`
+	ID         uuid.UUID          `json:"id"` // ID события
+	Coordinate LocationCoordinate `json:"coordinate"`
+	Timestamp  time.Time          `json:"timestamp"`
 }
 
 func (e LocationUpdated) GetID() uuid.UUID {
-	return e.EventID
+	return e.ID
 }
 
 func (e LocationUpdated) GetName() string {
 	return "location.updated"
-}
-
-// LocationDeleted представляет событие удаления локации
-type LocationDeleted struct {
-	ID        uuid.UUID `json:"id"`       // ID локации
-	EventID   uuid.UUID `json:"event_id"` // ID события
-	Timestamp time.Time `json:"timestamp"`
-}
-
-func (e LocationDeleted) GetID() uuid.UUID {
-	return e.EventID
-}
-
-func (e LocationDeleted) GetName() string {
-	return "location.deleted"
 }

@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 
 	"quest-manager/cmd"
+	"quest-manager/internal/adapters/out/postgres/eventrepo"
 	"quest-manager/internal/adapters/out/postgres/locationrepo"
 	"quest-manager/internal/adapters/out/postgres/questrepo"
 	"quest-manager/internal/pkg/errs"
@@ -158,5 +159,9 @@ func mustAutoMigrate(db *gorm.DB) {
 	err = db.AutoMigrate(&locationrepo.LocationDTO{})
 	if err != nil {
 		log.Fatalf("Ошибка миграции LocationDTO: %v", err)
+	}
+	err = db.AutoMigrate(&eventrepo.EventDTO{})
+	if err != nil {
+		log.Fatalf("Ошибка миграции EventDTO: %v", err)
 	}
 }

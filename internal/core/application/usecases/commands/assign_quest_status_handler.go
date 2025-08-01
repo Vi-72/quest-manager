@@ -16,12 +16,16 @@ var _ AssignQuestCommandHandler = &assignQuestHandler{}
 
 // assignQuestHandler implements AssignQuestCommandHandler.
 type assignQuestHandler struct {
-	repo ports.QuestRepository
+	repo           ports.QuestRepository
+	eventPublisher ports.EventPublisher
 }
 
 // NewAssignQuestCommandHandler creates a new instance of AssignQuestCommandHandler.
-func NewAssignQuestCommandHandler(repo ports.QuestRepository) AssignQuestCommandHandler {
-	return &assignQuestHandler{repo: repo}
+func NewAssignQuestCommandHandler(repo ports.QuestRepository, eventPublisher ports.EventPublisher) AssignQuestCommandHandler {
+	return &assignQuestHandler{
+		repo:           repo,
+		eventPublisher: eventPublisher,
+	}
 }
 
 // Handle assigns a quest to a user using domain business rules.
@@ -41,6 +45,17 @@ func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand)
 	if err := h.repo.Save(ctx, q); err != nil {
 		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
+
+	// Публикуем доменные события (включая QuestAssigned и QuestStatusChanged)
+	if h.eventPublisher != nil {
+		err = h.eventPublisher.Publish(ctx, q.GetDomainEvents()...)
+		if err != nil {
+			return AssignQuestResult{}, errs.WrapInfrastructureError("failed to publish quest events", err)
+		}
+	}
+
+	// Очищаем события после успешной публикации
+	q.ClearDomainEvents()
 
 	return AssignQuestResult{
 		ID:       q.ID(),

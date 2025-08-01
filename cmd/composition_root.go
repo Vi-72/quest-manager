@@ -4,6 +4,7 @@ import (
 	"log"
 	"quest-manager/internal/adapters/in/http"
 	"quest-manager/internal/adapters/out/postgres"
+	"quest-manager/internal/adapters/out/postgres/eventrepo"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/ports"
@@ -13,10 +14,11 @@ import (
 )
 
 type CompositionRoot struct {
-	configs    Config
-	db         *gorm.DB
-	unitOfWork ports.UnitOfWork
-	closers    []Closer
+	configs        Config
+	db             *gorm.DB
+	unitOfWork     ports.UnitOfWork
+	eventPublisher ports.EventPublisher
+	closers        []Closer
 }
 
 func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
@@ -26,16 +28,28 @@ func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
 		log.Fatalf("cannot create UnitOfWork: %v", err)
 	}
 
+	// Создаем EventPublisher с тем же Tracker что и UoW для транзакционности
+	eventPublisher, err := eventrepo.NewRepository(unitOfWork.(ports.Tracker))
+	if err != nil {
+		log.Fatalf("cannot create EventPublisher: %v", err)
+	}
+
 	return &CompositionRoot{
-		configs:    configs,
-		db:         db,
-		unitOfWork: unitOfWork,
+		configs:        configs,
+		db:             db,
+		unitOfWork:     unitOfWork,
+		eventPublisher: eventPublisher,
 	}
 }
 
 // GetUnitOfWork возвращает единственный экземпляр UnitOfWork
 func (cr *CompositionRoot) GetUnitOfWork() ports.UnitOfWork {
 	return cr.unitOfWork
+}
+
+// EventPublisher возвращает EventPublisher
+func (cr *CompositionRoot) EventPublisher() ports.EventPublisher {
+	return cr.eventPublisher
 }
 
 // QuestRepository возвращает репозиторий из единственного UoW
@@ -50,7 +64,7 @@ func (cr *CompositionRoot) LocationRepository() ports.LocationRepository {
 
 // NewCreateQuestCommandHandler creates a handler for creating quests.
 func (cr *CompositionRoot) NewCreateQuestCommandHandler() commands.CreateQuestCommandHandler {
-	return commands.NewCreateQuestCommandHandler(cr.GetUnitOfWork())
+	return commands.NewCreateQuestCommandHandler(cr.GetUnitOfWork(), cr.EventPublisher())
 }
 
 // NewListQuestsQueryHandler creates a handler for listing quests.
@@ -65,12 +79,12 @@ func (cr *CompositionRoot) NewGetQuestByIDQueryHandler() queries.GetQuestByIDQue
 
 // NewChangeQuestStatusHandler creates a handler for changing quest status.
 func (cr *CompositionRoot) NewChangeQuestStatusHandler() commands.ChangeQuestStatusCommandHandler {
-	return commands.NewChangeQuestStatusCommandHandler(cr.QuestRepository())
+	return commands.NewChangeQuestStatusCommandHandler(cr.QuestRepository(), cr.EventPublisher())
 }
 
 // NewAssignQuestCommandHandler creates a handler for assigning a quest.
 func (cr *CompositionRoot) NewAssignQuestCommandHandler() commands.AssignQuestCommandHandler {
-	return commands.NewAssignQuestCommandHandler(cr.QuestRepository())
+	return commands.NewAssignQuestCommandHandler(cr.QuestRepository(), cr.EventPublisher())
 }
 
 // NewSearchQuestsByRadiusQueryHandler creates a handler for searching quests in a radius.
