@@ -2,6 +2,8 @@ package ports
 
 import (
 	"context"
+	"log/slog"
+
 	"quest-manager/internal/pkg/ddd"
 )
 
@@ -15,16 +17,20 @@ type EventPublisher interface {
 type NullEventPublisher struct{}
 
 func (p *NullEventPublisher) Publish(ctx context.Context, events ...ddd.DomainEvent) error {
-	// In production there would be integration with message broker (RabbitMQ, Kafka, etc.)
-	// For now just log events
+	// In production, integrate with a message broker (RabbitMQ, Kafka, etc.)
+	// For now, just log the events
 	for _, event := range events {
-		// TODO: add structured logging
-		_ = event
+		slog.InfoContext(ctx, "publishing domain event",
+			slog.String("event_name", event.GetName()),
+			slog.String("event_id", event.GetID().String()),
+		)
 	}
 	return nil
 }
 
 func (p *NullEventPublisher) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
-	// Async version - just call synchronous
-	_ = p.Publish(ctx, events...)
+	// Asynchronous version - simply call the synchronous one
+	if err := p.Publish(ctx, events...); err != nil {
+		slog.ErrorContext(ctx, "failed to publish domain events", slog.Any("error", err))
+	}
 }
