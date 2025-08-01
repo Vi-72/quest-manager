@@ -2,7 +2,7 @@ package errs
 
 import "fmt"
 
-// DomainValidationError представляет ошибку валидации на уровне домена/приложения
+// DomainValidationError represents validation error at domain/application level
 type DomainValidationError struct {
 	Field   string
 	Message string
@@ -31,7 +31,7 @@ func NewDomainValidationErrorWithCause(field, message string, cause error) *Doma
 	}
 }
 
-// NotFoundError представляет ошибку "не найдено"
+// NotFoundError represents "not found" error
 type NotFoundError struct {
 	Resource string
 	ID       string

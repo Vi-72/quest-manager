@@ -6,25 +6,25 @@ import (
 	"github.com/google/uuid"
 )
 
-// BaseEvent предоставляет общую структуру для всех доменных событий
+// BaseEvent provides common structure for all domain events
 type BaseEvent struct {
-	ID          uuid.UUID `json:"id"`           // ID события
-	AggregateID uuid.UUID `json:"aggregate_id"` // ID агрегата
-	EventType   string    `json:"event_type"`   // тип события
-	Timestamp   time.Time `json:"timestamp"`    // время события
+	ID          uuid.UUID `json:"id"`           // Event ID
+	AggregateID uuid.UUID `json:"aggregate_id"` // Aggregate ID
+	EventType   string    `json:"event_type"`   // Event type
+	Timestamp   time.Time `json:"timestamp"`    // Event time
 }
 
-// GetID возвращает ID события
+// GetID returns event ID
 func (e BaseEvent) GetID() uuid.UUID {
 	return e.ID
 }
 
-// GetName возвращает тип события
+// GetName returns event type
 func (e BaseEvent) GetName() string {
 	return e.EventType
 }
 
-// NewBaseEvent создает новое базовое событие
+// NewBaseEvent creates new base event
 func NewBaseEvent(aggregateID uuid.UUID, eventType string) BaseEvent {
 	return BaseEvent{
 		ID:          uuid.New(),

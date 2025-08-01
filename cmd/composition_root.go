@@ -22,13 +22,13 @@ type CompositionRoot struct {
 }
 
 func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
-	// Создаем Unit of Work один раз при инициализации
+	// Create Unit of Work once during initialization
 	unitOfWork, err := postgres.NewUnitOfWork(db)
 	if err != nil {
 		log.Fatalf("cannot create UnitOfWork: %v", err)
 	}
 
-	// Создаем EventPublisher с тем же Tracker что и UoW для транзакционности
+	// Create EventPublisher with same Tracker as UoW for transactionality
 	eventPublisher, err := eventrepo.NewRepository(unitOfWork.(ports.Tracker), configs.EventGoroutineLimit)
 	if err != nil {
 		log.Fatalf("cannot create EventPublisher: %v", err)
@@ -42,22 +42,22 @@ func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
 	}
 }
 
-// GetUnitOfWork возвращает единственный экземпляр UnitOfWork
+// GetUnitOfWork returns the single UnitOfWork instance
 func (cr *CompositionRoot) GetUnitOfWork() ports.UnitOfWork {
 	return cr.unitOfWork
 }
 
-// EventPublisher возвращает EventPublisher
+// EventPublisher returns EventPublisher
 func (cr *CompositionRoot) EventPublisher() ports.EventPublisher {
 	return cr.eventPublisher
 }
 
-// QuestRepository возвращает репозиторий из единственного UoW
+// QuestRepository returns repository from the single UoW
 func (cr *CompositionRoot) QuestRepository() ports.QuestRepository {
 	return cr.unitOfWork.QuestRepository()
 }
 
-// LocationRepository возвращает репозиторий из единственного UoW
+// LocationRepository returns repository from the single UoW
 func (cr *CompositionRoot) LocationRepository() ports.LocationRepository {
 	return cr.unitOfWork.LocationRepository()
 }

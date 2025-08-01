@@ -22,7 +22,7 @@ const (
 	StatusCompleted  Status = "completed"
 )
 
-// IsValidStatus проверяет является ли строка валидным статусом квеста
+// IsValidStatus checks if string is a valid quest status
 func IsValidStatus(status string) bool {
 	switch Status(status) {
 	case StatusCreated, StatusPosted, StatusAssigned, StatusInProgress, StatusDeclined, StatusCompleted:
@@ -50,11 +50,11 @@ type Quest struct {
 	Reward          int
 	DurationMinutes int
 
-	// Основные координаты (денормализованные для производительности)
+	// Main coordinates (denormalized for performance)
 	TargetLocation    kernel.GeoCoordinate
 	ExecutionLocation kernel.GeoCoordinate
 
-	// Опциональные ссылки на справочник локаций
+	// Optional references to location directory
 	TargetLocationID    *uuid.UUID
 	ExecutionLocationID *uuid.UUID
 
@@ -71,14 +71,14 @@ type Quest struct {
 // Validates that difficulty is a valid domain value.
 func NewQuest(
 	title, description string,
-	difficulty string, // Принимаем string для валидации
+	difficulty string, // Accept string for validation
 	reward int,
 	durationMinutes int,
 	targetLocation, executionLocation kernel.GeoCoordinate,
 	creator string,
 	equipment, skills []string,
 ) (Quest, error) {
-	// Валидация difficulty в домене
+	// Validate difficulty in domain
 	var questDifficulty Difficulty
 	switch difficulty {
 	case string(DifficultyEasy):
@@ -91,16 +91,16 @@ func NewQuest(
 		return Quest{}, errors.New("invalid difficulty: must be one of 'easy', 'medium', 'hard'")
 	}
 
-	// Валидация reward
+	// Validate reward
 	if reward < 1 || reward > 5 {
 		return Quest{}, errors.New("reward must be between 1 and 5")
 	}
 
-	// Валидация duration
+	// Validate duration
 	if durationMinutes <= 0 {
 		return Quest{}, errors.New("duration must be greater than 0 minutes")
 	}
-	if durationMinutes > 525600 { // 1 год в минутах (365 * 24 * 60)
+	if durationMinutes > 525600 { // 1 year in minutes (365 * 24 * 60)
 		return Quest{}, errors.New("duration too long, maximum is 1 year (525600 minutes)")
 	}
 
@@ -124,16 +124,16 @@ func NewQuest(
 		UpdatedAt:         now,
 	}
 
-	// Создаем доменное событие
+	// Create domain event
 	quest.RaiseDomainEvent(NewQuestCreated(questID, creator))
 
 	return quest, nil
 }
 
 // AssignTo sets the assignee for the quest and changes its status to "assigned".
-// Содержит бизнес-логику назначения квеста.
+// Contains business logic for quest assignment.
 func (q *Quest) AssignTo(userID string) error {
-	// Бизнес-правила назначения
+	// Business rules for assignment
 	if q.Status != StatusCreated && q.Status != StatusPosted {
 		return errors.New("quest can only be assigned if status is 'created' or 'posted'")
 	}
@@ -147,16 +147,16 @@ func (q *Quest) AssignTo(userID string) error {
 	q.Status = StatusAssigned
 	q.UpdatedAt = time.Now()
 
-	// Создаем доменные события
+	// Create domain events
 	q.RaiseDomainEvent(NewQuestAssigned(q.ID(), userID))
 	q.RaiseDomainEvent(NewQuestStatusChanged(q.ID(), oldStatus, q.Status))
 
 	return nil
 }
 
-// ChangeStatus изменяет статус квеста с проверкой бизнес-правил
+// ChangeStatus changes quest status with business rules validation
 func (q *Quest) ChangeStatus(newStatus Status) error {
-	// Валидация переходов статуса (business rules)
+	// Validate status transitions (business rules)
 	if !q.isValidStatusTransition(q.Status, newStatus) {
 		return errors.New("invalid status transition from " + string(q.Status) + " to " + string(newStatus))
 	}
@@ -165,13 +165,13 @@ func (q *Quest) ChangeStatus(newStatus Status) error {
 	q.Status = newStatus
 	q.UpdatedAt = time.Now()
 
-	// Создаем доменное событие
+	// Create domain event
 	q.RaiseDomainEvent(NewQuestStatusChanged(q.ID(), oldStatus, newStatus))
 
 	return nil
 }
 
-// isValidStatusTransition проверяет допустимость перехода между статусами
+// isValidStatusTransition checks validity of transition between statuses
 func (q *Quest) isValidStatusTransition(from, to Status) bool {
 	validTransitions := map[Status][]Status{
 		StatusCreated:    {StatusPosted, StatusAssigned},
@@ -179,7 +179,7 @@ func (q *Quest) isValidStatusTransition(from, to Status) bool {
 		StatusAssigned:   {StatusInProgress, StatusDeclined, StatusPosted},
 		StatusInProgress: {StatusCompleted, StatusDeclined},
 		StatusDeclined:   {StatusPosted},
-		StatusCompleted:  {}, // Финальный статус
+		StatusCompleted:  {}, // Final status
 	}
 
 	allowed, exists := validTransitions[from]

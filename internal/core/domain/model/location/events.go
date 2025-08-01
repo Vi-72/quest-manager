@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// LocationCreated представляет событие создания локации
+// LocationCreated represents location creation event
 type LocationCreated struct {
 	ddd.BaseEvent
 	Coordinate kernel.GeoCoordinate `json:"coordinate"`
@@ -20,7 +20,7 @@ func NewLocationCreated(locationID uuid.UUID, coordinate kernel.GeoCoordinate, a
 	}
 }
 
-// LocationUpdated представляет событие обновления локации
+// LocationUpdated represents location update event
 type LocationUpdated struct {
 	ddd.BaseEvent
 	Coordinate kernel.GeoCoordinate `json:"coordinate"`

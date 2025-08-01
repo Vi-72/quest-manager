@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// QuestCreated представляет событие создания квеста
+// QuestCreated represents quest creation event
 type QuestCreated struct {
 	ddd.BaseEvent
 	Creator string `json:"creator"`
@@ -19,7 +19,7 @@ func NewQuestCreated(questID uuid.UUID, creator string) QuestCreated {
 	}
 }
 
-// QuestAssigned представляет событие назначения квеста
+// QuestAssigned represents quest assignment event
 type QuestAssigned struct {
 	ddd.BaseEvent
 	UserID string `json:"user_id"`
@@ -32,7 +32,7 @@ func NewQuestAssigned(questID uuid.UUID, userID string) QuestAssigned {
 	}
 }
 
-// QuestStatusChanged представляет событие изменения статуса квеста
+// QuestStatusChanged represents quest status change event
 type QuestStatusChanged struct {
 	ddd.BaseEvent
 	OldStatus Status `json:"old_status"`
