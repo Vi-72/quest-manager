@@ -1,4 +1,4 @@
-package web
+package cmd
 
 import (
 	"errors"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"quest-manager/cmd"
 	"quest-manager/internal/adapters/in/http/problems"
 	"quest-manager/internal/generated/servers"
 	"quest-manager/internal/pkg/errs"
@@ -15,7 +14,7 @@ import (
 
 const apiV1Prefix = "/api/v1"
 
-func NewRouter(root *cmd.CompositionRoot) http.Handler {
+func NewRouter(root *CompositionRoot) http.Handler {
 	router := chi.NewRouter()
 
 	// Swagger JSON

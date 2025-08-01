@@ -9,7 +9,6 @@ import (
 	"github.com/joho/godotenv"
 
 	"quest-manager/cmd"
-	"quest-manager/internal/web"
 )
 
 func main() {
@@ -42,7 +41,7 @@ func main() {
 	)
 	defer compositionRoot.CloseAll()
 
-	router := web.NewRouter(compositionRoot)
+	router := cmd.NewRouter(compositionRoot)
 
 	log.Printf("Server running on :%s", configs.HttpPort)
 	err = http.ListenAndServe(":"+configs.HttpPort, router)

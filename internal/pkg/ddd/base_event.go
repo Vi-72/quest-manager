@@ -24,6 +24,11 @@ func (e BaseEvent) GetName() string {
 	return e.EventType
 }
 
+// GetAggregateID returns aggregate ID
+func (e BaseEvent) GetAggregateID() uuid.UUID {
+	return e.AggregateID
+}
+
 // NewBaseEvent creates new base event
 func NewBaseEvent(aggregateID uuid.UUID, eventType string) BaseEvent {
 	return BaseEvent{

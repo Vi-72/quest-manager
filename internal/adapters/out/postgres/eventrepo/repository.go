@@ -2,6 +2,7 @@ package eventrepo
 
 import (
 	"context"
+	"log"
 	"sync"
 	"time"
 
@@ -64,13 +65,12 @@ func (r *Repository) PublishAsync(ctx context.Context, events ...ddd.DomainEvent
 
 		tracker, err := r.trackerFactory()
 		if err != nil {
-			// TODO: добавить логгер для записи ошибок
+			log.Printf("ERROR: Failed to create tracker for event publishing: %v", err)
 			return
 		}
 
 		if err := r.publishWithTracker(ctx, tracker, events...); err != nil {
-			// TODO: добавить логгер для записи ошибок
-			_ = err
+			log.Printf("ERROR: Failed to publish events: %v", err)
 		}
 	}()
 }
