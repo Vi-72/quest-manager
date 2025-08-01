@@ -6,26 +6,26 @@ import (
 	"github.com/google/uuid"
 )
 
-// ValidatedAssignQuestData содержит валидированные данные для назначения квеста
+// ValidatedAssignQuestData contains validated data for quest assignment
 type ValidatedAssignQuestData struct {
 	QuestID uuid.UUID
 	UserID  string
 }
 
-// ValidateAssignQuestRequest валидирует запрос назначения квеста
+// ValidateAssignQuestRequest validates quest assignment request
 func ValidateAssignQuestRequest(req *servers.AssignQuestRequest, questIdParam string) (*ValidatedAssignQuestData, *ValidationError) {
-	// Валидация body
+	// Validate body
 	if err := ValidateBody(req, "body"); err != nil {
 		return nil, err
 	}
 
-	// Валидация UserId
+	// Validate UserId
 	userID, err := ValidateUUID(req.UserId, "userId")
 	if err != nil {
 		return nil, err
 	}
 
-	// Валидация QuestId format (UUID)
+	// Validate QuestId format (UUID)
 	questID, err := ValidateUUID(questIdParam, "questId")
 	if err != nil {
 		return nil, err
@@ -33,6 +33,6 @@ func ValidateAssignQuestRequest(req *servers.AssignQuestRequest, questIdParam st
 
 	return &ValidatedAssignQuestData{
 		QuestID: questID,
-		UserID:  userID.String(), // Сохраняем как строку для совместимости
+		UserID:  userID.String(), // Store as string for compatibility
 	}, nil
 }

@@ -78,7 +78,7 @@ func (u *UnitOfWork) Commit(ctx context.Context) error {
 	return nil
 }
 
-// Геттеры репозиториев
+// Repository getters
 func (u *UnitOfWork) QuestRepository() ports.QuestRepository {
 	return u.questRepository
 }

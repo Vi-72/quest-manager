@@ -6,26 +6,26 @@ import (
 	"github.com/google/uuid"
 )
 
-// ValidatedChangeQuestStatusData содержит валидированные данные для изменения статуса квеста
+// ValidatedChangeQuestStatusData contains validated data for quest status change
 type ValidatedChangeQuestStatusData struct {
 	QuestID uuid.UUID
 	Status  string
 }
 
-// ValidateChangeQuestStatusRequest валидирует запрос изменения статуса квеста
+// ValidateChangeQuestStatusRequest validates quest status change request
 func ValidateChangeQuestStatusRequest(req *servers.ChangeStatusRequest, questIdParam string) (*ValidatedChangeQuestStatusData, *ValidationError) {
-	// Валидация body
+	// Validate body
 	if err := ValidateBody(req, "body"); err != nil {
 		return nil, err
 	}
 
-	// Валидация Status - только проверяем что не пустая строка
+	// Validate Status - only check that it's not empty string
 	statusStr := string(req.Status)
 	if err := ValidateNotEmpty(statusStr, "status"); err != nil {
 		return nil, err
 	}
 
-	// Валидация QuestId format (UUID)
+	// Validate QuestId format (UUID)
 	questID, err := ValidateUUID(questIdParam, "questId")
 	if err != nil {
 		return nil, err

@@ -12,7 +12,7 @@ var (
 	ErrValidationFailed = errors.New("validation failed")
 )
 
-// ValidationError представляет ошибку валидации с множественными деталями
+// ValidationError represents a validation error with multiple details
 type ValidationError struct {
 	Message string
 	Field   string
@@ -45,12 +45,12 @@ func (e *ValidationError) Unwrap() error {
 	return ErrValidationFailed
 }
 
-// ConvertValidationErrorToProblem конвертирует ValidationError в RFC 7807 Problem Details
+// ConvertValidationErrorToProblem converts ValidationError to RFC 7807 Problem Details
 func ConvertValidationErrorToProblem(err *ValidationError) *problems.BadRequest {
 	return problems.NewBadRequest(err.Error())
 }
 
-// ValidateBody проверяет что body запроса не nil
+// ValidateBody checks that request body is not nil
 func ValidateBody(body interface{}, bodyName string) *ValidationError {
 	if body == nil {
 		return NewValidationError(bodyName, "is required")
@@ -58,7 +58,7 @@ func ValidateBody(body interface{}, bodyName string) *ValidationError {
 	return nil
 }
 
-// ValidateNotEmpty проверяет что строка не пустая
+// ValidateNotEmpty checks that string is not empty
 func ValidateNotEmpty(value, fieldName string) *ValidationError {
 	if strings.TrimSpace(value) == "" {
 		return NewValidationError(fieldName, "is required and cannot be empty")
@@ -66,7 +66,7 @@ func ValidateNotEmpty(value, fieldName string) *ValidationError {
 	return nil
 }
 
-// ValidateUUID проверяет что строка является валидным UUID
+// ValidateUUID checks that string is a valid UUID
 func ValidateUUID(value, fieldName string) (uuid.UUID, *ValidationError) {
 	if value == "" {
 		return uuid.UUID{}, NewValidationError(fieldName, "is required")
@@ -80,7 +80,7 @@ func ValidateUUID(value, fieldName string) (uuid.UUID, *ValidationError) {
 	return parsedUUID, nil
 }
 
-// TrimAndValidateString обрезает пробелы и проверяет что строка не пустая
+// TrimAndValidateString trims spaces and checks that string is not empty
 func TrimAndValidateString(value, fieldName string) (string, *ValidationError) {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {

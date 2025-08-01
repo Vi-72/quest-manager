@@ -8,16 +8,16 @@ type QuestDTO struct {
 	Title           string
 	Description     string
 	Difficulty      string
-	Reward          int // Уровень награды от 1 до 5
-	DurationMinutes int // Храним duration в минутах
+	Reward          int // Reward level from 1 to 5
+	DurationMinutes int // Store duration in minutes
 
-	// Денормализованные координаты (главные данные для производительности)
+	// Denormalized coordinates (main data for performance)
 	TargetLatitude     float64 `gorm:"index:idx_target_location"`
 	TargetLongitude    float64 `gorm:"index:idx_target_location"`
 	ExecutionLatitude  float64 `gorm:"index:idx_execution_location"`
 	ExecutionLongitude float64 `gorm:"index:idx_execution_location"`
 
-	// Опциональные ссылки на справочник локаций
+	// Optional references to location directory
 	TargetLocationID    *string `gorm:"index"` // FK to quest_locations
 	ExecutionLocationID *string `gorm:"index"` // FK to quest_locations
 

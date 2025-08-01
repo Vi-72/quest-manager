@@ -6,7 +6,7 @@ import (
 	"quest-manager/internal/generated/servers"
 )
 
-// QuestToAPI конвертирует доменный квест в API формат
+// QuestToAPI converts domain quest to API format
 func QuestToAPI(q quest.Quest) servers.Quest {
 	// Convert target and execution locations
 	targetLocation := validations.ConvertKernelCoordinateToAPI(q.TargetLocation)

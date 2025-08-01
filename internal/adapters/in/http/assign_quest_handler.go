@@ -9,14 +9,14 @@ import (
 
 // AssignQuest implements POST /api/v1/quests/{quest_id}/assign from OpenAPI.
 func (a *ApiHandler) AssignQuest(ctx context.Context, request servers.AssignQuestRequestObject) (servers.AssignQuestResponseObject, error) {
-	// Валидация запроса
+	// Validate request
 	validatedData, validationErr := validations.ValidateAssignQuestRequest(request.Body, request.QuestId)
 	if validationErr != nil {
-		// Возвращаем ошибку валидации, middleware автоматически обработает её и вернет 400 ответ
+		// Return validation error, middleware will automatically handle it and return 400 response
 		return nil, validationErr
 	}
 
-	// Выполняем команду назначения
+	// Execute assignment command
 	cmd := commands.AssignQuestCommand{
 		ID:     validatedData.QuestID,
 		UserID: validatedData.UserID,
@@ -24,11 +24,11 @@ func (a *ApiHandler) AssignQuest(ctx context.Context, request servers.AssignQues
 
 	result, err := a.assignQuestHandler.Handle(ctx, cmd)
 	if err != nil {
-		// Передаем ошибку в middleware для правильной обработки (400 для validation, 404 для not found, 500 для infrastructure)
+		// Pass error to middleware for proper handling (400 for validation, 404 for not found, 500 for infrastructure)
 		return nil, err
 	}
 
-	// Формируем ответ из результата операции
+	// Form response from operation result
 	apiResult := servers.AssignQuestResult{
 		Id:       result.ID.String(),
 		Assignee: result.Assignee,

@@ -8,17 +8,17 @@ import (
 
 // GetQuestById implements GET /api/v1/quests/{quest_id} from OpenAPI.
 func (a *ApiHandler) GetQuestById(ctx context.Context, request servers.GetQuestByIdRequestObject) (servers.GetQuestByIdResponseObject, error) {
-	// Валидация UUID
+	// Validate UUID
 	questID, validationErr := validations.ValidateUUID(request.QuestId, "quest_id")
 	if validationErr != nil {
-		// Возвращаем ошибку валидации, middleware автоматически обработает её и вернет 400 ответ
+		// Return validation error, middleware will automatically handle it and return 400 response
 		return nil, validationErr
 	}
 
-	// Получаем квест напрямую
+	// Get quest directly
 	quest, err := a.getQuestByIDHandler.Handle(ctx, questID)
 	if err != nil {
-		// Передаем ошибку в middleware для правильной обработки (404 для NotFoundError, 500 для остальных)
+		// Pass error to middleware for proper handling (404 for NotFoundError, 500 for others)
 		return nil, err
 	}
 

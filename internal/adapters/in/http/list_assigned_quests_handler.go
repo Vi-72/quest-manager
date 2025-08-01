@@ -8,17 +8,17 @@ import (
 
 // ListAssignedQuests implements GET /api/v1/quests/assigned from OpenAPI.
 func (a *ApiHandler) ListAssignedQuests(ctx context.Context, request servers.ListAssignedQuestsRequestObject) (servers.ListAssignedQuestsResponseObject, error) {
-	// Валидация UUID для user_id
+	// Validate UUID for user_id
 	_, validationErr := validations.ValidateUUID(request.Params.UserId, "user_id")
 	if validationErr != nil {
-		// Возвращаем ошибку валидации, middleware автоматически обработает её и вернет 400 ответ
+		// Return validation error, middleware will automatically handle it and return 400 response
 		return nil, validationErr
 	}
 
-	// Получаем список квестов напрямую
+	// Get quest list directly
 	quests, err := a.listAssignedQuestsHandler.Handle(ctx, request.Params.UserId)
 	if err != nil {
-		// Передаем ошибку в middleware для правильной обработки
+		// Pass error to middleware for proper handling
 		return nil, err
 	}
 

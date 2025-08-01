@@ -100,6 +100,9 @@ func NewQuest(
 	if durationMinutes <= 0 {
 		return Quest{}, errors.New("duration must be greater than 0 minutes")
 	}
+	if durationMinutes > 525600 { // 1 год в минутах (365 * 24 * 60)
+		return Quest{}, errors.New("duration too long, maximum is 1 year (525600 minutes)")
+	}
 
 	questID := uuid.New()
 	now := time.Now()

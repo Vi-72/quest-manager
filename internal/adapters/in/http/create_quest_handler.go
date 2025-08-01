@@ -9,20 +9,20 @@ import (
 
 // CreateQuest implements POST /api/v1/quests from OpenAPI.
 func (a *ApiHandler) CreateQuest(ctx context.Context, request servers.CreateQuestRequestObject) (servers.CreateQuestResponseObject, error) {
-	// Валидация запроса и получение обработанных данных
+	// Validate request and get processed data
 	validatedData, validationErr := httpValidations.ValidateCreateQuestRequest(request.Body)
 	if validationErr != nil {
-		// Возвращаем детальную ошибку через middleware обработчик
+		// Return detailed error through middleware handler
 		return nil, validationErr
 	}
 
-	// Extract creator from context or set default (в реальном приложении это должно браться из токена аутентификации)
-	creator := "system" // TODO: получать из токена пользователя
+	// Extract creator from context or set default (in real app this should be taken from auth token)
+	creator := "system" // TODO: get from user token
 
 	cmd := commands.CreateQuestCommand{
 		Title:             validatedData.Title,
 		Description:       validatedData.Description,
-		Difficulty:        validatedData.Difficulty, // Передаем string напрямую
+		Difficulty:        validatedData.Difficulty, // Pass string directly
 		Reward:            validatedData.Reward,
 		DurationMinutes:   validatedData.DurationMinutes,
 		TargetLocation:    validatedData.TargetLocation,
@@ -34,11 +34,11 @@ func (a *ApiHandler) CreateQuest(ctx context.Context, request servers.CreateQues
 
 	result, err := a.createQuestHandler.Handle(ctx, cmd)
 	if err != nil {
-		// Передаем ошибку в middleware для правильной обработки (400 для validation, 500 для infrastructure)
+		// Pass error to middleware for proper handling (400 for validation, 500 for infrastructure)
 		return nil, err
 	}
 
-	// Возвращаем полный ответ с использованием маппера
+	// Return full response using mapper
 	response := QuestToAPI(result)
 
 	return servers.CreateQuest201JSONResponse(response), nil

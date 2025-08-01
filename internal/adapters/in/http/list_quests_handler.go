@@ -10,16 +10,16 @@ import (
 func (a *ApiHandler) ListQuests(ctx context.Context, request servers.ListQuestsRequestObject) (servers.ListQuestsResponseObject, error) {
 	var status *quest.Status
 	if request.Params.Status != nil {
-		// Просто передаем статус как есть - домен/репозиторий сам разберется с валидностью
+		// Simply pass status as is - domain/repository will handle validity itself
 		statusStr := string(*request.Params.Status)
 		questStatus := quest.Status(statusStr)
 		status = &questStatus
 	}
 
-	// Получаем список квестов напрямую с опциональным фильтром
+	// Get quest list directly with optional filter
 	quests, err := a.listQuestsHandler.Handle(ctx, status)
 	if err != nil {
-		// Передаем ошибку в middleware для правильной обработки (например, 400 для невалидного статуса)
+		// Pass error to middleware for proper handling (e.g., 400 for invalid status)
 		return nil, err
 	}
 

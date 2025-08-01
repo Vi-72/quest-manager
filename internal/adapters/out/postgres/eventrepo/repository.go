@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+
 	"quest-manager/internal/core/domain/model/location"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
@@ -15,7 +17,7 @@ var _ ports.EventPublisher = &Repository{}
 
 type Repository struct {
 	tracker            ports.Tracker
-	goroutineSemaphore chan struct{} // Семафор для ограничения горутин
+	goroutineSemaphore chan struct{} // Semaphore for limiting goroutines
 }
 
 func NewRepository(tracker ports.Tracker, goroutineLimit int) (*Repository, error) {
@@ -23,7 +25,7 @@ func NewRepository(tracker ports.Tracker, goroutineLimit int) (*Repository, erro
 		return nil, errs.NewValueIsRequiredError("tracker")
 	}
 	if goroutineLimit <= 0 {
-		goroutineLimit = 5 // значение по умолчанию
+		goroutineLimit = 5 // default value
 	}
 
 	return &Repository{
@@ -32,7 +34,7 @@ func NewRepository(tracker ports.Tracker, goroutineLimit int) (*Repository, erro
 	}, nil
 }
 
-// PublishAsync асинхронно публикует события с ограничением горутин
+// PublishAsync asynchronously publishes events with goroutine limiting
 func (r *Repository) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
 	if len(events) == 0 {
 		return
@@ -104,42 +106,23 @@ func (r *Repository) domainEventToDTO(event ddd.DomainEvent) (EventDTO, error) {
 
 	// Определяем AggregateID и данные в зависимости от типа события
 	switch e := event.(type) {
-	// === QUEST EVENTS ===
-	case quest.QuestCreated:
-		dto.AggregateID = e.AggregateID.String()
-		data, err := MarshalEventData(e)
-		if err != nil {
-			return EventDTO{}, err
-		}
-		dto.Data = data
+	// Обрабатываем явно поддерживаемые типы
+	case quest.QuestCreated,
+		quest.QuestStatusChanged,
+		quest.QuestAssigned,
+		location.LocationCreated,
+		location.LocationUpdated:
 
-	case quest.QuestStatusChanged:
-		dto.AggregateID = e.AggregateID.String()
-		data, err := MarshalEventData(e)
-		if err != nil {
-			return EventDTO{}, err
+		// Приводим к общему интерфейсу
+		agg, ok := e.(interface {
+			GetAggregateID() uuid.UUID
+		})
+		if !ok {
+			return EventDTO{}, errs.NewDomainValidationError("eventSerialization", "event missing AggregateID")
 		}
-		dto.Data = data
 
-	case quest.QuestAssigned:
-		dto.AggregateID = e.AggregateID.String()
-		data, err := MarshalEventData(e)
-		if err != nil {
-			return EventDTO{}, err
-		}
-		dto.Data = data
+		dto.AggregateID = agg.GetAggregateID().String()
 
-	// === LOCATION EVENTS ===
-	case location.LocationCreated:
-		dto.AggregateID = e.AggregateID.String()
-		data, err := MarshalEventData(e)
-		if err != nil {
-			return EventDTO{}, err
-		}
-		dto.Data = data
-
-	case location.LocationUpdated:
-		dto.AggregateID = e.AggregateID.String()
 		data, err := MarshalEventData(e)
 		if err != nil {
 			return EventDTO{}, err

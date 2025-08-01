@@ -17,7 +17,7 @@ import (
 	_ "github.com/lib/pq"
 )
 
-// MustConnectDB создает подключение к БД для тестов
+// MustConnectDB creates database connection for tests
 func MustConnectDB(databaseURL string) (*gorm.DB, *sql.DB, error) {
 	db := MustGormOpen(databaseURL)
 	sqlDB, err := db.DB()
