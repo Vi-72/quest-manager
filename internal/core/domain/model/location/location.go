@@ -31,14 +31,7 @@ func NewLocation(coordinate kernel.GeoCoordinate, address string) (*Location, er
 	}
 
 	// Raise domain event
-	location.RaiseDomainEvent(LocationCreated{
-		ID: uuid.New(),
-		Coordinate: LocationCoordinate{
-			GeoCoordinate: coordinate,
-			LocationID:    id,
-		},
-		Timestamp: now,
-	})
+	location.RaiseDomainEvent(NewLocationCreated(id, coordinate, address))
 
 	return location, nil
 }
@@ -50,14 +43,7 @@ func (l *Location) Update(coordinate kernel.GeoCoordinate, address string) error
 	l.UpdatedAt = time.Now()
 
 	// Raise domain event
-	l.RaiseDomainEvent(LocationUpdated{
-		ID: uuid.New(),
-		Coordinate: LocationCoordinate{
-			GeoCoordinate: coordinate,
-			LocationID:    l.ID(),
-		},
-		Timestamp: l.UpdatedAt,
-	})
+	l.RaiseDomainEvent(NewLocationUpdated(l.ID(), coordinate, address))
 
 	return nil
 }

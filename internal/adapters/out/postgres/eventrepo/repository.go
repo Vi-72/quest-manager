@@ -14,14 +14,45 @@ import (
 var _ ports.EventPublisher = &Repository{}
 
 type Repository struct {
-	tracker ports.Tracker
+	tracker            ports.Tracker
+	goroutineSemaphore chan struct{} // Семафор для ограничения горутин
 }
 
-func NewRepository(tracker ports.Tracker) (*Repository, error) {
+func NewRepository(tracker ports.Tracker, goroutineLimit int) (*Repository, error) {
 	if tracker == nil {
 		return nil, errs.NewValueIsRequiredError("tracker")
 	}
-	return &Repository{tracker: tracker}, nil
+	if goroutineLimit <= 0 {
+		goroutineLimit = 5 // значение по умолчанию
+	}
+
+	return &Repository{
+		tracker:            tracker,
+		goroutineSemaphore: make(chan struct{}, goroutineLimit),
+	}, nil
+}
+
+// PublishAsync асинхронно публикует события с ограничением горутин
+func (r *Repository) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
+	if len(events) == 0 {
+		return
+	}
+
+	// Запускаем в горутине с ограничением
+	go func() {
+		// Занимаем слот в семафоре
+		r.goroutineSemaphore <- struct{}{}
+		defer func() {
+			// Освобождаем слот
+			<-r.goroutineSemaphore
+		}()
+
+		// Публикуем события
+		if err := r.Publish(ctx, events...); err != nil {
+			// TODO: добавить логгер для записи ошибок
+			_ = err
+		}
+	}()
 }
 
 // Publish сохраняет доменные события в базу данных
@@ -75,7 +106,7 @@ func (r *Repository) domainEventToDTO(event ddd.DomainEvent) (EventDTO, error) {
 	switch e := event.(type) {
 	// === QUEST EVENTS ===
 	case quest.QuestCreated:
-		dto.AggregateID = e.QuestID.String()
+		dto.AggregateID = e.AggregateID.String()
 		data, err := MarshalEventData(e)
 		if err != nil {
 			return EventDTO{}, err
@@ -83,7 +114,7 @@ func (r *Repository) domainEventToDTO(event ddd.DomainEvent) (EventDTO, error) {
 		dto.Data = data
 
 	case quest.QuestStatusChanged:
-		dto.AggregateID = e.QuestID.String()
+		dto.AggregateID = e.AggregateID.String()
 		data, err := MarshalEventData(e)
 		if err != nil {
 			return EventDTO{}, err
@@ -91,7 +122,7 @@ func (r *Repository) domainEventToDTO(event ddd.DomainEvent) (EventDTO, error) {
 		dto.Data = data
 
 	case quest.QuestAssigned:
-		dto.AggregateID = e.QuestID.String()
+		dto.AggregateID = e.AggregateID.String()
 		data, err := MarshalEventData(e)
 		if err != nil {
 			return EventDTO{}, err
@@ -100,7 +131,7 @@ func (r *Repository) domainEventToDTO(event ddd.DomainEvent) (EventDTO, error) {
 
 	// === LOCATION EVENTS ===
 	case location.LocationCreated:
-		dto.AggregateID = e.Coordinate.LocationID.String()
+		dto.AggregateID = e.AggregateID.String()
 		data, err := MarshalEventData(e)
 		if err != nil {
 			return EventDTO{}, err
@@ -108,7 +139,7 @@ func (r *Repository) domainEventToDTO(event ddd.DomainEvent) (EventDTO, error) {
 		dto.Data = data
 
 	case location.LocationUpdated:
-		dto.AggregateID = e.Coordinate.LocationID.String()
+		dto.AggregateID = e.AggregateID.String()
 		data, err := MarshalEventData(e)
 		if err != nil {
 			return EventDTO{}, err

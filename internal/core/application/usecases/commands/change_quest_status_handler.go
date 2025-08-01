@@ -49,15 +49,12 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
-	// Публикуем доменные события (включая QuestStatusChanged)
+	// Публикуем доменные события асинхронно (включая QuestStatusChanged)
 	if h.eventPublisher != nil {
-		err = h.eventPublisher.Publish(ctx, q.GetDomainEvents()...)
-		if err != nil {
-			return quest.Quest{}, errs.WrapInfrastructureError("failed to publish quest events", err)
-		}
+		h.eventPublisher.PublishAsync(ctx, q.GetDomainEvents()...)
 	}
 
-	// Очищаем события после успешной публикации
+	// Очищаем события после постановки в очередь на публикацию
 	q.ClearDomainEvents()
 
 	return q, nil

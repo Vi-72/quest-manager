@@ -46,15 +46,12 @@ func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand)
 		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
-	// Публикуем доменные события (включая QuestAssigned и QuestStatusChanged)
+	// Публикуем доменные события асинхронно (включая QuestAssigned и QuestStatusChanged)
 	if h.eventPublisher != nil {
-		err = h.eventPublisher.Publish(ctx, q.GetDomainEvents()...)
-		if err != nil {
-			return AssignQuestResult{}, errs.WrapInfrastructureError("failed to publish quest events", err)
-		}
+		h.eventPublisher.PublishAsync(ctx, q.GetDomainEvents()...)
 	}
 
-	// Очищаем события после успешной публикации
+	// Очищаем события после постановки в очередь на публикацию
 	q.ClearDomainEvents()
 
 	return AssignQuestResult{

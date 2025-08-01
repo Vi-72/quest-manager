@@ -9,6 +9,9 @@ DB_PASSWORD=password
 DB_NAME=quest_manager
 DB_SSLMODE=disable
 
+# Event Processing Configuration
+EVENT_GOROUTINE_LIMIT=5
+
 # Instructions:
 # 1. Copy this file to .env: cp config.example .env
 # 2. Update the values according to your environment

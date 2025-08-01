@@ -29,7 +29,7 @@ func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
 	}
 
 	// Создаем EventPublisher с тем же Tracker что и UoW для транзакционности
-	eventPublisher, err := eventrepo.NewRepository(unitOfWork.(ports.Tracker))
+	eventPublisher, err := eventrepo.NewRepository(unitOfWork.(ports.Tracker), configs.EventGoroutineLimit)
 	if err != nil {
 		log.Fatalf("cannot create EventPublisher: %v", err)
 	}

@@ -144,14 +144,8 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 			allEvents = append(allEvents, executionLoc.GetDomainEvents()...)
 		}
 
-		// Отправляем события в горутине
-		go func() {
-			if err := h.eventPublisher.Publish(context.Background(), allEvents...); err != nil {
-				// Логируем ошибку, но не возвращаем её пользователю
-				// TODO: добавить логгер для записи ошибок публикации событий
-				_ = err
-			}
-		}()
+		// Отправляем события асинхронно с ограничением горутин
+		h.eventPublisher.PublishAsync(context.Background(), allEvents...)
 	}
 
 	// Очищаем события после постановки в очередь на публикацию

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/joho/godotenv"
@@ -63,13 +64,14 @@ func main() {
 
 func getConfigs() cmd.Config {
 	return cmd.Config{
-		HttpPort:   getEnv("HTTP_PORT"),
-		DbHost:     getEnv("DB_HOST"),
-		DbPort:     getEnv("DB_PORT"),
-		DbUser:     getEnv("DB_USER"),
-		DbPassword: getEnv("DB_PASSWORD"),
-		DbName:     getEnv("DB_NAME"),
-		DbSslMode:  getEnv("DB_SSLMODE"),
+		HttpPort:            getEnv("HTTP_PORT"),
+		DbHost:              getEnv("DB_HOST"),
+		DbPort:              getEnv("DB_PORT"),
+		DbUser:              getEnv("DB_USER"),
+		DbPassword:          getEnv("DB_PASSWORD"),
+		DbName:              getEnv("DB_NAME"),
+		DbSslMode:           getEnv("DB_SSLMODE"),
+		EventGoroutineLimit: getEnvInt("EVENT_GOROUTINE_LIMIT"),
 	}
 }
 
@@ -80,6 +82,19 @@ func getEnv(key string) string {
 		log.Fatalf("Missing env var: %s", key)
 	}
 	return val
+}
+
+func getEnvInt(key string) int {
+	_ = godotenv.Load(".env")
+	val := os.Getenv(key)
+	if val == "" {
+		log.Fatalf("Missing env var: %s", key)
+	}
+	intVal, err := strconv.Atoi(val)
+	if err != nil {
+		log.Fatalf("Invalid integer value for env var %s: %s", key, val)
+	}
+	return intVal
 }
 
 func createDbIfNotExists(host string, port string, user string,

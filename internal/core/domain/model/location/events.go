@@ -2,43 +2,33 @@ package location
 
 import (
 	"quest-manager/internal/core/domain/model/kernel"
-	"time"
+	"quest-manager/internal/pkg/ddd"
 
 	"github.com/google/uuid"
 )
 
-// LocationCoordinate представляет координаты с ID локации для событий
-type LocationCoordinate struct {
-	kernel.GeoCoordinate
-	LocationID uuid.UUID `json:"location_id"` // ID локации
-}
-
 // LocationCreated представляет событие создания локации
 type LocationCreated struct {
-	ID         uuid.UUID          `json:"id"` // ID события
-	Coordinate LocationCoordinate `json:"coordinate"`
-	Timestamp  time.Time          `json:"timestamp"`
+	ddd.BaseEvent
+	Coordinate kernel.GeoCoordinate `json:"coordinate"`
 }
 
-func (e LocationCreated) GetID() uuid.UUID {
-	return e.ID
-}
-
-func (e LocationCreated) GetName() string {
-	return "location.created"
+func NewLocationCreated(locationID uuid.UUID, coordinate kernel.GeoCoordinate, address string) LocationCreated {
+	return LocationCreated{
+		BaseEvent:  ddd.NewBaseEvent(locationID, "location.created"),
+		Coordinate: coordinate,
+	}
 }
 
 // LocationUpdated представляет событие обновления локации
 type LocationUpdated struct {
-	ID         uuid.UUID          `json:"id"` // ID события
-	Coordinate LocationCoordinate `json:"coordinate"`
-	Timestamp  time.Time          `json:"timestamp"`
+	ddd.BaseEvent
+	Coordinate kernel.GeoCoordinate `json:"coordinate"`
 }
 
-func (e LocationUpdated) GetID() uuid.UUID {
-	return e.ID
-}
-
-func (e LocationUpdated) GetName() string {
-	return "location.updated"
+func NewLocationUpdated(locationID uuid.UUID, coordinate kernel.GeoCoordinate, address string) LocationUpdated {
+	return LocationUpdated{
+		BaseEvent:  ddd.NewBaseEvent(locationID, "location.updated"),
+		Coordinate: coordinate,
+	}
 }
