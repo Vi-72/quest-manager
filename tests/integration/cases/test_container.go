@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"quest-manager/cmd"
-	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
 
 	"quest-manager/internal/core/application/usecases/commands"
@@ -68,6 +67,12 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer, withTx bool) TestDICont
 		db = tracker.Db()
 	}
 
+func NewTestDIContainer(
+	suiteContainer SuiteDIContainer,
+	db *gorm.DB,
+	unitOfWork ports.UnitOfWork,
+	closeDB func(),
+) TestDIContainer {
 	// Создание event репозитория отдельно
 	eventRepo, err := eventrepo.NewRepository(tracker, 5) // лимит горутин = 5
 	suiteContainer.Require().NoError(err, "Failed to create event repository")
@@ -106,13 +111,8 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer, withTx bool) TestDICont
 	return TestDIContainer{
 		SuiteDIContainer: suiteContainer,
 		DB:               db,
-		CloseDB: func() {
-			err := sqlDB.Close()
-			if err != nil {
-				return
-			}
-		},
-		UnitOfWork: unitOfWork,
+		CloseDB:          closeDB,
+		UnitOfWork:       unitOfWork,
 
 		QuestRepository:    questRepo,
 		LocationRepository: locationRepo,
