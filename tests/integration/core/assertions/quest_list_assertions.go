@@ -50,8 +50,8 @@ func (a *QuestListAssertions) QuestsAllHaveStatus(quests []quest.Quest, expected
 // QuestWithIDExists verifies that a quest with the specified ID is present in the list
 func (a *QuestListAssertions) QuestWithIDExists(quests []quest.Quest, questID string) {
 	found := false
-	for _, quest := range quests {
-		if quest.ID().String() == questID {
+	for _, q := range quests {
+		if q.ID().String() == questID {
 			found = true
 			break
 		}

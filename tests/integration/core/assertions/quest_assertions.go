@@ -20,16 +20,6 @@ type QuestAssertions struct {
 	eventStorage *storage.EventStorage
 }
 
-// NewQuestAssertions creates a new QuestAssertions
-func NewQuestAssertions(a *assert.Assertions, r *require.Assertions, s *storage.QuestStorage, es *storage.EventStorage) *QuestAssertions {
-	return &QuestAssertions{
-		assert:       a,
-		require:      r,
-		storage:      s,
-		eventStorage: es,
-	}
-}
-
 // QuestExists verifies that quest exists in database
 func (a *QuestAssertions) QuestExists(ctx context.Context, questID uuid.UUID) {
 	q, err := a.storage.GetQuestByID(ctx, questID)
@@ -46,21 +36,21 @@ func (a *QuestAssertions) QuestNotExists(ctx context.Context, questID uuid.UUID)
 
 // QuestHasStatus verifies quest status
 func (a *QuestAssertions) QuestHasStatus(ctx context.Context, questID uuid.UUID, expectedStatus quest.Status) {
-	quest, err := a.storage.GetQuestByID(ctx, questID)
+	q, err := a.storage.GetQuestByID(ctx, questID)
 	a.require.NoError(err, "Failed to get quest from database")
-	a.assert.Equal(string(expectedStatus), quest.Status, "Quest status should match expected")
+	a.assert.Equal(string(expectedStatus), q.Status, "Quest status should match expected")
 }
 
 // QuestHasAssignee verifies quest assignee
 func (a *QuestAssertions) QuestHasAssignee(ctx context.Context, questID uuid.UUID, expectedAssignee *string) {
-	quest, err := a.storage.GetQuestByID(ctx, questID)
+	q, err := a.storage.GetQuestByID(ctx, questID)
 	a.require.NoError(err, "Failed to get quest from database")
 
 	if expectedAssignee == nil {
-		a.assert.Nil(quest.Assignee, "Quest should not have assignee")
+		a.assert.Nil(q.Assignee, "Quest should not have assignee")
 	} else {
-		a.require.NotNil(quest.Assignee, "Quest should have assignee")
-		a.assert.Equal(*expectedAssignee, *quest.Assignee, "Quest assignee should match expected")
+		a.require.NotNil(q.Assignee, "Quest should have assignee")
+		a.assert.Equal(*expectedAssignee, *q.Assignee, "Quest assignee should match expected")
 	}
 }
 
