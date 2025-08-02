@@ -1,6 +1,7 @@
 package cases
 
 import (
+	"net/http"
 	"time"
 
 	"quest-manager/cmd"
@@ -16,6 +17,7 @@ import (
 
 // TestDIContainer содержит все зависимости для интеграционных тестов
 type TestDIContainer struct {
+	SuiteDIContainer
 	DB         *gorm.DB
 	CloseDB    func()
 	UnitOfWork ports.UnitOfWork
@@ -35,13 +37,16 @@ type TestDIContainer struct {
 	GetQuestByIDHandler         queries.GetQuestByIDQueryHandler
 	SearchQuestsByRadiusHandler queries.SearchQuestsByRadiusQueryHandler
 	ListAssignedQuestsHandler   queries.ListAssignedQuestsQueryHandler
+
+	// HTTP Router for API testing
+	HTTPRouter http.Handler
 }
 
 // NewTestDIContainer создает новый TestDIContainer для тестов
 func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	// Создаем тестовую базу данных если ее нет
 	cmd.CreateDbIfNotExists("localhost", "5432", "postgres", "password", "quest_test", "disable")
-	
+
 	// Подключение к тестовой БД
 	databaseURL := "postgres://postgres:password@localhost:5432/quest_test?sslmode=disable"
 
@@ -80,10 +85,18 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	searchQuestsByRadiusHandler := queries.NewSearchQuestsByRadiusQueryHandler(questRepo)
 	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(questRepo)
 
+	// Create HTTP Router for API testing
+	testConfig := cmd.Config{
+		EventGoroutineLimit: 5,
+	}
+	compositionRoot := cmd.NewCompositionRoot(testConfig, db)
+	httpRouter := cmd.NewRouter(compositionRoot)
+
 	return TestDIContainer{
-		DB:         db,
-		CloseDB:    func() { sqlDB.Close() },
-		UnitOfWork: unitOfWork,
+		SuiteDIContainer: suiteContainer,
+		DB:               db,
+		CloseDB:          func() { sqlDB.Close() },
+		UnitOfWork:       unitOfWork,
 
 		QuestRepository:    questRepo,
 		LocationRepository: locationRepo,
@@ -97,6 +110,8 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 		GetQuestByIDHandler:         getQuestByIDHandler,
 		SearchQuestsByRadiusHandler: searchQuestsByRadiusHandler,
 		ListAssignedQuestsHandler:   listAssignedQuestsHandler,
+
+		HTTPRouter: httpRouter,
 	}
 }
 

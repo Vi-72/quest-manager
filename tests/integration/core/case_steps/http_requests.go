@@ -117,3 +117,11 @@ func ListQuestsHTTPRequest(status string) HTTPRequest {
 		URL:    url,
 	}
 }
+
+// ListAssignedQuestsHTTPRequest создает HTTP запрос для получения квестов назначенных пользователю
+func ListAssignedQuestsHTTPRequest(userID string) HTTPRequest {
+	return HTTPRequest{
+		Method: "GET",
+		URL:    "/api/v1/quests/assigned?user_id=" + userID,
+	}
+}

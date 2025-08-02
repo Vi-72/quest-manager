@@ -26,3 +26,12 @@ func ListQuestsStep(
 ) ([]quest.Quest, error) {
 	return handler.Handle(ctx, status)
 }
+
+// ListAssignedQuestsStep gets list of quests assigned to a user
+func ListAssignedQuestsStep(
+	ctx context.Context,
+	handler queries.ListAssignedQuestsQueryHandler,
+	userID string,
+) ([]quest.Quest, error) {
+	return handler.Handle(ctx, userID)
+}
