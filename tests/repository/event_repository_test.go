@@ -208,7 +208,7 @@ func (suite *EventRepositoryTestSuite) TestPublish_ComplexDomainScenario() {
 	targetLocation := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
 	executionLocation := kernel.GeoCoordinate{Lat: 55.7559, Lon: 37.6177}
 
-	quest, err := quest.NewQuest(
+	q, err := quest.NewQuest(
 		"Test Quest",
 		"Test description",
 		"medium",
@@ -223,18 +223,18 @@ func (suite *EventRepositoryTestSuite) TestPublish_ComplexDomainScenario() {
 	suite.Require().NoError(err)
 
 	// Get events from quest creation and publish them immediately
-	creationEvents := quest.GetDomainEvents()
+	creationEvents := q.GetDomainEvents()
 	err = suite.eventRepo.Publish(ctx, creationEvents...)
 	suite.Require().NoError(err)
 
 	// Clear events after publishing
-	quest.ClearDomainEvents()
+	q.ClearDomainEvents()
 
 	// Assign quest (generates more events)
-	err = quest.AssignTo(userID)
+	err = q.AssignTo(userID)
 	suite.Require().NoError(err)
 
-	assignmentEvents := quest.GetDomainEvents()
+	assignmentEvents := q.GetDomainEvents()
 
 	// Act - publish assignment events
 	err = suite.eventRepo.Publish(ctx, assignmentEvents...)
