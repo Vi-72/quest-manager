@@ -3,11 +3,24 @@ package testdatagenerators
 import (
 	"fmt"
 	"math/rand"
-	"time"
+	"os"
+	"strconv"
 
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/generated/servers"
 )
+
+var questRand *rand.Rand
+
+func init() {
+	seed := int64(1)
+	if s, ok := os.LookupEnv("QUEST_GENERATOR_SEED"); ok {
+		if parsed, err := strconv.ParseInt(s, 10, 64); err == nil {
+			seed = parsed
+		}
+	}
+	questRand = rand.New(rand.NewSource(seed))
+}
 
 // QuestTestData содержит данные для создания тестового квеста
 type QuestTestData struct {
@@ -55,7 +68,7 @@ func DefaultQuestData() QuestTestData {
 
 // RandomQuestData генерирует случайные данные для квеста
 func RandomQuestData() *servers.CreateQuestRequest {
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r := questRand
 
 	difficulties := []servers.CreateQuestRequestDifficulty{
 		servers.CreateQuestRequestDifficultyEasy,
