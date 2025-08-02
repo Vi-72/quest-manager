@@ -45,5 +45,5 @@ func (s *DefaultSuite) SetupTest() {
 // TearDownTest cleans state after each test
 func (s *DefaultSuite) TearDownTest() {
 	// Wait for event processing completion
-	s.TestDIContainer.WaitForEventProcessing()
+	s.TestDIContainer.WaitForEventProcessing(0)
 }
