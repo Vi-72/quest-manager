@@ -28,6 +28,9 @@ func NewDefault(s suite.TestingSuite) DefaultSuite {
 
 // SetupSuite initializes resources before running all tests in the suite
 func (s *DefaultSuite) SetupSuite() {
+	container := NewTestDIContainer(s.SuiteDIContainer, false)
+	cmd.MustAutoMigrate(container.DB)
+	container.TearDownTest()
 	// Создаем тестовую базу данных если ее нет
 	cmd.CreateDbIfNotExists("localhost", "5432", "postgres", "password", "quest_test", "disable")
 
@@ -58,12 +61,11 @@ func (s *DefaultSuite) SetupSuite() {
 }
 
 // TearDownSuite cleans up resources after completing all tests in the suite
-func (s *DefaultSuite) TearDownSuite() {
-	s.TestDIContainer.TearDownTest()
-}
+func (s *DefaultSuite) TearDownSuite() {}
 
 // SetupTest prepares state before each test
 func (s *DefaultSuite) SetupTest() {
+	s.TestDIContainer = NewTestDIContainer(s.SuiteDIContainer, true)
 	tx := s.TestDIContainer.DB.Begin()
 	s.Require().NoError(tx.Error)
 
@@ -92,8 +94,8 @@ func (s *DefaultSuite) SetupTest() {
 
 // TearDownTest cleans state after each test
 func (s *DefaultSuite) TearDownTest() {
-	// Wait for event processing completion
 	s.TestDIContainer.WaitForEventProcessing(0)
+	s.TestDIContainer.TearDownTest()
 	if s.tx != nil {
 		_ = s.tx.Rollback()
 		s.tx = nil

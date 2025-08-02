@@ -12,6 +12,7 @@ import (
 )
 
 func (s *Suite) TestListAssignedQuestsHTTP() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - create quests via handler and assign them to a specific user
@@ -61,6 +62,7 @@ func (s *Suite) TestListAssignedQuestsHTTP() {
 }
 
 func (s *Suite) TestListAssignedQuestsHTTPEmpty() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - use a user ID that has no assigned quests
@@ -83,6 +85,7 @@ func (s *Suite) TestListAssignedQuestsHTTPEmpty() {
 }
 
 func (s *Suite) TestListAssignedQuestsHTTPInvalidUserID() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Act - try to get assigned quests with invalid user ID via HTTP API
