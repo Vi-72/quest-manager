@@ -9,6 +9,7 @@ import (
 
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/quest"
+	"quest-manager/internal/generated/servers"
 )
 
 // QuestTestData содержит данные для создания тестового квеста
@@ -48,10 +49,15 @@ func DefaultQuestData() QuestTestData {
 }
 
 // RandomQuestData генерирует случайные данные для квеста
-func RandomQuestData() QuestTestData {
+func RandomQuestData() *servers.CreateQuestRequest {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 
-	difficulties := []string{"easy", "medium", "hard"}
+	difficulties := []servers.CreateQuestRequestDifficulty{
+		servers.CreateQuestRequestDifficultyEasy,
+		servers.CreateQuestRequestDifficultyMedium,
+		servers.CreateQuestRequestDifficultyHard,
+	}
+
 	titles := []string{
 		"Treasure Hunt",
 		"City Explorer",
@@ -78,23 +84,25 @@ func RandomQuestData() QuestTestData {
 		{"physical fitness", "communication"},
 	}
 
-	return QuestTestData{
+	selectedEquipment := equipment[r.Intn(len(equipment))]
+	selectedSkills := skills[r.Intn(len(skills))]
+
+	return &servers.CreateQuestRequest{
 		Title:           titles[r.Intn(len(titles))] + fmt.Sprintf(" #%d", r.Intn(1000)),
 		Description:     fmt.Sprintf("Generated test quest %d for integration testing", r.Intn(10000)),
 		Difficulty:      difficulties[r.Intn(len(difficulties))],
 		Reward:          r.Intn(5) + 1,        // 1-5
 		DurationMinutes: (r.Intn(6) + 1) * 30, // 30, 60, 90, 120, 150, 180 minutes
-		Creator:         fmt.Sprintf("test-creator-%d", r.Intn(100)),
-		TargetLocation: kernel.GeoCoordinate{
-			Lat: 55.7 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
-			Lon: 37.6 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
+		TargetLocation: servers.Coordinate{
+			Latitude:  float32(55.7 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
+			Longitude: float32(37.6 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
 		},
-		ExecutionLocation: kernel.GeoCoordinate{
-			Lat: 55.7 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
-			Lon: 37.6 + (r.Float64()-0.5)*0.1, // Moscow area ±0.05°
+		ExecutionLocation: servers.Coordinate{
+			Latitude:  float32(55.7 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
+			Longitude: float32(37.6 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
 		},
-		Equipment: equipment[r.Intn(len(equipment))],
-		Skills:    skills[r.Intn(len(skills))],
+		Equipment: &selectedEquipment,
+		Skills:    &selectedSkills,
 	}
 }
 

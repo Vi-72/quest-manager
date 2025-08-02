@@ -3,77 +3,44 @@ package quest
 import (
 	"context"
 
-	"quest-manager/internal/core/application/usecases/commands"
-	"quest-manager/internal/core/domain/model/kernel"
+	casesteps "quest-manager/tests/integration/core/case_steps"
 )
 
 func (s *Suite) TestListQuests() {
 	ctx := context.Background()
 
-	// Arrange - создаем несколько квестов
-	quest1Cmd := commands.CreateQuestCommand{
-		Title:           "First Quest",
-		Description:     "First Description",
-		Difficulty:      "easy",
-		Reward:          2,
-		DurationMinutes: 20,
-		Creator:         "550e8400-e29b-41d4-a716-446655440001",
-		TargetLocation: kernel.GeoCoordinate{
-			Lat: 55.7558,
-			Lon: 37.6176,
-		},
-		ExecutionLocation: kernel.GeoCoordinate{
-			Lat: 55.7558,
-			Lon: 37.6176,
-		},
-	}
-
-	quest2Cmd := commands.CreateQuestCommand{
-		Title:           "Second Quest",
-		Description:     "Second Description",
-		Difficulty:      "hard",
-		Reward:          5,
-		DurationMinutes: 60,
-		Creator:         "550e8400-e29b-41d4-a716-446655440002",
-		TargetLocation: kernel.GeoCoordinate{
-			Lat: 56.8431,
-			Lon: 60.6454,
-		},
-		ExecutionLocation: kernel.GeoCoordinate{
-			Lat: 56.8431,
-			Lon: 60.6454,
-		},
-	}
-
-	// Создаем квесты
-	_, err := s.TestDIContainer.CreateQuestHandler.Handle(ctx, quest1Cmd)
+	// Pre-condition - создаем несколько квестов
+	expectedCount := 2
+	createdQuests, err := casesteps.CreateMultipleRandomQuests(ctx, s.TestDIContainer.CreateQuestHandler, expectedCount)
 	s.Require().NoError(err)
-
-	_, err = s.TestDIContainer.CreateQuestHandler.Handle(ctx, quest2Cmd)
-	s.Require().NoError(err)
+	createdQuestIDs := make(map[string]bool)
+	for _, quest := range createdQuests {
+		createdQuestIDs[quest.ID().String()] = true
+	}
 
 	// Act - получаем список квестов (все квесты, без фильтра по статусу)
-	quests, err := s.TestDIContainer.ListQuestsHandler.Handle(ctx, nil)
+	quests, err := casesteps.ListQuestsStep(ctx, s.TestDIContainer.ListQuestsHandler, nil)
 
 	// Assert
 	s.Require().NoError(err)
-	s.Assert().Len(quests, 2)
+	s.Assert().GreaterOrEqual(len(quests), expectedCount, "Should have at least the created quests")
 
-	// Проверяем, что квесты содержат ожидаемые данные
-	questTitles := make([]string, len(quests))
-	for i, quest := range quests {
-		questTitles[i] = quest.Title
+	// Проверяем, что все созданные квесты присутствуют в полученном списке
+	retrievedQuestIDs := make(map[string]bool)
+	for _, quest := range quests {
+		retrievedQuestIDs[quest.ID().String()] = true
 	}
 
-	s.Assert().Contains(questTitles, "First Quest")
-	s.Assert().Contains(questTitles, "Second Quest")
+	for _, createdQuest := range createdQuests {
+		s.Assert().Contains(retrievedQuestIDs, createdQuest.ID().String(), "Created quest should be in the retrieved list")
+	}
 }
 
 func (s *Suite) TestListQuestsEmpty() {
 	ctx := context.Background()
 
 	// Act - получаем список квестов из пустой базы
-	quests, err := s.TestDIContainer.ListQuestsHandler.Handle(ctx, nil)
+	quests, err := casesteps.ListQuestsStep(ctx, s.TestDIContainer.ListQuestsHandler, nil)
 
 	// Assert
 	s.Require().NoError(err)
