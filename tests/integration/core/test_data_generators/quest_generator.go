@@ -5,10 +5,7 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/google/uuid"
-
 	"quest-manager/internal/core/domain/model/kernel"
-	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/generated/servers"
 )
 
@@ -26,6 +23,14 @@ type QuestTestData struct {
 	Skills            []string
 }
 
+// DefaultTestCoordinate returns default coordinates for testing (Moscow center)
+func DefaultTestCoordinate() kernel.GeoCoordinate {
+	return kernel.GeoCoordinate{
+		Lat: 55.7558, // Moscow latitude
+		Lon: 37.6176, // Moscow longitude
+	}
+}
+
 // DefaultQuestData возвращает стандартные данные для квеста
 func DefaultQuestData() QuestTestData {
 	return QuestTestData{
@@ -36,12 +41,12 @@ func DefaultQuestData() QuestTestData {
 		DurationMinutes: 60,
 		Creator:         "test-creator",
 		TargetLocation: kernel.GeoCoordinate{
-			Lat: 55.7558,
+			Lat: 25.7558,
 			Lon: 37.6176,
 		},
 		ExecutionLocation: kernel.GeoCoordinate{
 			Lat: 55.7539,
-			Lon: 37.6208,
+			Lon: 77.4802,
 		},
 		Equipment: []string{"map", "compass"},
 		Skills:    []string{"navigation", "observation"},
@@ -98,74 +103,10 @@ func RandomQuestData() *servers.CreateQuestRequest {
 			Longitude: float32(37.6 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
 		},
 		ExecutionLocation: servers.Coordinate{
-			Latitude:  float32(55.7 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
-			Longitude: float32(37.6 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
+			Latitude:  float32(65.7 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
+			Longitude: float32(47.6 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
 		},
 		Equipment: &selectedEquipment,
 		Skills:    &selectedSkills,
 	}
-}
-
-// QuestWithSpecificDifficulty создает квест с определенной сложностью
-func QuestWithSpecificDifficulty(difficulty string) QuestTestData {
-	data := DefaultQuestData()
-	data.Difficulty = difficulty
-	data.Title = fmt.Sprintf("%s Quest", difficulty)
-
-	// Настраиваем параметры в зависимости от сложности
-	switch difficulty {
-	case "easy":
-		data.Reward = 1
-		data.DurationMinutes = 30
-	case "medium":
-		data.Reward = 3
-		data.DurationMinutes = 60
-	case "hard":
-		data.Reward = 5
-		data.DurationMinutes = 120
-	}
-
-	return data
-}
-
-// QuestWithSpecificCreator создает квест для определенного создателя
-func QuestWithSpecificCreator(creator string) QuestTestData {
-	data := DefaultQuestData()
-	data.Creator = creator
-	data.Title = fmt.Sprintf("Quest by %s", creator)
-	return data
-}
-
-// ValidUserID генерирует валидный UUID для пользователя
-func ValidUserID() string {
-	return uuid.New().String()
-}
-
-// InvalidUserID возвращает невалидный ID пользователя
-func InvalidUserID() string {
-	return "invalid-user-id"
-}
-
-// QuestStatuses возвращает все возможные статусы квестов
-func QuestStatuses() []quest.Status {
-	return []quest.Status{
-		quest.StatusCreated,
-		quest.StatusPosted,
-		quest.StatusAssigned,
-		quest.StatusInProgress,
-		quest.StatusDeclined,
-		quest.StatusCompleted,
-	}
-}
-
-// RandomQuestStatus возвращает случайный статус квеста
-func RandomQuestStatus() quest.Status {
-	statuses := QuestStatuses()
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return statuses[r.Intn(len(statuses))]
-}
-
-// stringPtr возвращает указатель на строку
-func stringPtr(s string) *string {
-	return &s
 }

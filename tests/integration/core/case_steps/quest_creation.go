@@ -11,23 +11,33 @@ import (
 
 // convertCreateQuestRequestToCommand from CreateQuestRequest to CreateQuestCommand
 func convertCreateQuestRequestToCommand(req *servers.CreateQuestRequest) commands.CreateQuestCommand {
+	// Generate test addresses
+	targetAddress := "Target Address: Test Street 123, Test City"
+	executionAddress := "Execution Address: Test Avenue 456, Test City"
+
+	// Make sure locations are different to get different addresses
+	targetLocation := kernel.GeoCoordinate{
+		Lat: float64(req.TargetLocation.Latitude),
+		Lon: float64(req.TargetLocation.Longitude),
+	}
+	executionLocation := kernel.GeoCoordinate{
+		Lat: float64(req.ExecutionLocation.Latitude) + 0.001,  // Make slightly different
+		Lon: float64(req.ExecutionLocation.Longitude) + 0.001, // Make slightly different
+	}
+
 	return commands.CreateQuestCommand{
-		Title:           req.Title,
-		Description:     req.Description,
-		Difficulty:      string(req.Difficulty),
-		Reward:          req.Reward,
-		DurationMinutes: req.DurationMinutes,
-		TargetLocation: kernel.GeoCoordinate{
-			Lat: float64(req.TargetLocation.Latitude),
-			Lon: float64(req.TargetLocation.Longitude),
-		},
-		ExecutionLocation: kernel.GeoCoordinate{
-			Lat: float64(req.ExecutionLocation.Latitude),
-			Lon: float64(req.ExecutionLocation.Longitude),
-		},
-		Creator:   "test-creator",
-		Equipment: getStringSlice(req.Equipment),
-		Skills:    getStringSlice(req.Skills),
+		Title:             req.Title,
+		Description:       req.Description,
+		Difficulty:        string(req.Difficulty),
+		Reward:            req.Reward,
+		DurationMinutes:   req.DurationMinutes,
+		TargetLocation:    targetLocation,
+		TargetAddress:     &targetAddress,
+		ExecutionLocation: executionLocation,
+		ExecutionAddress:  &executionAddress,
+		Creator:           "test-creator",
+		Equipment:         getStringSlice(req.Equipment),
+		Skills:            getStringSlice(req.Skills),
 	}
 }
 

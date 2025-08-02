@@ -12,7 +12,7 @@ import (
 	"quest-manager/tests/integration/core/storage"
 )
 
-// QuestAssertions предоставляет методы для проверки квестов в тестах
+// QuestAssertions provides methods for asserting quests in tests
 type QuestAssertions struct {
 	assert       *assert.Assertions
 	require      *require.Assertions
@@ -20,7 +20,7 @@ type QuestAssertions struct {
 	eventStorage *storage.EventStorage
 }
 
-// NewQuestAssertions создает новый QuestAssertions
+// NewQuestAssertions creates a new QuestAssertions
 func NewQuestAssertions(a *assert.Assertions, r *require.Assertions, s *storage.QuestStorage, es *storage.EventStorage) *QuestAssertions {
 	return &QuestAssertions{
 		assert:       a,
@@ -30,7 +30,7 @@ func NewQuestAssertions(a *assert.Assertions, r *require.Assertions, s *storage.
 	}
 }
 
-// QuestExists проверяет что квест существует в базе данных
+// QuestExists verifies that quest exists in database
 func (a *QuestAssertions) QuestExists(ctx context.Context, questID uuid.UUID) {
 	quest, err := a.storage.GetQuestByID(ctx, questID)
 	a.require.NoError(err, "Quest should exist in database")
@@ -38,20 +38,20 @@ func (a *QuestAssertions) QuestExists(ctx context.Context, questID uuid.UUID) {
 	a.assert.Equal(questID.String(), quest.ID, "Quest ID should match")
 }
 
-// QuestNotExists проверяет что квест не существует в базе данных
+// QuestNotExists verifies that quest does not exist in database
 func (a *QuestAssertions) QuestNotExists(ctx context.Context, questID uuid.UUID) {
 	_, err := a.storage.GetQuestByID(ctx, questID)
 	a.assert.Error(err, "Quest should not exist in database")
 }
 
-// QuestHasStatus проверяет статус квеста
+// QuestHasStatus verifies quest status
 func (a *QuestAssertions) QuestHasStatus(ctx context.Context, questID uuid.UUID, expectedStatus quest.Status) {
 	quest, err := a.storage.GetQuestByID(ctx, questID)
 	a.require.NoError(err, "Failed to get quest from database")
 	a.assert.Equal(string(expectedStatus), quest.Status, "Quest status should match expected")
 }
 
-// QuestHasAssignee проверяет назначенного пользователя квеста
+// QuestHasAssignee verifies quest assignee
 func (a *QuestAssertions) QuestHasAssignee(ctx context.Context, questID uuid.UUID, expectedAssignee *string) {
 	quest, err := a.storage.GetQuestByID(ctx, questID)
 	a.require.NoError(err, "Failed to get quest from database")
@@ -64,28 +64,28 @@ func (a *QuestAssertions) QuestHasAssignee(ctx context.Context, questID uuid.UUI
 	}
 }
 
-// QuestHasCreator проверяет создателя квеста
+// QuestHasCreator verifies quest creator
 func (a *QuestAssertions) QuestHasCreator(ctx context.Context, questID uuid.UUID, expectedCreator string) {
 	quest, err := a.storage.GetQuestByID(ctx, questID)
 	a.require.NoError(err, "Failed to get quest from database")
 	a.assert.Equal(expectedCreator, quest.Creator, "Quest creator should match expected")
 }
 
-// QuestCountEquals проверяет общее количество квестов
+// QuestCountEquals verifies total quest count
 func (a *QuestAssertions) QuestCountEquals(ctx context.Context, expectedCount int64) {
 	count, err := a.storage.CountQuests(ctx)
 	a.require.NoError(err, "Failed to count quests")
 	a.assert.Equal(expectedCount, count, "Quest count should match expected")
 }
 
-// QuestCountByStatusEquals проверяет количество квестов по статусу
+// QuestCountByStatusEquals verifies quest count by status
 func (a *QuestAssertions) QuestCountByStatusEquals(ctx context.Context, status quest.Status, expectedCount int64) {
 	count, err := a.storage.CountQuestsByStatus(ctx, status)
 	a.require.NoError(err, "Failed to count quests by status")
 	a.assert.Equal(expectedCount, count, "Quest count by status should match expected")
 }
 
-// QuestHasValidTimestamps проверяет что временные метки квеста корректны
+// QuestHasValidTimestamps verifies that quest timestamps are correct
 func (a *QuestAssertions) QuestHasValidTimestamps(ctx context.Context, questID uuid.UUID) {
 	quest, err := a.storage.GetQuestByID(ctx, questID)
 	a.require.NoError(err, "Failed to get quest from database")
@@ -96,7 +96,7 @@ func (a *QuestAssertions) QuestHasValidTimestamps(ctx context.Context, questID u
 		"UpdatedAt should be after or equal to CreatedAt")
 }
 
-// EventExists проверяет что событие существует
+// EventExists verifies that event exists
 func (a *QuestAssertions) EventExists(ctx context.Context, eventType string, aggregateID uuid.UUID) {
 	events, err := a.eventStorage.GetEventsByAggregateID(ctx, aggregateID)
 	a.require.NoError(err, "Failed to get events")
@@ -112,21 +112,21 @@ func (a *QuestAssertions) EventExists(ctx context.Context, eventType string, agg
 	a.assert.True(found, "Event of type %s should exist for aggregate %s", eventType, aggregateID)
 }
 
-// EventCountEquals проверяет количество событий для агрегата
+// EventCountEquals verifies event count for aggregate
 func (a *QuestAssertions) EventCountEquals(ctx context.Context, aggregateID uuid.UUID, expectedCount int64) {
 	count, err := a.eventStorage.CountEventsByAggregateID(ctx, aggregateID)
 	a.require.NoError(err, "Failed to count events")
 	a.assert.Equal(expectedCount, count, "Event count should match expected")
 }
 
-// EventCountByTypeEquals проверяет количество событий по типу
+// EventCountByTypeEquals verifies event count by type
 func (a *QuestAssertions) EventCountByTypeEquals(ctx context.Context, eventType string, expectedCount int64) {
 	count, err := a.eventStorage.CountEventsByType(ctx, eventType)
 	a.require.NoError(err, "Failed to count events by type")
 	a.assert.Equal(expectedCount, count, "Event count by type should match expected")
 }
 
-// WaitForEvents ждет появления событий (для асинхронных операций)
+// WaitForEvents waits for events to appear (for asynchronous operations)
 func (a *QuestAssertions) WaitForEvents(ctx context.Context, aggregateID uuid.UUID, expectedCount int64, timeout time.Duration) {
 	deadline := time.Now().Add(timeout)
 
@@ -141,7 +141,7 @@ func (a *QuestAssertions) WaitForEvents(ctx context.Context, aggregateID uuid.UU
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	// Финальная проверка
+	// Final check
 	count, err := a.eventStorage.CountEventsByAggregateID(ctx, aggregateID)
 	a.require.NoError(err, "Failed to count events")
 	a.assert.GreaterOrEqual(count, expectedCount, "Should have at least %d events after timeout", expectedCount)

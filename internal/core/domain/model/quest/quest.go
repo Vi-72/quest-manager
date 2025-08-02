@@ -58,6 +58,10 @@ type Quest struct {
 	TargetLocationID    *uuid.UUID
 	ExecutionLocationID *uuid.UUID
 
+	// Optional addresses from location directory
+	TargetAddress    *string
+	ExecutionAddress *string
+
 	Equipment []string
 	Skills    []string
 	Status    Status

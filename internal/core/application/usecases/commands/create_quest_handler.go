@@ -55,8 +55,8 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 		_ = h.unitOfWork.Rollback()
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to save target location", err)
 	}
-	locID := targetLoc.ID()
-	targetLocationID = &locID
+	targetLocID := targetLoc.ID()
+	targetLocationID = &targetLocID
 
 	// Create or find execution location (can be the same as target)
 	var executionLoc *location.Location
@@ -79,8 +79,8 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 			_ = h.unitOfWork.Rollback()
 			return quest.Quest{}, errs.WrapInfrastructureError("failed to save execution location", err)
 		}
-		locID = executionLoc.ID()
-		executionLocationID = &locID
+		executionLocID := executionLoc.ID()
+		executionLocationID = &executionLocID
 	}
 
 	// Create quest

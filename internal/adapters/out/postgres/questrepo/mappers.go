@@ -62,7 +62,16 @@ func DtoToDomainWithAddress(dto QuestWithAddressDTO) (quest.Quest, error) {
 		return quest.Quest{}, err
 	}
 
-	return dtoToDomainCommon(dto.QuestDTO, id, targetCoord, execCoord)
+	q, err := dtoToDomainCommon(dto.QuestDTO, id, targetCoord, execCoord)
+	if err != nil {
+		return quest.Quest{}, err
+	}
+
+	// Add addresses from DTO
+	q.TargetAddress = dto.TargetAddress
+	q.ExecutionAddress = dto.ExecutionAddress
+
+	return q, nil
 }
 
 // DtoToDomain converts QuestDTO to domain model Quest.
