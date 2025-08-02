@@ -45,7 +45,9 @@ type TestDIContainer struct {
 }
 
 // NewTestDIContainer создает новый TestDIContainer для тестов
-func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
+// Если withTx == true, то все операции выполняются в рамках транзакции,
+// которая откатывается после завершения теста.
+func NewTestDIContainer(suiteContainer SuiteDIContainer, withTx bool) TestDIContainer {
 	// Создаем тестовую базу данных если ее нет
 	cmd.CreateDbIfNotExists("localhost", "5432", "postgres", "password", "quest_test", "disable")
 
@@ -58,9 +60,16 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	// Создание Unit of Work (он сам создает внутри себя quest и location репозитории)
 	unitOfWork, err := postgres.NewUnitOfWork(db)
 	suiteContainer.Require().NoError(err, "Failed to create unit of work")
+	tracker := unitOfWork.(ports.Tracker)
+
+	if withTx {
+		err = tracker.Begin(context.Background())
+		suiteContainer.Require().NoError(err, "Failed to begin transaction")
+		db = tracker.Db()
+	}
 
 	// Создание event репозитория отдельно
-	eventRepo, err := eventrepo.NewRepository(unitOfWork.(ports.Tracker), 5) // лимит горутин = 5
+	eventRepo, err := eventrepo.NewRepository(tracker, 5) // лимит горутин = 5
 	suiteContainer.Require().NoError(err, "Failed to create event repository")
 
 	// Получаем репозитории из UnitOfWork
@@ -124,6 +133,12 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 
 // TearDownTest очищает ресурсы после теста
 func (c *TestDIContainer) TearDownTest() {
+	if c.UnitOfWork != nil {
+		tracker := c.UnitOfWork.(ports.Tracker)
+		if tracker.InTx() {
+			_ = tracker.Rollback()
+		}
+	}
 	if c.CloseDB != nil {
 		c.CloseDB()
 	}

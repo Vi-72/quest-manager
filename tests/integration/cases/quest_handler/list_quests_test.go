@@ -9,6 +9,7 @@ import (
 )
 
 func (s *Suite) TestListQuests() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - create multiple quests
@@ -29,6 +30,7 @@ func (s *Suite) TestListQuests() {
 }
 
 func (s *Suite) TestListQuestsEmpty() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Act - get list of quests from empty database
@@ -40,6 +42,7 @@ func (s *Suite) TestListQuestsEmpty() {
 }
 
 func (s *Suite) TestListQuestsWithValidStatus() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - create multiple quests
@@ -68,6 +71,7 @@ func (s *Suite) TestListQuestsWithValidStatus() {
 }
 
 func (s *Suite) TestListQuestsWithEmptyStatus() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - create multiple quests
@@ -88,6 +92,7 @@ func (s *Suite) TestListQuestsWithEmptyStatus() {
 }
 
 func (s *Suite) TestListQuestsWithInvalidStatus() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - create quest to ensure database is not empty

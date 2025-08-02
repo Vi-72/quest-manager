@@ -14,6 +14,7 @@ type Suite struct {
 }
 
 func TestQuestOperations(t *testing.T) {
+	t.Parallel()
 	suite.Run(t, new(Suite))
 }
 

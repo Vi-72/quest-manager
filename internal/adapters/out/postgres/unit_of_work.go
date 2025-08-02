@@ -46,6 +46,9 @@ func (u *UnitOfWork) Tx() *gorm.DB {
 }
 
 func (u *UnitOfWork) Db() *gorm.DB {
+	if u.tx != nil {
+		return u.tx
+	}
 	return u.db
 }
 

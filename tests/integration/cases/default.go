@@ -21,29 +21,21 @@ func NewDefault(s suite.TestingSuite) DefaultSuite {
 
 // SetupSuite initializes resources before running all tests in the suite
 func (s *DefaultSuite) SetupSuite() {
-	s.TestDIContainer = NewTestDIContainer(s.SuiteDIContainer)
-
-	// Run migrations
-	cmd.MustAutoMigrate(s.TestDIContainer.DB)
+	container := NewTestDIContainer(s.SuiteDIContainer, false)
+	cmd.MustAutoMigrate(container.DB)
+	container.TearDownTest()
 }
 
 // TearDownSuite cleans up resources after completing all tests in the suite
-func (s *DefaultSuite) TearDownSuite() {
-	s.TestDIContainer.TearDownTest()
-}
+func (s *DefaultSuite) TearDownSuite() {}
 
 // SetupTest prepares state before each test
 func (s *DefaultSuite) SetupTest() {
-	// Clean database before each test
-	err := s.TestDIContainer.CleanupDatabase()
-	s.Require().NoError(err, "Failed to cleanup database")
-
-	// Recreate TestDIContainer for each test to avoid transaction issues
-	s.TestDIContainer = NewTestDIContainer(s.SuiteDIContainer)
+	s.TestDIContainer = NewTestDIContainer(s.SuiteDIContainer, true)
 }
 
 // TearDownTest cleans state after each test
 func (s *DefaultSuite) TearDownTest() {
-	// Wait for event processing completion
 	s.TestDIContainer.WaitForEventProcessing(0)
+	s.TestDIContainer.TearDownTest()
 }

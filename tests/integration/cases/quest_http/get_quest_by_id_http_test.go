@@ -15,6 +15,7 @@ import (
 )
 
 func (s *Suite) TestGetQuestByIDHTTP() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - create quest via handler (for setup)
@@ -41,6 +42,7 @@ func (s *Suite) TestGetQuestByIDHTTP() {
 }
 
 func (s *Suite) TestGetQuestByIDHTTPNotFound() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - use non-existent quest ID
@@ -59,6 +61,7 @@ func (s *Suite) TestGetQuestByIDHTTPNotFound() {
 }
 
 func (s *Suite) TestGetQuestByIDHTTPInvalidID() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Act - try to get quest with invalid UUID format via HTTP API
@@ -75,6 +78,7 @@ func (s *Suite) TestGetQuestByIDHTTPInvalidID() {
 }
 
 func (s *Suite) TestGetQuestByIDHTTPHasAddresses() {
+	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - create quest with explicit different locations via handler
