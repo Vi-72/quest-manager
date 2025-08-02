@@ -41,9 +41,9 @@ func (a *QuestListAssertions) QuestsHaveMinimumCount(quests []quest.Quest, expec
 
 // QuestsAllHaveStatus verifies that all quests in the list have the specified status
 func (a *QuestListAssertions) QuestsAllHaveStatus(quests []quest.Quest, expectedStatus quest.Status) {
-	for i, quest := range quests {
-		a.assert.Equal(expectedStatus, quest.Status,
-			"Quest at index %d should have status %s, but got %s", i, expectedStatus, quest.Status)
+	for i, q := range quests {
+		a.assert.Equal(expectedStatus, q.Status,
+			"Quest at index %d should have status %s, but got %s", i, expectedStatus, q.Status)
 	}
 }
 
