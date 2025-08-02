@@ -1,6 +1,7 @@
 package cases
 
 import (
+	"context"
 	"net/http"
 	"time"
 
@@ -11,6 +12,7 @@ import (
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/ports"
+	teststorage "quest-manager/tests/integration/core/storage"
 
 	"gorm.io/gorm"
 )
@@ -142,8 +144,38 @@ func (c *TestDIContainer) CleanupDatabase() error {
 	return nil
 }
 
-// WaitForEventProcessing ждет завершения обработки событий
-func (c *TestDIContainer) WaitForEventProcessing() {
-	// Ждем немного для завершения обработки асинхронных событий
-	time.Sleep(100 * time.Millisecond)
+// WaitForEventProcessing actively waits until the expected number of events is stored.
+// If expectedCount is 0, the method waits until the number of events stops changing.
+// Waiting is cancelled by a context with timeout to avoid hanging.
+func (c *TestDIContainer) WaitForEventProcessing(expectedCount int64) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+
+	storage := teststorage.NewEventStorage(c.DB)
+	ticker := time.NewTicker(10 * time.Millisecond)
+	defer ticker.Stop()
+
+	var lastCount int64 = -1
+
+	for {
+		select {
+		case <-ctx.Done():
+			c.Require().Fail("timeout waiting for events")
+			return
+		case <-ticker.C:
+			count, err := storage.CountEvents(ctx)
+			c.Require().NoError(err)
+
+			if expectedCount > 0 {
+				if count >= expectedCount {
+					return
+				}
+			} else {
+				if lastCount != -1 && count == lastCount {
+					return
+				}
+				lastCount = count
+			}
+		}
+	}
 }
