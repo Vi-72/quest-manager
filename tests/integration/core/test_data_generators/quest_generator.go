@@ -92,6 +92,10 @@ func RandomQuestData() *servers.CreateQuestRequest {
 	selectedEquipment := equipment[r.Intn(len(equipment))]
 	selectedSkills := skills[r.Intn(len(skills))]
 
+	// Generate addresses for locations
+	targetAddress := "Test Target Address: Moscow Center"
+	executionAddress := "Test Execution Address: Moscow Suburbs"
+
 	return &servers.CreateQuestRequest{
 		Title:           titles[r.Intn(len(titles))] + fmt.Sprintf(" #%d", r.Intn(1000)),
 		Description:     fmt.Sprintf("Generated test quest %d for integration testing", r.Intn(10000)),
@@ -99,14 +103,16 @@ func RandomQuestData() *servers.CreateQuestRequest {
 		Reward:          r.Intn(5) + 1,        // 1-5
 		DurationMinutes: (r.Intn(6) + 1) * 30, // 30, 60, 90, 120, 150, 180 minutes
 		TargetLocation: servers.Coordinate{
+			Address:   &targetAddress,
 			Latitude:  float32(55.7 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
 			Longitude: float32(37.6 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
 		},
 		ExecutionLocation: servers.Coordinate{
-			Latitude:  float32(65.7 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
-			Longitude: float32(47.6 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
+			Address:   &executionAddress,
+			Latitude:  float32(65.7 + (r.Float64()-0.5)*0.1), // Different area ±0.05°
+			Longitude: float32(47.6 + (r.Float64()-0.5)*0.1), // Different area ±0.05°
 		},
-		Equipment: &selectedEquipment,
-		Skills:    &selectedSkills,
+		Equipment: &selectedEquipment, // Pointer to slice
+		Skills:    &selectedSkills,    // Pointer to slice
 	}
 }
