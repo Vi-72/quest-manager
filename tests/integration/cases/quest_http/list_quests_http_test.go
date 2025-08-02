@@ -11,7 +11,6 @@ import (
 )
 
 func (s *Suite) TestListQuestsHTTP() {
-	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - create multiple quests via handler (for setup)
@@ -48,7 +47,6 @@ func (s *Suite) TestListQuestsHTTP() {
 }
 
 func (s *Suite) TestListQuestsHTTPEmpty() {
-	s.T().Parallel()
 	ctx := context.Background()
 
 	// Act - get list of quests from empty database via HTTP API
@@ -68,7 +66,6 @@ func (s *Suite) TestListQuestsHTTPEmpty() {
 }
 
 func (s *Suite) TestListQuestsHTTPWithValidStatus() {
-	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - create multiple quests via handler
@@ -117,7 +114,6 @@ func (s *Suite) TestListQuestsHTTPWithValidStatus() {
 }
 
 func (s *Suite) TestListQuestsHTTPWithEmptyStatus() {
-	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - create multiple quests via handler
@@ -154,7 +150,6 @@ func (s *Suite) TestListQuestsHTTPWithEmptyStatus() {
 }
 
 func (s *Suite) TestListQuestsHTTPWithInvalidStatus() {
-	s.T().Parallel()
 	ctx := context.Background()
 
 	// Arrange - create quest to ensure database is not empty

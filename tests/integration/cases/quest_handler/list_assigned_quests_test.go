@@ -9,7 +9,6 @@ import (
 )
 
 func (s *Suite) TestListAssignedQuests() {
-	s.T().Parallel()
 	ctx := context.Background()
 
 	// Pre-condition - create multiple quests and assign them to a specific user
@@ -41,7 +40,6 @@ func (s *Suite) TestListAssignedQuests() {
 }
 
 func (s *Suite) TestListAssignedQuestsEmpty() {
-	s.T().Parallel()
 	ctx := context.Background()
 
 	// Pre-condition - use a user ID that has no assigned quests
