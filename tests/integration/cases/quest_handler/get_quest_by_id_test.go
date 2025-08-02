@@ -12,7 +12,6 @@ import (
 )
 
 func (s *Suite) TestGetQuestByID() {
-	s.T().Parallel()
 	ctx := context.Background()
 
 	// Pre-condition - create quest
@@ -32,7 +31,6 @@ func (s *Suite) TestGetQuestByID() {
 }
 
 func (s *Suite) TestGetQuestByIDNotFound() {
-	s.T().Parallel()
 	ctx := context.Background()
 
 	// Pre-condition - use non-existent quest ID
@@ -47,7 +45,6 @@ func (s *Suite) TestGetQuestByIDNotFound() {
 }
 
 func (s *Suite) TestGetQuestByIDHasAddresses() {
-	s.T().Parallel()
 	ctx := context.Background()
 
 	// Pre-condition - create quest with explicit different locations
