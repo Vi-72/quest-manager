@@ -18,7 +18,6 @@ func (s *Suite) TestListAssignedQuests() {
 	s.Require().NoError(err)
 
 	// Assign all created quests to the test user
-	var assignedQuests []quest.Quest
 	for _, q := range createdQuests {
 		_, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, q.ID(), testUserID)
 		s.Require().NoError(err)
@@ -31,7 +30,7 @@ func (s *Suite) TestListAssignedQuests() {
 	s.Require().NoError(err)
 	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 	listAssertions.QuestsHaveMinimumCount(quests, expectedCount)
-	listAssertions.QuestsContainAllCreated(assignedQuests, quests)
+	listAssertions.QuestsContainAllCreated(createdQuests, quests)
 
 	// Verify all returned quests are assigned to the correct user
 	for _, q := range quests {
