@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"quest-manager/cmd"
-	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
 
 	"quest-manager/internal/core/application/usecases/commands"
@@ -45,20 +44,12 @@ type TestDIContainer struct {
 }
 
 // NewTestDIContainer создает новый TestDIContainer для тестов
-func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
-	// Создаем тестовую базу данных если ее нет
-	cmd.CreateDbIfNotExists("localhost", "5432", "postgres", "password", "quest_test", "disable")
-
-	// Подключение к тестовой БД
-	databaseURL := "postgres://postgres:password@localhost:5432/quest_test?sslmode=disable"
-
-	db, sqlDB, err := cmd.MustConnectDB(databaseURL)
-	suiteContainer.Require().NoError(err, "Failed to connect to test database")
-
-	// Создание Unit of Work (он сам создает внутри себя quest и location репозитории)
-	unitOfWork, err := postgres.NewUnitOfWork(db)
-	suiteContainer.Require().NoError(err, "Failed to create unit of work")
-
+func NewTestDIContainer(
+	suiteContainer SuiteDIContainer,
+	db *gorm.DB,
+	unitOfWork ports.UnitOfWork,
+	closeDB func(),
+) TestDIContainer {
 	// Создание event репозитория отдельно
 	eventRepo, err := eventrepo.NewRepository(unitOfWork.(ports.Tracker), 5) // лимит горутин = 5
 	suiteContainer.Require().NoError(err, "Failed to create event repository")
@@ -97,13 +88,8 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	return TestDIContainer{
 		SuiteDIContainer: suiteContainer,
 		DB:               db,
-		CloseDB: func() {
-			err := sqlDB.Close()
-			if err != nil {
-				return
-			}
-		},
-		UnitOfWork: unitOfWork,
+		CloseDB:          closeDB,
+		UnitOfWork:       unitOfWork,
 
 		QuestRepository:    questRepo,
 		LocationRepository: locationRepo,
