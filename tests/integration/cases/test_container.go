@@ -95,8 +95,13 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	return TestDIContainer{
 		SuiteDIContainer: suiteContainer,
 		DB:               db,
-		CloseDB:          func() { sqlDB.Close() },
-		UnitOfWork:       unitOfWork,
+		CloseDB: func() {
+			err := sqlDB.Close()
+			if err != nil {
+				return
+			}
+		},
+		UnitOfWork: unitOfWork,
 
 		QuestRepository:    questRepo,
 		LocationRepository: locationRepo,
