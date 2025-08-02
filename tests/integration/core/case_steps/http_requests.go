@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -123,5 +124,14 @@ func ListAssignedQuestsHTTPRequest(userID string) HTTPRequest {
 	return HTTPRequest{
 		Method: "GET",
 		URL:    "/api/v1/quests/assigned?user_id=" + userID,
+	}
+}
+
+// SearchQuestsByRadiusHTTPRequest создает HTTP запрос для поиска квестов по радиусу
+func SearchQuestsByRadiusHTTPRequest(lat, lon, radiusKm float64) HTTPRequest {
+	url := fmt.Sprintf("/api/v1/quests/search-radius?lat=%f&lon=%f&radius_km=%f", lat, lon, radiusKm)
+	return HTTPRequest{
+		Method: "GET",
+		URL:    url,
 	}
 }

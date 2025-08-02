@@ -2,6 +2,7 @@ package casesteps
 
 import (
 	"context"
+	"quest-manager/internal/core/domain/model/kernel"
 
 	"github.com/google/uuid"
 
@@ -34,4 +35,14 @@ func ListAssignedQuestsStep(
 	userID string,
 ) ([]quest.Quest, error) {
 	return handler.Handle(ctx, userID)
+}
+
+// SearchQuestsByRadiusStep searches for quests within a radius from center coordinates
+func SearchQuestsByRadiusStep(
+	ctx context.Context,
+	handler queries.SearchQuestsByRadiusQueryHandler,
+	center kernel.GeoCoordinate,
+	radiusKm float64,
+) ([]quest.Quest, error) {
+	return handler.Handle(ctx, center, radiusKm)
 }

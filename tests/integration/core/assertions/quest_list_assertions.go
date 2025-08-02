@@ -58,3 +58,15 @@ func (a *QuestListAssertions) QuestWithIDExists(quests []quest.Quest, questID st
 	}
 	a.assert.True(found, "Quest with ID %s should be present in the list", questID)
 }
+
+// QuestWithIDNotExists verifies that a quest with the specified ID is NOT present in the list
+func (a *QuestListAssertions) QuestWithIDNotExists(quests []quest.Quest, questID string) {
+	found := false
+	for _, q := range quests {
+		if q.ID().String() == questID {
+			found = true
+			break
+		}
+	}
+	a.assert.False(found, "Quest with ID %s should NOT be present in the list", questID)
+}
