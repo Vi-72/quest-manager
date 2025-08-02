@@ -22,8 +22,8 @@ func NewQuestListAssertions(a *assert.Assertions) *QuestListAssertions {
 func (a *QuestListAssertions) QuestsContainAllCreated(createdQuests []quest.Quest, retrievedQuests []quest.Quest) {
 	// Create map from retrieved quest IDs for fast lookup
 	retrievedQuestIDs := make(map[string]bool)
-	for _, quest := range retrievedQuests {
-		retrievedQuestIDs[quest.ID().String()] = true
+	for _, q := range retrievedQuests {
+		retrievedQuestIDs[q.ID().String()] = true
 	}
 
 	// Verify that each created quest is present in the retrieved list

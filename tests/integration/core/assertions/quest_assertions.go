@@ -32,10 +32,10 @@ func NewQuestAssertions(a *assert.Assertions, r *require.Assertions, s *storage.
 
 // QuestExists verifies that quest exists in database
 func (a *QuestAssertions) QuestExists(ctx context.Context, questID uuid.UUID) {
-	quest, err := a.storage.GetQuestByID(ctx, questID)
+	q, err := a.storage.GetQuestByID(ctx, questID)
 	a.require.NoError(err, "Quest should exist in database")
-	a.require.NotNil(quest, "Quest should not be nil")
-	a.assert.Equal(questID.String(), quest.ID, "Quest ID should match")
+	a.require.NotNil(q, "Quest should not be nil")
+	a.assert.Equal(questID.String(), q.ID, "Quest ID should match")
 }
 
 // QuestNotExists verifies that quest does not exist in database
@@ -66,9 +66,9 @@ func (a *QuestAssertions) QuestHasAssignee(ctx context.Context, questID uuid.UUI
 
 // QuestHasCreator verifies quest creator
 func (a *QuestAssertions) QuestHasCreator(ctx context.Context, questID uuid.UUID, expectedCreator string) {
-	quest, err := a.storage.GetQuestByID(ctx, questID)
+	q, err := a.storage.GetQuestByID(ctx, questID)
 	a.require.NoError(err, "Failed to get quest from database")
-	a.assert.Equal(expectedCreator, quest.Creator, "Quest creator should match expected")
+	a.assert.Equal(expectedCreator, q.Creator, "Quest creator should match expected")
 }
 
 // QuestCountEquals verifies total quest count
@@ -87,12 +87,12 @@ func (a *QuestAssertions) QuestCountByStatusEquals(ctx context.Context, status q
 
 // QuestHasValidTimestamps verifies that quest timestamps are correct
 func (a *QuestAssertions) QuestHasValidTimestamps(ctx context.Context, questID uuid.UUID) {
-	quest, err := a.storage.GetQuestByID(ctx, questID)
+	q, err := a.storage.GetQuestByID(ctx, questID)
 	a.require.NoError(err, "Failed to get quest from database")
 
-	a.assert.False(quest.CreatedAt.IsZero(), "CreatedAt should not be zero")
-	a.assert.False(quest.UpdatedAt.IsZero(), "UpdatedAt should not be zero")
-	a.assert.True(quest.UpdatedAt.After(quest.CreatedAt) || quest.UpdatedAt.Equal(quest.CreatedAt),
+	a.assert.False(q.CreatedAt.IsZero(), "CreatedAt should not be zero")
+	a.assert.False(q.UpdatedAt.IsZero(), "UpdatedAt should not be zero")
+	a.assert.True(q.UpdatedAt.After(q.CreatedAt) || q.UpdatedAt.Equal(q.CreatedAt),
 		"UpdatedAt should be after or equal to CreatedAt")
 }
 
