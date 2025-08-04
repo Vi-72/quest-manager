@@ -7,6 +7,7 @@ import (
 
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/generated/servers"
+	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 )
 
@@ -23,13 +24,8 @@ func (s *Suite) TestListQuestsHTTP() {
 	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
 
 	// Assert
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusOK, listResp.StatusCode)
-
-	// Parse response
-	var quests []servers.Quest
-	err = json.Unmarshal([]byte(listResp.Body), &quests)
-	s.Require().NoError(err)
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	quests := httpAssertions.QuestHTTPListSuccessfully(listResp, err)
 
 	// Verify response
 	s.Assert().GreaterOrEqual(len(quests), expectedCount, "Should return at least %d quests", expectedCount)

@@ -24,7 +24,7 @@ type HTTPRequest struct {
 
 func (s *Suite) TestCreateQuestHTTP() {
 	ctx := context.Background()
-	creationAssertions := assertions.NewQuestCreationAssertions(s.Assert())
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Pre-condition - prepare quest data
 	questRequest := testdatagenerators.RandomQuestData()
@@ -34,8 +34,8 @@ func (s *Suite) TestCreateQuestHTTP() {
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 
 	// Assert
-	createdQuest := creationAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
-	creationAssertions.QuestArraysNotNull(createdQuest)
+	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	httpAssertions.QuestArraysNotNull(createdQuest)
 
 	// Verify quest data matches request
 	s.Assert().Equal(questRequest.Title, createdQuest.Title)
@@ -47,7 +47,7 @@ func (s *Suite) TestCreateQuestHTTP() {
 
 func (s *Suite) TestCreateQuestHTTPWithEmptyArrays() {
 	ctx := context.Background()
-	creationAssertions := assertions.NewQuestCreationAssertions(s.Assert())
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Pre-condition - prepare quest data with empty arrays
 	questRequest := &servers.CreateQuestRequest{
@@ -73,8 +73,8 @@ func (s *Suite) TestCreateQuestHTTPWithEmptyArrays() {
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 
 	// Assert
-	createdQuest := creationAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
-	creationAssertions.QuestArraysNotNull(createdQuest)
+	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	httpAssertions.QuestArraysNotNull(createdQuest)
 
 	// Specifically verify empty arrays are returned as [] not null
 	s.Assert().Len(*createdQuest.Equipment, 0, "Equipment should be empty array")
@@ -91,7 +91,7 @@ func (s *Suite) TestCreateQuestHTTPWithEmptyArrays() {
 
 func (s *Suite) TestCreateQuestHTTPMissingRequiredFields() {
 	ctx := context.Background()
-	creationAssertions := assertions.NewQuestCreationAssertions(s.Assert())
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Act - send request with empty JSON body to test ValidateBody function
 	emptyBodyRequest := map[string]interface{}{} // Empty object
@@ -100,7 +100,7 @@ func (s *Suite) TestCreateQuestHTTPMissingRequiredFields() {
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 
 	// Assert - API layer should reject incomplete body
-	creationAssertions.QuestHTTPValidationError(createResp, err, "")
+	httpAssertions.QuestHTTPValidationError(createResp, err, "")
 }
 
 func (s *Suite) TestCreateQuestHTTPEmptyStringFields() {
@@ -153,7 +153,7 @@ func (s *Suite) TestCreateQuestHTTPEmptyStringFields() {
 		},
 	}
 
-	creationAssertions := assertions.NewQuestCreationAssertions(s.Assert())
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
@@ -162,14 +162,14 @@ func (s *Suite) TestCreateQuestHTTPEmptyStringFields() {
 			createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 
 			// Assert - API layer should reject empty required fields
-			creationAssertions.QuestHTTPValidationError(createResp, err, tc.field)
+			httpAssertions.QuestHTTPValidationError(createResp, err, tc.field)
 		})
 	}
 }
 
 func (s *Suite) TestCreateQuestHTTPNegativeNumbers() {
 	ctx := context.Background()
-	creationAssertions := assertions.NewQuestCreationAssertions(s.Assert())
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Test cases with negative numbers (API layer technical validation)
 	testCases := []struct {
@@ -238,14 +238,14 @@ func (s *Suite) TestCreateQuestHTTPNegativeNumbers() {
 			createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 
 			// Assert - API layer should reject negative numbers
-			creationAssertions.QuestHTTPValidationError(createResp, err, tc.field)
+			httpAssertions.QuestHTTPValidationError(createResp, err, tc.field)
 		})
 	}
 }
 
 func (s *Suite) TestCreateQuestHTTPWithInvalidCoordinates() {
 	ctx := context.Background()
-	creationAssertions := assertions.NewQuestCreationAssertions(s.Assert())
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Test cases with invalid coordinates (API layer technical validation)
 	testCases := []struct {
@@ -309,7 +309,7 @@ func (s *Suite) TestCreateQuestHTTPWithInvalidCoordinates() {
 			createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 
 			// Assert - API layer should reject invalid coordinates
-			creationAssertions.QuestHTTPValidationError(createResp, err, "")
+			httpAssertions.QuestHTTPValidationError(createResp, err, "")
 			// API layer validates at field level (target_location/execution_location), not coordinate component level
 			s.Assert().True(
 				strings.Contains(createResp.Body, "target_location") || strings.Contains(createResp.Body, "execution_location"),
@@ -346,7 +346,7 @@ func (s *Suite) TestCreateQuestHTTPMalformedJSON() {
 
 func (s *Suite) TestCreateQuestHTTPPersistence() {
 	ctx := context.Background()
-	creationAssertions := assertions.NewQuestCreationAssertions(s.Assert())
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Pre-condition - prepare quest data
 	questRequest := testdatagenerators.RandomQuestData()
@@ -356,7 +356,7 @@ func (s *Suite) TestCreateQuestHTTPPersistence() {
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 
 	// Assert creation
-	createdQuest := creationAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
 
 	// Verify quest is persisted by retrieving it via HTTP API
 	getReq := casesteps.GetQuestHTTPRequest(createdQuest.Id)
@@ -411,9 +411,9 @@ func (s *Suite) TestCreateQuestHTTPWithLocationAddresses() {
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 
 	// Assert
-	creationAssertions := assertions.NewQuestCreationAssertions(s.Assert())
-	createdQuest := creationAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
-	creationAssertions.QuestArraysNotNull(createdQuest)
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	httpAssertions.QuestArraysNotNull(createdQuest)
 
 	// Verify HTTP response structure matches domain expectations
 	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
@@ -455,8 +455,8 @@ func (s *Suite) TestCreateQuestHTTPWithoutAddresses() {
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 
 	// Assert
-	creationAssertions := assertions.NewQuestCreationAssertions(s.Assert())
-	createdQuest := creationAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
 
 	// Verify quest was created successfully without addresses
 	s.Assert().Equal(questRequest.Title, createdQuest.Title)
@@ -502,8 +502,8 @@ func (s *Suite) TestCreateQuestHTTPWithSameLocations() {
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 
 	// Assert
-	creationAssertions := assertions.NewQuestCreationAssertions(s.Assert())
-	createdQuest := creationAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
 
 	// Verify both locations are identical
 	s.Assert().Equal(createdQuest.TargetLocation.Latitude, createdQuest.ExecutionLocation.Latitude)

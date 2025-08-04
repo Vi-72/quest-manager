@@ -2,13 +2,11 @@ package quest_http
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"github.com/google/uuid"
 
 	"quest-manager/internal/core/domain/model/kernel"
-	"quest-manager/internal/generated/servers"
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
@@ -26,13 +24,8 @@ func (s *Suite) TestGetQuestByIDHTTP() {
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusOK, getResp.StatusCode)
-
-	// Parse response
-	var foundQuest servers.Quest
-	err = json.Unmarshal([]byte(getResp.Body), &foundQuest)
-	s.Require().NoError(err)
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	foundQuest := httpAssertions.QuestHTTPGetSuccessfully(getResp, err)
 
 	// Verify quest data matches created quest
 	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
@@ -51,11 +44,8 @@ func (s *Suite) TestGetQuestByIDHTTPNotFound() {
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert - should return 404 error
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusNotFound, getResp.StatusCode, "Should return 404 for non-existent quest ID")
-
-	// Verify error message
-	s.Assert().Contains(getResp.Body, "not found", "Error message should indicate quest was not found")
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	httpAssertions.QuestHTTPErrorResponse(getResp, err, http.StatusNotFound, "not found")
 }
 
 func (s *Suite) TestGetQuestByIDHTTPInvalidID() {
@@ -95,13 +85,8 @@ func (s *Suite) TestGetQuestByIDHTTPHasAddresses() {
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusOK, getResp.StatusCode)
-
-	// Parse response
-	var foundQuest servers.Quest
-	err = json.Unmarshal([]byte(getResp.Body), &foundQuest)
-	s.Require().NoError(err)
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	foundQuest := httpAssertions.QuestHTTPGetSuccessfully(getResp, err)
 
 	// Verify quest data matches created quest
 	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
@@ -124,13 +109,8 @@ func (s *Suite) TestGetQuestByIDHTTPEmptyArrays() {
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusOK, getResp.StatusCode)
-
-	// Parse response
-	var foundQuest servers.Quest
-	err = json.Unmarshal([]byte(getResp.Body), &foundQuest)
-	s.Require().NoError(err)
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	foundQuest := httpAssertions.QuestHTTPGetSuccessfully(getResp, err)
 
 	// Verify quest data matches created quest
 	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())

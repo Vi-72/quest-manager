@@ -2,11 +2,10 @@ package quest_http
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
 	"quest-manager/internal/core/domain/model/kernel"
-	"quest-manager/internal/generated/servers"
+	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
 )
@@ -44,13 +43,8 @@ func (s *Suite) TestSearchQuestsByRadiusHTTP() {
 	searchResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, searchReq)
 
 	// Assert
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusOK, searchResp.StatusCode)
-
-	// Parse response
-	var foundQuests []servers.Quest
-	err = json.Unmarshal([]byte(searchResp.Body), &foundQuests)
-	s.Require().NoError(err)
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	foundQuests := httpAssertions.QuestHTTPListSuccessfully(searchResp, err)
 
 	// Should find the near quest but not the far quest
 	nearQuestFound := false
@@ -87,13 +81,8 @@ func (s *Suite) TestSearchQuestsByRadiusHTTPEmpty() {
 	searchResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, searchReq)
 
 	// Assert
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusOK, searchResp.StatusCode)
-
-	// Parse response
-	var foundQuests []servers.Quest
-	err = json.Unmarshal([]byte(searchResp.Body), &foundQuests)
-	s.Require().NoError(err)
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	foundQuests := httpAssertions.QuestHTTPListSuccessfully(searchResp, err)
 
 	s.Assert().Len(foundQuests, 0, "Should return empty list for remote location")
 }
