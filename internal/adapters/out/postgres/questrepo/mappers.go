@@ -100,11 +100,15 @@ func dtoToDomainCommon(dto QuestDTO, id uuid.UUID, targetCoord, execCoord kernel
 	var equipment []string
 	if dto.Equipment != "" {
 		equipment = strings.Split(dto.Equipment, ",")
+	} else {
+		equipment = []string{} // Нормализация: всегда возвращаем [], а не nil
 	}
 
 	var skills []string
 	if dto.Skills != "" {
 		skills = strings.Split(dto.Skills, ",")
+	} else {
+		skills = []string{} // Нормализация: всегда возвращаем [], а не nil
 	}
 
 	q := quest.Quest{

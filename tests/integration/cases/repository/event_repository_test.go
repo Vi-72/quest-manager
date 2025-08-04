@@ -39,6 +39,7 @@ func (s *Suite) TestEventRepository_Publish_SingleEvent() {
 	s.Equal("test.event", storedEvent.EventType)
 	s.Equal(aggregateID.String(), storedEvent.AggregateID)
 	s.Contains(storedEvent.Data, "test event data")
+	s.NotEmpty(storedEvent.ID)
 }
 
 func (s *Suite) TestEventRepository_Publish_MultipleEvents() {
@@ -70,10 +71,14 @@ func (s *Suite) TestEventRepository_Publish_MultipleEvents() {
 	s.Require().NoError(err)
 	s.Len(allEvents, 3)
 
-	// Verify events are in correct order
-	s.Equal("quest.created", allEvents[0].EventType)
-	s.Equal("quest.status_changed", allEvents[1].EventType)
-	s.Equal("quest.assigned", allEvents[2].EventType)
+	// Verify events are in correct order (только если события действительно сохранились)
+	if len(allEvents) >= 3 {
+		s.Equal("quest.created", allEvents[0].EventType)
+		s.Equal("quest.status_changed", allEvents[1].EventType)
+		s.Equal("quest.assigned", allEvents[2].EventType)
+	} else {
+		s.Fail("Not enough events saved", "Expected 3 events, got %d", len(allEvents))
+	}
 }
 
 func (s *Suite) TestEventRepository_Publish_EmptyEvents() {
@@ -252,8 +257,11 @@ func (s *Suite) TestEventRepository_PostgreSQL_ConcurrentEventPublishing() {
 	for _, event := range events {
 		aggregateIDs[event.AggregateID] = true
 	}
-	s.True(aggregateIDs[aggregateID1.String()])
-	s.True(aggregateIDs[aggregateID2.String()])
+
+	// Более информативные проверки
+	s.Contains(aggregateIDs, aggregateID1.String(), "Should find first aggregate ID")
+	s.Contains(aggregateIDs, aggregateID2.String(), "Should find second aggregate ID")
+	s.Len(aggregateIDs, 2, "Should have exactly 2 different aggregate IDs")
 }
 
 // ==========================================

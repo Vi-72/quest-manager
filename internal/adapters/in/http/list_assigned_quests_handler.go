@@ -22,7 +22,7 @@ func (a *ApiHandler) ListAssignedQuests(ctx context.Context, request servers.Lis
 		return nil, err
 	}
 
-	var apiQuests []servers.Quest
+	apiQuests := make([]servers.Quest, 0)
 	for _, q := range quests {
 		apiQuests = append(apiQuests, QuestToAPI(q))
 	}

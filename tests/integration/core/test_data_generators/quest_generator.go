@@ -66,6 +66,28 @@ func DefaultQuestData() QuestTestData {
 	}
 }
 
+// EmptyArraysQuestData возвращает данные для квеста с пустыми массивами Equipment и Skills
+func EmptyArraysQuestData() QuestTestData {
+	return QuestTestData{
+		Title:           "Empty Arrays Test Quest",
+		Description:     "A test quest with empty equipment and skills arrays",
+		Difficulty:      "easy",
+		Reward:          2,
+		DurationMinutes: 30,
+		Creator:         "test-creator",
+		TargetLocation: kernel.GeoCoordinate{
+			Lat: 25.7558,
+			Lon: 37.6176,
+		},
+		ExecutionLocation: kernel.GeoCoordinate{
+			Lat: 55.7539,
+			Lon: 77.4802,
+		},
+		Equipment: []string{}, // Empty array
+		Skills:    []string{}, // Empty array
+	}
+}
+
 // RandomQuestData генерирует случайные данные для квеста
 func RandomQuestData() *servers.CreateQuestRequest {
 	r := questRand

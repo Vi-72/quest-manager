@@ -58,6 +58,12 @@ func (a *QuestSingleAssertions) QuestHTTPMatchesDomain(httpQuest servers.Quest, 
 	a.assert.Equal(domainQuest.DurationMinutes, httpQuest.DurationMinutes, "Quest duration should match")
 	a.assert.Equal(domainQuest.Creator, httpQuest.Creator, "Quest creator should match")
 	a.assert.Equal(string(domainQuest.Status), string(httpQuest.Status), "Quest status should match")
+
+	// Equipment and Skills should always be non-nil arrays (empty [] instead of null)
+	a.assert.NotNil(httpQuest.Equipment, "Equipment should never be null, should be [] when empty")
+	a.assert.NotNil(httpQuest.Skills, "Skills should never be null, should be [] when empty")
+	a.assert.Equal(domainQuest.Equipment, *httpQuest.Equipment, "Equipment should match")
+	a.assert.Equal(domainQuest.Skills, *httpQuest.Skills, "Skills should match")
 }
 
 // QuestHTTPHasValidLocationData verifies that HTTP quest has valid location IDs and coordinates

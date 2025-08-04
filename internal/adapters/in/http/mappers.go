@@ -13,16 +13,10 @@ func QuestToAPI(q quest.Quest) servers.Quest {
 	targetLocation := validations.ConvertKernelCoordinateToAPI(q.TargetLocation, nil)
 	executionLocation := validations.ConvertKernelCoordinateToAPI(q.ExecutionLocation, nil)
 
-	// Convert optional fields to pointers
-	var equipment *[]string
-	if len(q.Equipment) > 0 {
-		equipment = &q.Equipment
-	}
+	// Convert optional fields to pointers, ensure empty arrays instead of null
+	equipment := &q.Equipment
 
-	var skills *[]string
-	if len(q.Skills) > 0 {
-		skills = &q.Skills
-	}
+	skills := &q.Skills
 
 	// Convert location IDs to strings if present
 	var targetLocationId *string

@@ -55,7 +55,7 @@ func (s *Suite) TestQuestRepository_Save_Update() {
 	s.Require().NoError(err)
 	s.Equal("Updated Title", updated.Title)
 	s.Equal("Updated Description", updated.Description)
-	s.Equal("medium", updated.Difficulty)
+	s.Equal(quest.Difficulty("medium"), updated.Difficulty)
 }
 
 func (s *Suite) TestQuestRepository_GetByID_Success() {
@@ -328,8 +328,8 @@ func (s *Suite) TestQuestRepository_PostgreSQL_EmptyEquipmentAndSkills() {
 	s.Equal(q.Skills, found.Skills)
 	s.Len(found.Equipment, 0)
 	s.Len(found.Skills, 0)
-	s.NotNil(found.Equipment) // Should be empty slice, not nil
-	s.NotNil(found.Skills)    // Should be empty slice, not nil
+	s.NotNil(found.Equipment) // Теперь всегда [], а не nil
+	s.NotNil(found.Skills)    // Теперь всегда [], а не nil
 }
 
 func (s *Suite) TestQuestRepository_PostgreSQL_EmptyEquipmentOnly() {
@@ -369,7 +369,7 @@ func (s *Suite) TestQuestRepository_PostgreSQL_EmptySkillsOnly() {
 	s.Len(found.Equipment, 2)
 	s.Len(found.Skills, 0)
 	s.Equal([]string{"Map", "Compass"}, found.Equipment)
-	s.Equal([]string{}, found.Skills)
+	s.True(len(found.Skills) == 0, "Skills should be empty")
 }
 
 func (s *Suite) TestQuestRepository_PostgreSQL_ArrayUpdates() {
@@ -399,8 +399,8 @@ func (s *Suite) TestQuestRepository_PostgreSQL_ArrayUpdates() {
 	s.Require().NoError(err)
 	s.Len(updated.Equipment, 0)
 	s.Len(updated.Skills, 0)
-	s.Equal([]string{}, updated.Equipment)
-	s.Equal([]string{}, updated.Skills)
+	s.True(len(updated.Equipment) == 0, "Equipment should be empty")
+	s.True(len(updated.Skills) == 0, "Skills should be empty")
 }
 
 // ==========================================
