@@ -17,7 +17,7 @@ import (
 func (s *Suite) TestGetQuestByIDHTTP() {
 	ctx := context.Background()
 
-	// Arrange - create quest via handler (for setup)
+	// Pre-condition - create quest via handler (for setup)
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
 	s.Require().NoError(err)
 
@@ -43,7 +43,7 @@ func (s *Suite) TestGetQuestByIDHTTP() {
 func (s *Suite) TestGetQuestByIDHTTPNotFound() {
 	ctx := context.Background()
 
-	// Arrange - use non-existent quest ID
+	// Pre-condition - use non-existent quest ID
 	nonExistentID := uuid.New().String()
 
 	// Act - try to get quest by non-existent ID via HTTP API
@@ -77,7 +77,7 @@ func (s *Suite) TestGetQuestByIDHTTPInvalidID() {
 func (s *Suite) TestGetQuestByIDHTTPHasAddresses() {
 	ctx := context.Background()
 
-	// Arrange - create quest with explicit different locations via handler
+	// Pre-condition - create quest with explicit different locations via handler
 	targetLocation := testdatagenerators.DefaultTestCoordinate()
 	executionLocation := kernel.GeoCoordinate{
 		Lat: targetLocation.Latitude() + 0.1,  // Much more significant difference

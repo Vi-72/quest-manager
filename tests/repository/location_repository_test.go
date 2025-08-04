@@ -21,7 +21,7 @@ func (suite *LocationRepositoryTestSuite) SetupTest() {
 func (suite *LocationRepositoryTestSuite) TestSave_Success() {
 	ctx := context.Background()
 
-	// Arrange - create a valid location
+	// Pre-condition - create a valid location
 	coordinate := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
 	address := "Test Address, Moscow"
 
@@ -43,7 +43,7 @@ func (suite *LocationRepositoryTestSuite) TestSave_Success() {
 func (suite *LocationRepositoryTestSuite) TestSave_Update() {
 	ctx := context.Background()
 
-	// Arrange - save initial location
+	// Pre-condition - save initial location
 	coordinate := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
 	address := "Original Address"
 
@@ -76,7 +76,7 @@ func (suite *LocationRepositoryTestSuite) TestSave_Update() {
 func (suite *LocationRepositoryTestSuite) TestSave_WithNilAddress() {
 	ctx := context.Background()
 
-	// Arrange - create location without address
+	// Pre-condition - create location without address
 	coordinate := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
 
 	loc, err := location.NewLocation(coordinate, nil)
@@ -98,7 +98,7 @@ func (suite *LocationRepositoryTestSuite) TestSave_WithNilAddress() {
 func (suite *LocationRepositoryTestSuite) TestGetByID_Success() {
 	ctx := context.Background()
 
-	// Arrange - save a location
+	// Pre-condition - save a location
 	coordinate := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
 	address := "Test Address"
 
@@ -131,7 +131,7 @@ func (suite *LocationRepositoryTestSuite) TestGetByID_NotFound() {
 func (suite *LocationRepositoryTestSuite) TestFindAll_Success() {
 	ctx := context.Background()
 
-	// Arrange - save multiple locations
+	// Pre-condition - save multiple locations
 	coord1 := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
 	coord2 := kernel.GeoCoordinate{Lat: 59.9311, Lon: 30.3609}
 
@@ -178,7 +178,7 @@ func (suite *LocationRepositoryTestSuite) TestFindAll_Empty() {
 func (suite *LocationRepositoryTestSuite) TestFindByBoundingBox_Success() {
 	ctx := context.Background()
 
-	// Arrange - create locations at different coordinates
+	// Pre-condition - create locations at different coordinates
 	moscowCenter := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
 	moscowSuburb := kernel.GeoCoordinate{Lat: 55.8000, Lon: 37.7000}
 	stPetersburg := kernel.GeoCoordinate{Lat: 59.9311, Lon: 30.3609}

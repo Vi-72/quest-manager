@@ -21,7 +21,7 @@ func (suite *QuestRepositoryTestSuite) SetupTest() {
 func (suite *QuestRepositoryTestSuite) TestSave_Success() {
 	ctx := context.Background()
 
-	// Arrange - create a valid quest
+	// Pre-condition - create a valid quest
 	q := suite.createTestQuest("Test Quest", "easy")
 
 	// Act - save quest
@@ -39,7 +39,7 @@ func (suite *QuestRepositoryTestSuite) TestSave_Success() {
 func (suite *QuestRepositoryTestSuite) TestSave_Update() {
 	ctx := context.Background()
 
-	// Arrange - save initial quest
+	// Pre-condition - save initial quest
 	q := suite.createTestQuest("Original Title", "easy")
 	err := suite.questRepo.Save(ctx, q)
 	suite.Require().NoError(err)
@@ -64,7 +64,7 @@ func (suite *QuestRepositoryTestSuite) TestSave_Update() {
 func (suite *QuestRepositoryTestSuite) TestGetByID_Success() {
 	ctx := context.Background()
 
-	// Arrange - save a quest
+	// Pre-condition - save a quest
 	q := suite.createTestQuest("Test Quest", "medium")
 	err := suite.questRepo.Save(ctx, q)
 	suite.Require().NoError(err)
@@ -92,7 +92,7 @@ func (suite *QuestRepositoryTestSuite) TestGetByID_NotFound() {
 func (suite *QuestRepositoryTestSuite) TestFindAll_Success() {
 	ctx := context.Background()
 
-	// Arrange - save multiple quests
+	// Pre-condition - save multiple quests
 	quest1 := suite.createTestQuest("Quest 1", "easy")
 	quest2 := suite.createTestQuest("Quest 2", "hard")
 
@@ -131,7 +131,7 @@ func (suite *QuestRepositoryTestSuite) TestFindAll_Empty() {
 func (suite *QuestRepositoryTestSuite) TestFindByStatus_Success() {
 	ctx := context.Background()
 
-	// Arrange - save quests with different statuses
+	// Pre-condition - save quests with different statuses
 	quest1 := suite.createTestQuest("Created Quest", "easy")
 	quest2 := suite.createTestQuest("Posted Quest", "medium")
 
@@ -162,7 +162,7 @@ func (suite *QuestRepositoryTestSuite) TestFindByStatus_Success() {
 func (suite *QuestRepositoryTestSuite) TestFindByAssignee_Success() {
 	ctx := context.Background()
 
-	// Arrange - create quests and assign them
+	// Pre-condition - create quests and assign them
 	quest1 := suite.createTestQuest("Quest 1", "easy")
 	quest2 := suite.createTestQuest("Quest 2", "medium")
 	quest3 := suite.createTestQuest("Quest 3", "hard")
@@ -209,7 +209,7 @@ func (suite *QuestRepositoryTestSuite) TestFindByAssignee_Success() {
 func (suite *QuestRepositoryTestSuite) TestFindByBoundingBox_Success() {
 	ctx := context.Background()
 
-	// Arrange - create quests at different locations
+	// Pre-condition - create quests at different locations
 	moscowCenter := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
 	moscowSuburb := kernel.GeoCoordinate{Lat: 55.8000, Lon: 37.7000}
 	stPetersburg := kernel.GeoCoordinate{Lat: 59.9311, Lon: 30.3609}

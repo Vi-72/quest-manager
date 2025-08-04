@@ -14,7 +14,7 @@ import (
 func (s *Suite) TestListAssignedQuestsHTTP() {
 	ctx := context.Background()
 
-	// Arrange - create quests via handler and assign them to a specific user
+	// Pre-condition - create quests via handler and assign them to a specific user
 	testUserID := uuid.New().String() // Generate new UUID
 	expectedCount := 2
 
@@ -63,7 +63,7 @@ func (s *Suite) TestListAssignedQuestsHTTP() {
 func (s *Suite) TestListAssignedQuestsHTTPEmpty() {
 	ctx := context.Background()
 
-	// Arrange - use a user ID that has no assigned quests
+	// Pre-condition - use a user ID that has no assigned quests
 	nonExistentUserID := uuid.New().String() // Generate new UUID with no quests
 
 	// Act - get list of assigned quests for user with no assignments via HTTP API

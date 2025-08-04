@@ -11,7 +11,7 @@ import (
 func (s *Suite) TestListQuests() {
 	ctx := context.Background()
 
-	// Arrange - create multiple quests
+	// Pre-condition - create multiple quests
 	expectedCount := 2
 	createdQuests, err := casesteps.CreateMultipleRandomQuests(ctx, s.TestDIContainer.CreateQuestHandler, expectedCount)
 	s.Require().NoError(err)
@@ -42,7 +42,7 @@ func (s *Suite) TestListQuestsEmpty() {
 func (s *Suite) TestListQuestsWithValidStatus() {
 	ctx := context.Background()
 
-	// Arrange - create multiple quests
+	// Pre-condition - create multiple quests
 	expectedCount := 3
 	createdQuests, err := casesteps.CreateMultipleRandomQuests(ctx, s.TestDIContainer.CreateQuestHandler, expectedCount)
 	s.Require().NoError(err)
@@ -70,7 +70,7 @@ func (s *Suite) TestListQuestsWithValidStatus() {
 func (s *Suite) TestListQuestsWithEmptyStatus() {
 	ctx := context.Background()
 
-	// Arrange - create multiple quests
+	// Pre-condition - create multiple quests
 	expectedCount := 2
 	createdQuests, err := casesteps.CreateMultipleRandomQuests(ctx, s.TestDIContainer.CreateQuestHandler, expectedCount)
 	s.Require().NoError(err)
@@ -90,7 +90,7 @@ func (s *Suite) TestListQuestsWithEmptyStatus() {
 func (s *Suite) TestListQuestsWithInvalidStatus() {
 	ctx := context.Background()
 
-	// Arrange - create quest to ensure database is not empty
+	// Pre-condition - create quest to ensure database is not empty
 	_, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
 	s.Require().NoError(err)
 

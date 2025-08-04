@@ -14,7 +14,7 @@ import (
 func (s *Suite) TestSearchQuestsByRadiusHTTP() {
 	ctx := context.Background()
 
-	// Arrange - create quest at specific location via handler (for setup)
+	// Pre-condition - create quest at specific location via handler (for setup)
 	centerLocation := testdatagenerators.DefaultTestCoordinate() // Moscow center: 55.7558, 37.6176
 	nearLocation := kernel.GeoCoordinate{
 		Lat: centerLocation.Latitude() + 0.01,  // ~1km away
@@ -74,7 +74,7 @@ func (s *Suite) TestSearchQuestsByRadiusHTTP() {
 func (s *Suite) TestSearchQuestsByRadiusHTTPEmpty() {
 	ctx := context.Background()
 
-	// Arrange - use location far from any existing quests
+	// Pre-condition - use location far from any existing quests
 	remoteLocation := kernel.GeoCoordinate{
 		Lat: -89.0, // Near South Pole
 		Lon: 0.0,

@@ -31,7 +31,7 @@ func (suite *EventRepositoryTestSuite) SetupSuite() {
 func (suite *EventRepositoryTestSuite) TestPublish_Success() {
 	ctx := context.Background()
 
-	// Arrange - create test events
+	// Pre-condition - create test events
 	questID := uuid.New()
 	events := []ddd.DomainEvent{
 		quest.NewQuestCreated(questID, "test-creator"),
@@ -64,7 +64,7 @@ func (suite *EventRepositoryTestSuite) TestPublish_EmptyEvents() {
 func (suite *EventRepositoryTestSuite) TestPublish_SingleEvent() {
 	ctx := context.Background()
 
-	// Arrange - create single event
+	// Pre-condition - create single event
 	questID := uuid.New()
 	event := quest.NewQuestCreated(questID, "test-creator")
 
@@ -81,7 +81,7 @@ func (suite *EventRepositoryTestSuite) TestPublish_SingleEvent() {
 func (suite *EventRepositoryTestSuite) TestPublish_MultipleEventTypes() {
 	ctx := context.Background()
 
-	// Arrange - create different types of events
+	// Pre-condition - create different types of events
 	questID := uuid.New()
 
 	questCreated := quest.NewQuestCreated(questID, "test-creator")
@@ -101,7 +101,7 @@ func (suite *EventRepositoryTestSuite) TestPublish_MultipleEventTypes() {
 func (suite *EventRepositoryTestSuite) TestPublishAsync_Success() {
 	ctx := context.Background()
 
-	// Arrange - create test events
+	// Pre-condition - create test events
 	questID := uuid.New()
 	events := []ddd.DomainEvent{
 		quest.NewQuestCreated(questID, "test-creator"),
@@ -134,7 +134,7 @@ func (suite *EventRepositoryTestSuite) TestPublishAsync_EmptyEvents() {
 func (suite *EventRepositoryTestSuite) TestPublishAsync_HighVolume() {
 	ctx := context.Background()
 
-	// Arrange - create many events to test goroutine limiting
+	// Pre-condition - create many events to test goroutine limiting
 	var events []ddd.DomainEvent
 	for i := 0; i < 20; i++ {
 		questID := uuid.New()
@@ -154,7 +154,7 @@ func (suite *EventRepositoryTestSuite) TestPublishAsync_HighVolume() {
 func (suite *EventRepositoryTestSuite) TestPublish_WithTransaction() {
 	ctx := context.Background()
 
-	// Arrange - start transaction manually
+	// Pre-condition - start transaction manually
 	err := suite.tracker.Begin(ctx)
 	suite.Require().NoError(err)
 
@@ -179,7 +179,7 @@ func (suite *EventRepositoryTestSuite) TestPublish_WithTransaction() {
 func (suite *EventRepositoryTestSuite) TestPublish_TransactionRollback() {
 	ctx := context.Background()
 
-	// Arrange - start transaction
+	// Pre-condition - start transaction
 	err := suite.tracker.Begin(ctx)
 	suite.Require().NoError(err)
 
@@ -201,7 +201,7 @@ func (suite *EventRepositoryTestSuite) TestPublish_TransactionRollback() {
 func (suite *EventRepositoryTestSuite) TestPublish_ComplexDomainScenario() {
 	ctx := context.Background()
 
-	// Arrange - simulate complex domain scenario
+	// Pre-condition - simulate complex domain scenario
 	userID := "test-user-123"
 
 	// Create quest
