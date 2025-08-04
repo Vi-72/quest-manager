@@ -1,4 +1,6 @@
-package quest_handler
+//go:build integration
+
+package repository
 
 import (
 	"testing"
@@ -13,7 +15,7 @@ type Suite struct {
 	cases.DefaultSuite
 }
 
-func TestQuestHandlerOperations(t *testing.T) {
+func TestRepositoryIntegration(t *testing.T) {
 	suite.Run(t, new(Suite))
 }
 

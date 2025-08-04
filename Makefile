@@ -40,25 +40,61 @@ clean:
 # ========================
 
 .PHONY: test
-test:
-	go test ./...
+test: test-unit test-integration
 
 .PHONY: test-unit
 test-unit:
-	go test -short ./...
+	@echo "🧪 Running unit tests..."
+	go test ./tests/domain -v
+
+
+
+.PHONY: test-repository
+test-repository:
+	@echo "🗄️ Running repository integration tests (PostgreSQL)..."
+	go test -tags=integration ./tests/integration/cases/repository -v
+
+
 
 .PHONY: test-integration
 test-integration:
-	go test -tags=integration ./tests/integration/...
+	@echo "🔗 Running integration tests..."
+	go test -tags=integration ./tests/integration/... -v
 
-.PHONY: test-integration-verbose
-test-integration-verbose:
-	go test -tags=integration -v ./tests/integration/...
+
+
+.PHONY: test-fast
+test-fast:
+	@echo "⚡ Running fast tests only..."
+	go test -short ./tests/domain -v
 
 .PHONY: test-coverage
 test-coverage:
+	@echo "📊 Generating test coverage report..."
 	go test -coverprofile=coverage.out ./...
-	go tool cover -html=coverage.out
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+.PHONY: test-coverage-integration
+test-coverage-integration:
+	@echo "📊 Generating integration test coverage..."
+	go test -tags=integration -coverprofile=coverage-integration.out ./tests/integration/...
+	go tool cover -html=coverage-integration.out -o coverage-integration.html
+
+.PHONY: test-bench
+test-bench:
+	@echo "🚀 Running benchmark tests..."
+	go test -bench=. -benchmem ./...
+
+.PHONY: test-all
+test-all: test-unit test-repository test-integration
+	@echo "✅ All tests completed!"
+
+.PHONY: test-watch
+test-watch:
+	@echo "👀 Watching for changes and running tests..."
+	# Requires 'entr' tool: brew install entr
+	find . -name "*.go" | entr -c make test-fast
 
 # ========================
 # DEV SHORTCUT

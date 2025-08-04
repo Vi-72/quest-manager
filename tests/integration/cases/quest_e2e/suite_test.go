@@ -13,7 +13,7 @@ type Suite struct {
 	cases.DefaultSuite
 }
 
-func TestQuestHandlerOperations(t *testing.T) {
+func TestQuestE2EOperations(t *testing.T) {
 	suite.Run(t, new(Suite))
 }
 
