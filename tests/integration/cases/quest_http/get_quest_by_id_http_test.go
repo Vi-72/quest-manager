@@ -85,13 +85,9 @@ func (s *Suite) TestGetQuestByIDHTTPHasAddresses() {
 	}
 
 	// Get default test data and customize for addresses test
-	defaultData := testdatagenerators.DefaultQuestData()
+	questData := testdatagenerators.QuestDataWithLocations(targetLocation, executionLocation)
 
-	createdQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler,
-		"Test Quest with Addresses", "Test Description with Addresses", defaultData.Difficulty,
-		defaultData.Reward, defaultData.DurationMinutes, defaultData.Creator,
-		targetLocation, executionLocation,
-		defaultData.Equipment, defaultData.Skills)
+	createdQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, questData)
 	s.Require().NoError(err)
 
 	// Act - get quest by ID via HTTP API
@@ -120,11 +116,7 @@ func (s *Suite) TestGetQuestByIDHTTPEmptyArrays() {
 	// Pre-condition - create quest with empty Equipment and Skills arrays
 	emptyData := testdatagenerators.EmptyArraysQuestData()
 
-	createdQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler,
-		emptyData.Title, emptyData.Description, emptyData.Difficulty,
-		emptyData.Reward, emptyData.DurationMinutes, emptyData.Creator,
-		emptyData.TargetLocation, emptyData.ExecutionLocation,
-		emptyData.Equipment, emptyData.Skills)
+	createdQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, emptyData)
 	s.Require().NoError(err)
 
 	// Act - get quest by ID via HTTP API

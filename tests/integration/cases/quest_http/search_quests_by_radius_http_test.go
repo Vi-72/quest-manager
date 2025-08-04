@@ -26,15 +26,15 @@ func (s *Suite) TestSearchQuestsByRadiusHTTP() {
 	}
 
 	// Create quest near the center (within 5km radius)
-	nearQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler,
-		"Near Quest", "Quest near center", "easy", 1, 30, "test-creator",
-		nearLocation, nearLocation, []string{"equipment"}, []string{"skill"})
+	nearQuestData := testdatagenerators.SimpleQuestData(
+		"Near Quest", "Quest near center", "easy", 1, 30, nearLocation, nearLocation)
+	nearQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, nearQuestData)
 	s.Require().NoError(err)
 
 	// Create quest far from center (outside 5km radius)
-	farQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler,
-		"Far Quest", "Quest far from center", "medium", 2, 60, "test-creator",
-		farLocation, farLocation, []string{"equipment"}, []string{"skill"})
+	farQuestData := testdatagenerators.SimpleQuestData(
+		"Far Quest", "Quest far from center", "medium", 2, 60, farLocation, farLocation)
+	farQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, farQuestData)
 	s.Require().NoError(err)
 
 	// Act - search for quests within 5km radius via HTTP API

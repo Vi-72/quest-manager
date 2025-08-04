@@ -88,6 +88,27 @@ func EmptyArraysQuestData() QuestTestData {
 	}
 }
 
+// QuestDataWithLocations возвращает данные для квеста с заданными локациями и дефолтными названиями
+func QuestDataWithLocations(targetLoc, execLoc kernel.GeoCoordinate) QuestTestData {
+	data := DefaultQuestData()
+	data.TargetLocation = targetLoc
+	data.ExecutionLocation = execLoc
+	return data
+}
+
+// SimpleQuestData возвращает данные для простого квеста с заданными параметрами
+func SimpleQuestData(title, description, difficulty string, reward, duration int, targetLoc, execLoc kernel.GeoCoordinate) QuestTestData {
+	data := DefaultQuestData()
+	data.Title = title
+	data.Description = description
+	data.Difficulty = difficulty
+	data.Reward = reward
+	data.DurationMinutes = duration
+	data.TargetLocation = targetLoc
+	data.ExecutionLocation = execLoc
+	return data
+}
+
 // RandomQuestData генерирует случайные данные для квеста
 func RandomQuestData() *servers.CreateQuestRequest {
 	r := questRand

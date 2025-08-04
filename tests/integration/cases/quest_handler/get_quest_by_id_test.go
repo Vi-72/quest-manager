@@ -55,13 +55,9 @@ func (s *Suite) TestGetQuestByIDHasAddresses() {
 	}
 
 	// Get default test data and customize for addresses test
-	defaultData := testdatagenerators.DefaultQuestData()
+	questData := testdatagenerators.QuestDataWithLocations(targetLocation, executionLocation)
 
-	createdQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler,
-		"Test Quest with Addresses", "Test Description with Addresses", defaultData.Difficulty,
-		defaultData.Reward, defaultData.DurationMinutes, defaultData.Creator,
-		targetLocation, executionLocation,
-		defaultData.Equipment, defaultData.Skills)
+	createdQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, questData)
 	s.Require().NoError(err)
 
 	// Act - get quest by ID

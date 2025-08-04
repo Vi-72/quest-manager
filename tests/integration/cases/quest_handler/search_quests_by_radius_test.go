@@ -24,15 +24,15 @@ func (s *Suite) TestSearchQuestsByRadius() {
 	}
 
 	// Create quest near the center (within 5km radius)
-	nearQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler,
-		"Near Quest", "Quest near center", "easy", 1, 30, "test-creator",
-		nearLocation, nearLocation, []string{"equipment"}, []string{"skill"})
+	nearQuestData := testdatagenerators.SimpleQuestData(
+		"Near Quest", "Quest near center", "easy", 1, 30, nearLocation, nearLocation)
+	nearQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, nearQuestData)
 	s.Require().NoError(err)
 
 	// Create quest far from center (outside 5km radius)
-	farQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler,
-		"Far Quest", "Quest far from center", "medium", 2, 60, "test-creator",
-		farLocation, farLocation, []string{"equipment"}, []string{"skill"})
+	farQuestData := testdatagenerators.SimpleQuestData(
+		"Far Quest", "Quest far from center", "medium", 2, 60, farLocation, farLocation)
+	farQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, farQuestData)
 	s.Require().NoError(err)
 
 	// Act - search for quests within 5km radius
@@ -79,9 +79,9 @@ func (s *Suite) TestSearchQuestsByRadiusMultipleQuests() {
 		Lat: centerLocation.Latitude() + 0.005,  // ~0.5km away
 		Lon: centerLocation.Longitude() + 0.005, // ~0.5km away
 	}
-	quest1, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler,
-		"Quest 1", "Very close quest", "easy", 1, 30, "test-creator",
-		quest1Location, quest1Location, []string{"equipment"}, []string{"skill"})
+	quest1Data := testdatagenerators.SimpleQuestData(
+		"Quest 1", "Very close quest", "easy", 1, 30, quest1Location, quest1Location)
+	quest1, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, quest1Data)
 	s.Require().NoError(err)
 
 	// Quest 2: Medium distance (within 5km)
@@ -89,9 +89,9 @@ func (s *Suite) TestSearchQuestsByRadiusMultipleQuests() {
 		Lat: centerLocation.Latitude() + 0.03,  // ~3km away
 		Lon: centerLocation.Longitude() + 0.03, // ~3km away
 	}
-	quest2, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler,
-		"Quest 2", "Medium distance quest", "medium", 2, 60, "test-creator",
-		quest2Location, quest2Location, []string{"equipment"}, []string{"skill"})
+	quest2Data := testdatagenerators.SimpleQuestData(
+		"Quest 2", "Medium distance quest", "medium", 2, 60, quest2Location, quest2Location)
+	quest2, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, quest2Data)
 	s.Require().NoError(err)
 
 	// Quest 3: Far away (outside 5km)
@@ -99,9 +99,9 @@ func (s *Suite) TestSearchQuestsByRadiusMultipleQuests() {
 		Lat: centerLocation.Latitude() + 0.1,  // ~10km away
 		Lon: centerLocation.Longitude() + 0.1, // ~10km away
 	}
-	quest3, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler,
-		"Quest 3", "Far away quest", "hard", 3, 90, "test-creator",
-		quest3Location, quest3Location, []string{"equipment"}, []string{"skill"})
+	quest3Data := testdatagenerators.SimpleQuestData(
+		"Quest 3", "Far away quest", "hard", 3, 90, quest3Location, quest3Location)
+	quest3, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, quest3Data)
 	s.Require().NoError(err)
 
 	// Act - search within 5km radius
@@ -137,9 +137,9 @@ func (s *Suite) TestSearchQuestsByRadiusWithTargetAndExecutionLocations() {
 		Lon: centerLocation.Longitude() + 0.2, // ~20km away
 	}
 
-	quest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler,
-		"Mixed Location Quest", "Quest with near target, far execution", "medium", 2, 60, "test-creator",
-		targetLocation, executionLocation, []string{"equipment"}, []string{"skill"})
+	questData := testdatagenerators.SimpleQuestData(
+		"Mixed Location Quest", "Quest with near target, far execution", "medium", 2, 60, targetLocation, executionLocation)
+	quest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, questData)
 	s.Require().NoError(err)
 
 	// Act - search within 5km radius (should find quest because target is within radius)

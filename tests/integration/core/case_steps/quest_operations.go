@@ -6,45 +6,42 @@ import (
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/quest"
+	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
 )
 
-// CreateQuestStep creates quest with specific parameters
+// CreateQuestStep creates quest using QuestTestData structure
 func CreateQuestStep(
 	ctx context.Context,
 	handler commands.CreateQuestCommandHandler,
-	title, description, difficulty string,
-	reward, durationMinutes int,
-	creator string,
-	targetLocation, executionLocation kernel.GeoCoordinate,
-	equipment, skills []string,
+	questData testdatagenerators.QuestTestData,
 ) (quest.Quest, error) {
 	// Generate test addresses for locations
 	targetAddress := "Target Address: Test Street 123, Test City"
 	executionAddress := "Execution Address: Test Avenue 456, Test City"
 
 	// Make sure execution location is slightly different from target to get different addresses
-	if targetLocation.Equals(executionLocation) {
-		executionLocation = kernel.GeoCoordinate{
-			Lat: executionLocation.Latitude() + 0.001,
-			Lon: executionLocation.Longitude() + 0.001,
+	if questData.TargetLocation.Equals(questData.ExecutionLocation) {
+		questData.ExecutionLocation = kernel.GeoCoordinate{
+			Lat: questData.ExecutionLocation.Latitude() + 0.001,
+			Lon: questData.ExecutionLocation.Longitude() + 0.001,
 		}
 		// Also make execution address different if coordinates are the same
 		executionAddress = "Execution Address: Test Avenue 789, Different City"
 	}
 
 	cmd := commands.CreateQuestCommand{
-		Title:             title,
-		Description:       description,
-		Difficulty:        difficulty,
-		Reward:            reward,
-		DurationMinutes:   durationMinutes,
-		TargetLocation:    targetLocation,
+		Title:             questData.Title,
+		Description:       questData.Description,
+		Difficulty:        questData.Difficulty,
+		Reward:            questData.Reward,
+		DurationMinutes:   questData.DurationMinutes,
+		TargetLocation:    questData.TargetLocation,
 		TargetAddress:     &targetAddress,
-		ExecutionLocation: executionLocation,
+		ExecutionLocation: questData.ExecutionLocation,
 		ExecutionAddress:  &executionAddress,
-		Creator:           creator,
-		Equipment:         equipment,
-		Skills:            skills,
+		Creator:           questData.Creator,
+		Equipment:         questData.Equipment,
+		Skills:            questData.Skills,
 	}
 
 	return handler.Handle(ctx, cmd)
