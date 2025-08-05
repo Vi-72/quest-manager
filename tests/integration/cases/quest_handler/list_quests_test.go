@@ -1,5 +1,8 @@
 package quest_handler
 
+// HANDLER LAYER INTEGRATION TESTS
+// Tests for listQuestsHandler.Handle orchestration logic
+
 import (
 	"context"
 
