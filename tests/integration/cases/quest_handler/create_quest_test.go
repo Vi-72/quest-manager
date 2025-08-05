@@ -123,8 +123,7 @@ func (s *Suite) TestCreateQuestPersistence() {
 	ctx := context.Background()
 
 	// Act - create quest
-	defaultData := testdatagenerators.DefaultQuestData()
-	createdQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, defaultData)
+	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
 	s.Require().NoError(err)
 
 	// Verify quest is persisted by retrieving it

@@ -93,20 +93,17 @@ func (s *Suite) TestSearchQuestsByRadiusHTTPEmpty() {
 func (s *Suite) TestSearchQuestsByRadiusHTTPWithInvalidParams() {
 	ctx := context.Background()
 
-	// Test cases with invalid parameters
+	// Test cases with invalid parameters (API layer validation only)
+	// Note: Coordinate validation is tested in domain layer (tests/domain/kernel_coordinates_test.go)
 	testCases := []struct {
 		name     string
 		lat      float64
 		lon      float64
 		radiusKm float64
 	}{
-		{"Invalid latitude too high", 91.0, 0.0, 10.0},
-		{"Invalid latitude too low", -91.0, 0.0, 10.0},
-		{"Invalid longitude too high", 0.0, 181.0, 10.0},
-		{"Invalid longitude too low", 0.0, -181.0, 10.0},
-		{"Invalid radius zero", 50.0, 10.0, 0.0},
-		{"Invalid radius negative", 50.0, 10.0, -5.0},
-		{"Invalid radius too large", 50.0, 10.0, 25000.0},
+		{"Invalid radius zero", 50.0, 10.0, 0.0},          // API validation
+		{"Invalid radius negative", 50.0, 10.0, -5.0},     // API validation
+		{"Invalid radius too large", 50.0, 10.0, 25000.0}, // API validation
 	}
 
 	for _, tc := range testCases {

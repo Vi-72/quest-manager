@@ -32,11 +32,21 @@ func ExecuteHTTPRequest(ctx context.Context, handler http.Handler, req HTTPReque
 
 	// Подготавливаем тело запроса
 	if req.Body != nil {
-		bodyBytes, err := json.Marshal(req.Body)
-		if err != nil {
-			return nil, err
+		switch v := req.Body.(type) {
+		case string:
+			// Raw string body (for malformed JSON)
+			body = bytes.NewReader([]byte(v))
+		case json.RawMessage:
+			// Raw JSON message
+			body = bytes.NewReader([]byte(v))
+		default:
+			// Regular objects - marshal to JSON
+			bodyBytes, err := json.Marshal(req.Body)
+			if err != nil {
+				return nil, err
+			}
+			body = bytes.NewReader(bodyBytes)
 		}
-		body = bytes.NewReader(bodyBytes)
 	}
 
 	// Создаем HTTP запрос
@@ -88,16 +98,6 @@ func AssignQuestHTTPRequest(questID string, userID string) HTTPRequest {
 	}
 }
 
-// ChangeQuestStatusHTTPRequest создает HTTP запрос для изменения статуса квеста
-func ChangeQuestStatusHTTPRequest(questID string, status string) HTTPRequest {
-	return HTTPRequest{
-		Method:      "PATCH",
-		URL:         "/api/v1/quests/" + questID + "/status",
-		Body:        map[string]string{"status": status},
-		ContentType: "application/json",
-	}
-}
-
 // GetQuestHTTPRequest создает HTTP запрос для получения квеста
 func GetQuestHTTPRequest(questID string) HTTPRequest {
 	return HTTPRequest{
@@ -133,5 +133,25 @@ func SearchQuestsByRadiusHTTPRequest(lat, lon, radiusKm float64) HTTPRequest {
 	return HTTPRequest{
 		Method: "GET",
 		URL:    url,
+	}
+}
+
+// ChangeQuestStatusHTTPRequest создает HTTP запрос для изменения статуса квеста
+func ChangeQuestStatusHTTPRequest(questID string, statusRequest interface{}) HTTPRequest {
+	return HTTPRequest{
+		Method:      "PATCH",
+		URL:         "/api/v1/quests/" + questID + "/status",
+		Body:        statusRequest,
+		ContentType: "application/json",
+	}
+}
+
+// CreateMalformedJSONRequest создает HTTP запрос с невалидным JSON
+func CreateMalformedJSONRequest(method, url string) HTTPRequest {
+	return HTTPRequest{
+		Method:      method,
+		URL:         url,
+		Body:        `{"status": invalid-json}`, // Malformed JSON
+		ContentType: "application/json",
 	}
 }

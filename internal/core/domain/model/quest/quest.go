@@ -160,6 +160,11 @@ func (q *Quest) AssignTo(userID string) error {
 
 // ChangeStatus changes quest status with business rules validation
 func (q *Quest) ChangeStatus(newStatus Status) error {
+	// Validate that the new status is a valid enum value
+	if !IsValidStatus(string(newStatus)) {
+		return errors.New("invalid status: " + string(newStatus) + " is not a valid quest status")
+	}
+
 	// Validate status transitions (business rules)
 	if !q.isValidStatusTransition(q.Status, newStatus) {
 		return errors.New("invalid status transition from " + string(q.Status) + " to " + string(newStatus))

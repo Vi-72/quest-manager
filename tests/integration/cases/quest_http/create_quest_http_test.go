@@ -246,80 +246,9 @@ func (s *Suite) TestCreateQuestHTTPNegativeNumbers() {
 	}
 }
 
-func (s *Suite) TestCreateQuestHTTPWithInvalidCoordinates() {
-	ctx := context.Background()
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
-
-	// Test cases with invalid coordinates (API layer technical validation)
-	testCases := []struct {
-		name      string
-		targetLat float64
-		targetLon float64
-		execLat   float64
-		execLon   float64
-		field     string
-	}{
-		{
-			name:      "latitude too high",
-			targetLat: 91.0, // Invalid latitude
-			targetLon: 37.6176,
-			execLat:   55.7560,
-			execLon:   37.6178,
-			field:     "latitude",
-		},
-		{
-			name:      "latitude too low",
-			targetLat: -91.0, // Invalid latitude
-			targetLon: 37.6176,
-			execLat:   55.7560,
-			execLon:   37.6178,
-			field:     "latitude",
-		},
-		{
-			name:      "longitude too high",
-			targetLat: 55.7558,
-			targetLon: 181.0, // Invalid longitude
-			execLat:   55.7560,
-			execLon:   37.6178,
-			field:     "longitude",
-		},
-		{
-			name:      "longitude too low",
-			targetLat: 55.7558,
-			targetLon: -181.0, // Invalid longitude
-			execLat:   55.7560,
-			execLon:   37.6178,
-			field:     "longitude",
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			invalidRequest := map[string]interface{}{
-				"title":              "Valid Quest",
-				"description":        "Valid description",
-				"difficulty":         "easy",
-				"reward":             3,
-				"duration_minutes":   60,
-				"target_location":    map[string]interface{}{"latitude": tc.targetLat, "longitude": tc.targetLon},
-				"execution_location": map[string]interface{}{"latitude": tc.execLat, "longitude": tc.execLon},
-				"equipment":          []string{},
-				"skills":             []string{},
-			}
-
-			// Act - try to create quest with invalid coordinates via HTTP API
-			createReq := casesteps.CreateQuestHTTPRequest(invalidRequest)
-			createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
-
-			// Assert - API layer should reject invalid coordinates
-			httpAssertions.QuestHTTPValidationError(createResp, err, "")
-			// API layer validates at field level (target_location/execution_location), not coordinate component level
-			s.Assert().True(
-				strings.Contains(createResp.Body, "target_location") || strings.Contains(createResp.Body, "execution_location"),
-				"Error should mention location field validation")
-		})
-	}
-}
+// Note: Coordinate validation tests removed from HTTP layer
+// Domain coordinate validation is tested in tests/domain/kernel_coordinates_test.go
+// HTTP layer focuses on API-specific validations (format, required fields, etc.)
 
 func (s *Suite) TestCreateQuestHTTPMalformedJSON() {
 	ctx := context.Background()

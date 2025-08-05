@@ -13,20 +13,12 @@ type ValidatedSearchByRadiusData struct {
 
 // ValidateSearchByRadiusParams validates radius search parameters
 func ValidateSearchByRadiusParams(lat, lon, radiusKm float32) (*ValidatedSearchByRadiusData, *ValidationError) {
-	// Validate latitude
+	// Convert to float64 for domain layer
 	latF64 := float64(lat)
-	if latF64 < -90 || latF64 > 90 {
-		return nil, NewValidationError("lat", "must be between -90 and 90 degrees")
-	}
-
-	// Validate longitude
 	lonF64 := float64(lon)
-	if lonF64 < -180 || lonF64 > 180 {
-		return nil, NewValidationError("lon", "must be between -180 and 180 degrees")
-	}
-
-	// Validate radius
 	radiusF64 := float64(radiusKm)
+
+	// Validate radius (API level validation for business logic)
 	if radiusF64 <= 0 {
 		return nil, NewValidationError("radius_km", "must be greater than 0 kilometers")
 	}
@@ -34,7 +26,7 @@ func ValidateSearchByRadiusParams(lat, lon, radiusKm float32) (*ValidatedSearchB
 		return nil, NewValidationError("radius_km", "must be less than 20000 kilometers")
 	}
 
-	// Create domain coordinate
+	// Create domain coordinate - domain layer handles coordinate validation
 	center, err := kernel.NewGeoCoordinate(latF64, lonF64)
 	if err != nil {
 		return nil, NewValidationErrorWithCause("coordinates", "invalid coordinate values", err)
@@ -47,18 +39,10 @@ func ValidateSearchByRadiusParams(lat, lon, radiusKm float32) (*ValidatedSearchB
 }
 
 // ConvertAPICoordinateToKernel converts API coordinates to domain coordinates with validation
+// Validation is performed by the domain layer (kernel.NewGeoCoordinate)
 func ConvertAPICoordinateToKernel(apiCoord servers.Coordinate) (kernel.GeoCoordinate, *ValidationError) {
-	// Validate latitude
-	if apiCoord.Latitude < -90 || apiCoord.Latitude > 90 {
-		return kernel.GeoCoordinate{}, NewValidationError("latitude", "must be between -90 and 90")
-	}
-
-	// Validate longitude
-	if apiCoord.Longitude < -180 || apiCoord.Longitude > 180 {
-		return kernel.GeoCoordinate{}, NewValidationError("longitude", "must be between -180 and 180")
-	}
-
 	// Create domain coordinate (convert float32 to float64)
+	// Domain layer handles all coordinate validation
 	coord, err := kernel.NewGeoCoordinate(float64(apiCoord.Latitude), float64(apiCoord.Longitude))
 	if err != nil {
 		return kernel.GeoCoordinate{}, NewValidationErrorWithCause("coordinate", "invalid coordinate values", err)

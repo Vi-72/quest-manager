@@ -23,6 +23,11 @@ func TestNewGeoCoordinate_Valid(t *testing.T) {
 		{"Date line", 0.0, 180.0},
 		{"Antimeridian", 0.0, -180.0},
 		{"Zero coordinates", 0.0, 0.0},
+		{"Boundary values", 90.0, 180.0},
+		{"Boundary values negative", -90.0, -180.0},
+		{"Near boundary positive", 89.999999, 179.999999},
+		{"Near boundary negative", -89.999999, -179.999999},
+		{"Precision test", 55.123456789, 37.987654321},
 	}
 
 	for _, tt := range tests {
@@ -41,10 +46,14 @@ func TestNewGeoCoordinate_InvalidLatitude(t *testing.T) {
 		lat  float64
 		lon  float64
 	}{
+		{"Latitude exactly too high", 90.1, 0.0},
 		{"Latitude too high", 91.0, 0.0},
+		{"Latitude exactly too low", -90.1, 0.0},
 		{"Latitude too low", -91.0, 0.0},
 		{"Latitude way too high", 200.0, 0.0},
 		{"Latitude way too low", -200.0, 0.0},
+		{"Latitude maximum float64", 1e10, 0.0},
+		{"Latitude minimum float64", -1e10, 0.0},
 	}
 
 	for _, tt := range tests {
@@ -63,10 +72,14 @@ func TestNewGeoCoordinate_InvalidLongitude(t *testing.T) {
 		lat  float64
 		lon  float64
 	}{
+		{"Longitude exactly too high", 0.0, 180.1},
 		{"Longitude too high", 0.0, 181.0},
+		{"Longitude exactly too low", 0.0, -180.1},
 		{"Longitude too low", 0.0, -181.0},
 		{"Longitude way too high", 0.0, 360.0},
 		{"Longitude way too low", 0.0, -360.0},
+		{"Longitude maximum float64", 0.0, 1e10},
+		{"Longitude minimum float64", 0.0, -1e10},
 	}
 
 	for _, tt := range tests {
@@ -231,4 +244,43 @@ func TestGeoCoordinate_DistanceTo_EdgeCases(t *testing.T) {
 
 	smallDistance := coord1.DistanceTo(coord2)
 	assert.True(t, smallDistance > 0.0 && smallDistance < 1.0, "Small distance should be between 0 and 1 km")
+}
+
+func TestNewGeoCoordinate_BothInvalid(t *testing.T) {
+	tests := []struct {
+		name string
+		lat  float64
+		lon  float64
+	}{
+		{"Both too high", 91.0, 181.0},
+		{"Both too low", -91.0, -181.0},
+		{"Lat high, lon low", 91.0, -181.0},
+		{"Lat low, lon high", -91.0, 181.0},
+		{"Both extreme", 1000.0, 1000.0},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, err := kernel.NewGeoCoordinate(tt.lat, tt.lon)
+			assert.Error(t, err)
+			// Should report first validation error (latitude is checked first)
+			assert.Contains(t, err.Error(), "latitude")
+			assert.Contains(t, err.Error(), "out of range")
+		})
+	}
+}
+
+func TestNewGeoCoordinate_ValidationMessages(t *testing.T) {
+	// Test that validation messages contain proper information
+	_, err := kernel.NewGeoCoordinate(100.0, 0.0)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "100.000000")
+	assert.Contains(t, err.Error(), "-90")
+	assert.Contains(t, err.Error(), "90")
+
+	_, err = kernel.NewGeoCoordinate(0.0, 200.0)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "200.000000")
+	assert.Contains(t, err.Error(), "-180")
+	assert.Contains(t, err.Error(), "180")
 }
