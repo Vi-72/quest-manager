@@ -1,5 +1,8 @@
 package quest_http
 
+// API LAYER VALIDATION TESTS
+// Only tests that correspond to ValidateUUID function
+
 import (
 	"context"
 	"net/http"

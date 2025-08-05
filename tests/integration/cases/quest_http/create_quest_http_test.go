@@ -13,6 +13,9 @@ import (
 	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
 )
 
+// API LAYER VALIDATION TESTS
+// Only tests that correspond to ValidateCreateQuestRequest function
+
 // HTTPRequest represents HTTP request for testing (duplicated here for convenience)
 type HTTPRequest struct {
 	Method      string

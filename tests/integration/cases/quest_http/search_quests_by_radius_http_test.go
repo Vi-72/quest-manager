@@ -1,5 +1,8 @@
 package quest_http
 
+// API LAYER VALIDATION TESTS
+// Only tests that correspond to ValidateSearchByRadiusParams function
+
 import (
 	"context"
 	"net/http"

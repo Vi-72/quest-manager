@@ -1,5 +1,8 @@
 package quest_http
 
+// API LAYER VALIDATION TESTS
+// Only tests that correspond to HTTP API layer functionality
+
 import (
 	"context"
 	"encoding/json"
