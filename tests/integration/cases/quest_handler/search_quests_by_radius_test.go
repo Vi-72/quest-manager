@@ -1,5 +1,8 @@
 package quest_handler
 
+// HANDLER LAYER INTEGRATION TESTS
+// Tests for searchQuestsByRadius.Handle orchestration logic
+
 import (
 	"context"
 

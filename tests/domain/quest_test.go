@@ -1,5 +1,8 @@
 package domain
 
+// DOMAIN LAYER UNIT TESTS
+// Tests for domain model business rules and validation logic
+
 import (
 	"testing"
 	"time"
