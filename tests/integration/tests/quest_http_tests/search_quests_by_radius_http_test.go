@@ -1,4 +1,4 @@
-package quest_http
+package quest_http_tests
 
 // API LAYER VALIDATION TESTS
 // Only tests that correspond to ValidateSearchByRadiusParams function

@@ -10,15 +10,15 @@ import (
 
 type Suite struct {
 	suite.Suite
-	cases.DefaultSuite
+	tests.DefaultSuite
 }
 
-func TestQuestHandlerOperations(t *testing.T) {
+func TestQuestE2EOperations(t *testing.T) {
 	suite.Run(t, new(Suite))
 }
 
 func (s *Suite) SetupSuite() {
-	s.DefaultSuite = cases.NewDefault(s)
+	s.DefaultSuite = tests.NewDefault(s)
 	s.DefaultSuite.SetupSuite()
 }
 

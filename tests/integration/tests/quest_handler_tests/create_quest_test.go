@@ -1,4 +1,4 @@
-package quest_handler
+package quest_handler_tests
 
 // HANDLER LAYER INTEGRATION TESTS
 // Tests for createQuestHandler.Handle orchestration logic

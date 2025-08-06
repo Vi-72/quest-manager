@@ -1,4 +1,4 @@
-package quest_http
+package quest_http_tests
 
 import (
 	"context"

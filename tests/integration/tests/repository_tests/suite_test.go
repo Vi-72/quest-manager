@@ -12,7 +12,7 @@ import (
 
 type Suite struct {
 	suite.Suite
-	cases.DefaultSuite
+	tests.DefaultSuite
 }
 
 func TestRepositoryIntegration(t *testing.T) {
@@ -20,7 +20,7 @@ func TestRepositoryIntegration(t *testing.T) {
 }
 
 func (s *Suite) SetupSuite() {
-	s.DefaultSuite = cases.NewDefault(s)
+	s.DefaultSuite = tests.NewDefault(s)
 	s.DefaultSuite.SetupSuite()
 }
 

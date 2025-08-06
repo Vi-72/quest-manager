@@ -1,4 +1,4 @@
-package quest_handler
+package quest_handler_tests
 
 import (
 	"testing"
@@ -10,15 +10,15 @@ import (
 
 type Suite struct {
 	suite.Suite
-	cases.DefaultSuite
+	tests.DefaultSuite
 }
 
-func TestQuestE2EOperations(t *testing.T) {
+func TestQuestHandlerOperations(t *testing.T) {
 	suite.Run(t, new(Suite))
 }
 
 func (s *Suite) SetupSuite() {
-	s.DefaultSuite = cases.NewDefault(s)
+	s.DefaultSuite = tests.NewDefault(s)
 	s.DefaultSuite.SetupSuite()
 }
 
