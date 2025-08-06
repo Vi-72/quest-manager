@@ -68,6 +68,7 @@ echo "  ./test-stats.sh domain          # Run domain tests"
 echo "  ./test-stats.sh integration     # Run integration tests"
 echo "  ./test-stats.sh http            # Run HTTP tests"
 echo "  ./test-stats.sh handler         # Run handler tests"
+echo "  ./test-stats.sh contracts       # Run contract tests"
 echo "  ./test-stats.sh assign-quest    # Run assign quest tests"
 echo "  ./test-stats.sh all             # Run all tests"
 echo ""
@@ -85,6 +86,9 @@ case "${1:-help}" in
         ;;
     "handler")
         run_tests_with_stats "./tests/integration/cases/quest_handler/..." "Handler Tests"
+        ;;
+    "contracts")
+        run_tests_with_stats "./tests/contracts/..." "Contract Tests"
         ;;
     "assign-quest")
         echo "🎯 Running Assign Quest Tests on All Layers..."

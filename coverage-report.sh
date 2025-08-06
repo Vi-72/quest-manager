@@ -182,6 +182,9 @@ run_full_coverage() {
     # HTTP coverage
     run_coverage_analysis "./tests/integration/cases/quest_http/..." "HTTP Layer Coverage" "http"
     
+    # Contract coverage
+    run_coverage_analysis "./tests/contracts/..." "Contract Layer Coverage" "contracts"
+    
     # Общее покрытие
     echo "🎯 Overall Project Coverage:"
     echo "═══════════════════════════════════════════════════════════════"
@@ -284,15 +287,19 @@ case "${1:-help}" in
     "http")
         run_coverage_analysis "./tests/integration/cases/quest_http/..." "HTTP Layer Coverage" "http"
         ;;
+    "contracts")
+        run_coverage_analysis "./tests/contracts/..." "Contract Layer Coverage" "contracts"
+        ;;
     "help"|*)
         echo "🚀 Coverage Analysis Script"
         echo ""
         echo "Usage examples:"
-        echo "  ./coverage-report.sh full     # Complete coverage analysis"
-        echo "  ./coverage-report.sh quick    # Quick coverage overview"
-        echo "  ./coverage-report.sh domain   # Domain layer coverage only"
-        echo "  ./coverage-report.sh handler  # Handler layer coverage only"
-        echo "  ./coverage-report.sh http     # HTTP layer coverage only"
+echo "  ./coverage-report.sh full     # Complete coverage analysis"
+echo "  ./coverage-report.sh quick    # Quick coverage overview"
+echo "  ./coverage-report.sh domain   # Domain layer coverage only"
+echo "  ./coverage-report.sh handler  # Handler layer coverage only"
+echo "  ./coverage-report.sh http     # HTTP layer coverage only"
+echo "  ./coverage-report.sh contracts # Contract layer coverage only"
         echo ""
         ;;
 esac
