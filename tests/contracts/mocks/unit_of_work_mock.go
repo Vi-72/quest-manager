@@ -25,6 +25,7 @@ func NewMockUnitOfWork() *MockUnitOfWork {
 }
 
 func (m *MockUnitOfWork) Begin(ctx context.Context) error {
+	_ = ctx // unused in mock
 	if m.shouldFail {
 		return fmt.Errorf("mock begin error")
 	}
@@ -36,6 +37,7 @@ func (m *MockUnitOfWork) Begin(ctx context.Context) error {
 }
 
 func (m *MockUnitOfWork) Commit(ctx context.Context) error {
+	_ = ctx // unused in mock
 	if m.shouldFail {
 		return fmt.Errorf("mock commit error")
 	}

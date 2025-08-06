@@ -97,6 +97,7 @@ type MockEventPublisher struct {
 }
 
 func (m *MockEventPublisher) Publish(ctx context.Context, events ...ddd.DomainEvent) error {
+	_ = ctx // unused in mock
 	if m.PublishError != nil {
 		return m.PublishError
 	}
@@ -105,5 +106,6 @@ func (m *MockEventPublisher) Publish(ctx context.Context, events ...ddd.DomainEv
 }
 
 func (m *MockEventPublisher) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
+	_ = ctx // unused in mock
 	m.PublishAsyncEvents = append(m.PublishAsyncEvents, events...)
 }

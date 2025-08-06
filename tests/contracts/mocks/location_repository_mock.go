@@ -25,6 +25,7 @@ func NewMockLocationRepository() *MockLocationRepository {
 }
 
 func (m *MockLocationRepository) GetByID(ctx context.Context, locationID uuid.UUID) (*location.Location, error) {
+	_ = ctx // unused in mock
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -36,6 +37,7 @@ func (m *MockLocationRepository) GetByID(ctx context.Context, locationID uuid.UU
 }
 
 func (m *MockLocationRepository) Save(ctx context.Context, l *location.Location) error {
+	_ = ctx // unused in mock
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.locations[l.ID()] = l
@@ -43,6 +45,7 @@ func (m *MockLocationRepository) Save(ctx context.Context, l *location.Location)
 }
 
 func (m *MockLocationRepository) FindAll(ctx context.Context) ([]*location.Location, error) {
+	_ = ctx // unused in mock
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -54,6 +57,7 @@ func (m *MockLocationRepository) FindAll(ctx context.Context) ([]*location.Locat
 }
 
 func (m *MockLocationRepository) FindByBoundingBox(ctx context.Context, bbox kernel.BoundingBox) ([]*location.Location, error) {
+	_ = ctx // unused in mock
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -67,6 +71,7 @@ func (m *MockLocationRepository) FindByBoundingBox(ctx context.Context, bbox ker
 }
 
 func (m *MockLocationRepository) FindByName(ctx context.Context, namePattern string) ([]*location.Location, error) {
+	_ = ctx // unused in mock
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 

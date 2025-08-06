@@ -24,6 +24,7 @@ func NewMockQuestRepository() *MockQuestRepository {
 }
 
 func (m *MockQuestRepository) GetByID(ctx context.Context, questID uuid.UUID) (quest.Quest, error) {
+	_ = ctx // unused in mock
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -35,6 +36,7 @@ func (m *MockQuestRepository) GetByID(ctx context.Context, questID uuid.UUID) (q
 }
 
 func (m *MockQuestRepository) Save(ctx context.Context, q quest.Quest) error {
+	_ = ctx // unused in mock
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.quests[q.ID()] = q
@@ -42,6 +44,7 @@ func (m *MockQuestRepository) Save(ctx context.Context, q quest.Quest) error {
 }
 
 func (m *MockQuestRepository) FindAll(ctx context.Context) ([]quest.Quest, error) {
+	_ = ctx // unused in mock
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -53,6 +56,7 @@ func (m *MockQuestRepository) FindAll(ctx context.Context) ([]quest.Quest, error
 }
 
 func (m *MockQuestRepository) FindByStatus(ctx context.Context, status quest.Status) ([]quest.Quest, error) {
+	_ = ctx // unused in mock
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -66,6 +70,7 @@ func (m *MockQuestRepository) FindByStatus(ctx context.Context, status quest.Sta
 }
 
 func (m *MockQuestRepository) FindByBoundingBox(ctx context.Context, bbox kernel.BoundingBox) ([]quest.Quest, error) {
+	_ = ctx // unused in mock
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
@@ -80,6 +85,7 @@ func (m *MockQuestRepository) FindByBoundingBox(ctx context.Context, bbox kernel
 }
 
 func (m *MockQuestRepository) FindByAssignee(ctx context.Context, userID string) ([]quest.Quest, error) {
+	_ = ctx // unused in mock
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
