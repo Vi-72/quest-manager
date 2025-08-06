@@ -86,6 +86,7 @@ func (c *ContractDIContainer) CleanupAll() {
 
 // WaitForEventProcessing is a no-op for mocked implementation
 func (c *ContractDIContainer) WaitForEventProcessing(expectedCount int64) {
+	_ = expectedCount // unused in mock
 	// No-op for mocks
 }
 
