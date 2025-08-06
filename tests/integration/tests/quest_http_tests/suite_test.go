@@ -3,7 +3,7 @@ package quest_http_tests
 import (
 	"testing"
 
-	"quest-manager/tests/integration/cases"
+	"quest-manager/tests/integration/tests"
 
 	"github.com/stretchr/testify/suite"
 )

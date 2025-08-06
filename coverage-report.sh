@@ -177,13 +177,16 @@ run_full_coverage() {
     run_coverage_analysis "./tests/domain/..." "Domain Layer Coverage" "domain"
     
     # Handler coverage
-    run_coverage_analysis "./tests/integration/cases/quest_handler/..." "Handler Layer Coverage" "handler"
+    run_coverage_analysis "./tests/integration/tests/quest_handler_tests/..." "Handler Layer Coverage" "handler"
     
     # HTTP coverage
-    run_coverage_analysis "./tests/integration/cases/quest_http/..." "HTTP Layer Coverage" "http"
+    run_coverage_analysis "./tests/integration/tests/quest_http_tests/..." "HTTP Layer Coverage" "http"
     
     # Contract coverage
     run_coverage_analysis "./tests/contracts/..." "Contract Layer Coverage" "contracts"
+    
+    # E2E coverage
+    run_coverage_analysis "./tests/integration/tests/quest_e2e_tests/..." "E2E Layer Coverage" "e2e"
     
     # Общее покрытие
     echo "🎯 Overall Project Coverage:"
@@ -282,13 +285,55 @@ case "${1:-help}" in
         run_coverage_analysis "./tests/domain/..." "Domain Layer Coverage" "domain"
         ;;
     "handler")
-        run_coverage_analysis "./tests/integration/cases/quest_handler/..." "Handler Layer Coverage" "handler"
+        run_coverage_analysis "./tests/integration/tests/quest_handler_tests/..." "Handler Layer Coverage" "handler"
         ;;
     "http")
-        run_coverage_analysis "./tests/integration/cases/quest_http/..." "HTTP Layer Coverage" "http"
+        run_coverage_analysis "./tests/integration/tests/quest_http_tests/..." "HTTP Layer Coverage" "http"
         ;;
     "contracts")
         run_coverage_analysis "./tests/contracts/..." "Contract Layer Coverage" "contracts"
+        ;;
+    "e2e")
+        run_coverage_analysis "./tests/integration/tests/quest_e2e_tests/..." "E2E Layer Coverage" "e2e"
+        ;;
+    "repository")
+        echo "📊 Running Repository Layer Coverage with integration tag..."
+        echo "═══════════════════════════════════════════════════════════════"
+        
+        # Create temporary coverage file
+        coverage_file="coverage_repository_$(date +%s).out"
+        
+        # Run tests with coverage and integration tag
+        if go test -tags=integration -p 1 -count=1 -coverprofile="$coverage_file" ./tests/integration/tests/repository_tests 2>/dev/null; then
+            if [ -f "$coverage_file" ]; then
+                # Get total coverage
+                total_result=$(go tool cover -func="$coverage_file" | tail -1)
+                total_percent=$(echo "$total_result" | awk '{print $NF}' | sed 's/%//')
+                
+                # Color based on percentage
+                if (( $(echo "$total_percent >= 80" | bc -l) )); then
+                    color="\033[32m" # Green
+                elif (( $(echo "$total_percent >= 60" | bc -l) )); then
+                    color="\033[33m" # Yellow
+                else
+                    color="\033[31m" # Red
+                fi
+                
+                echo ""
+                echo -e "📈 Overall Coverage: ${color}${total_percent}%\033[0m"
+                echo ""
+                
+                # Cleanup
+                rm -f "$coverage_file"
+            else
+                echo "❌ Failed to generate coverage report"
+            fi
+        else
+            echo "❌ Tests failed, unable to generate coverage report"
+        fi
+        
+        echo "═══════════════════════════════════════════════════════════════"
+        echo ""
         ;;
     "help"|*)
         echo "🚀 Coverage Analysis Script"
@@ -300,6 +345,8 @@ echo "  ./coverage-report.sh domain   # Domain layer coverage only"
 echo "  ./coverage-report.sh handler  # Handler layer coverage only"
 echo "  ./coverage-report.sh http     # HTTP layer coverage only"
 echo "  ./coverage-report.sh contracts # Contract layer coverage only"
+echo "  ./coverage-report.sh e2e       # E2E layer coverage only"
+echo "  ./coverage-report.sh repository # Repository layer coverage only"
         echo ""
         ;;
 esac

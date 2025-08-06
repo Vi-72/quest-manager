@@ -43,6 +43,7 @@ func (s *Suite) TestEventRepository_Publish_SingleEvent() {
 	s.Equal(aggregateID.String(), storedEvent.AggregateID)
 	s.Contains(storedEvent.Data, "test event data")
 	s.NotEmpty(storedEvent.ID)
+	// Не проверяем конкретное ID события, так как оно генерируется случайно
 }
 
 func (s *Suite) TestEventRepository_Publish_MultipleEvents() {

@@ -9,7 +9,8 @@ echo "════════════════════════�
 
 # Запускаем все тесты с покрытием только для internal/
 # Исключаем tests/ папку из подсчета покрытия
-go test -p 1 -count=1 -coverprofile=internal_coverage.out -coverpkg=./internal/... ./tests/... 2>/dev/null
+# Включаем repository тесты с build tag integration
+go test -p 1 -count=1 -tags=integration -coverprofile=internal_coverage.out -coverpkg=./internal/... ./tests/... 2>/dev/null
 
 if [ -f "internal_coverage.out" ]; then
     # Получаем итоговый процент покрытия

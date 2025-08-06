@@ -28,6 +28,7 @@ type TestDIContainer struct {
 	QuestRepository    ports.QuestRepository
 	LocationRepository ports.LocationRepository
 	EventPublisher     ports.EventPublisher
+	EventStorage       *teststorage.EventStorage
 
 	// Command Handlers
 	CreateQuestHandler       commands.CreateQuestCommandHandler
@@ -66,6 +67,9 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	// Получаем репозитории из UnitOfWork
 	questRepo := unitOfWork.QuestRepository()
 	locationRepo := unitOfWork.LocationRepository()
+
+	// Создание EventStorage для тестирования
+	eventStorage := teststorage.NewEventStorage(db)
 
 	// Создание обработчиков команд
 	createQuestHandler := commands.NewCreateQuestCommandHandler(
@@ -108,6 +112,7 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 		QuestRepository:    questRepo,
 		LocationRepository: locationRepo,
 		EventPublisher:     eventRepo,
+		EventStorage:       eventStorage,
 
 		CreateQuestHandler:       createQuestHandler,
 		AssignQuestHandler:       assignQuestHandler,

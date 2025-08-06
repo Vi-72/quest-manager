@@ -162,7 +162,15 @@ func (r *Repository) domainEventToDTO(event ddd.DomainEvent) (EventDTO, error) {
 
 	default:
 		// Fallback для неизвестных событий
-		dto.AggregateID = event.GetID().String()
+		// Попробуем получить AggregateID через интерфейс, если есть
+		if agg, ok := e.(interface {
+			GetAggregateID() uuid.UUID
+		}); ok {
+			dto.AggregateID = agg.GetAggregateID().String()
+		} else {
+			// Если GetAggregateID недоступен, используем ID события как fallback
+			dto.AggregateID = event.GetID().String()
+		}
 		data, err := MarshalEventData(event)
 		if err != nil {
 			return EventDTO{}, errs.NewDomainValidationError("eventSerialization", "failed to serialize unknown event type")
