@@ -7,17 +7,33 @@ oapi-codegen -config configs/server.cfg.yaml api/openapi/openapi.yml
 
 ```
 tests/integration/
-├── cases/                     # Тестовые наборы
-│   ├── quest_operations/      # Тесты операций с квестами
+├── tests/                     # 🧪 Группы интеграционных тестов
+│   ├── quest_e2e_tests/       # E2E тесты полного цикла квестов
+│   ├── quest_http_tests/      # HTTP API layer тесты
+│   ├── quest_handler_tests/   # Application handler тесты
+│   ├── repository_tests/      # Infrastructure repository тесты
 │   ├── test_container.go      # DI контейнер для тестов
 │   ├── suite_container.go     # Базовый контейнер для test suites
 │   └── default.go            # Базовый тестовый набор
-├── core/                      # Основные компоненты
-│   ├── assertions/           # Пользовательские assertions
+├── core/                      # 🔧 Переиспользуемые компоненты
+│   ├── assertions/           # Пользовательские проверки
+│   │   ├── quest_assign_assertions.go
+│   │   ├── quest_e2e_assertions.go
+│   │   ├── quest_field_assertions.go
+│   │   ├── quest_handler_assertions.go    # ✨ Новый
+│   │   ├── quest_http_assertions.go
+│   │   ├── quest_list_assertions.go
+│   │   └── quest_single_assertions.go
 │   ├── case_steps/          # Переиспользуемые шаги тестирования
-│   ├── storage/             # Утилиты для работы с базой данных
+│   │   ├── database_steps.go
+│   │   ├── http_requests.go
+│   │   ├── quest_creation.go
+│   │   ├── quest_queries.go
+│   │   └── quest_status.go
+│   ├── storage/             # Прямой доступ к БД
+│   │   └── event_storage.go
 │   └── test_data_generators/ # Генераторы тестовых данных
-├── mock/                     # Mock объекты (если нужны)
+│       └── quest_generator.go
 └── README.md                # Этот файл
 ```
 
@@ -30,24 +46,58 @@ tests/integration/
 - Управляет жизненным циклом ресурсов
 - Обеспечивает изоляцию тестов
 
+### Test Groups (`tests/`)
+Организованы по слоям архитектуры:
+
+#### **🌐 E2E Tests** (`quest_e2e_tests/`)
+Тесты полного цикла квеста от создания до завершения:
+- Создание квеста через Handler, назначение через API
+- Проверка событий и состояния в БД
+- Smoke тесты среды
+
+#### **🌍 HTTP Tests** (`quest_http_tests/`)
+Тесты HTTP API слоя:
+- Валидация входных данных
+- Коды ответов и форматы JSON
+- Error handling и edge cases
+
+#### **⚙️ Handler Tests** (`quest_handler_tests/`)
+Тесты Application слоя (use cases):
+- Бизнес-логика без HTTP слоя
+- Оркестрация команд и queries
+- Domain events генерация
+
+#### **🗄️ Repository Tests** (`repository_tests/`)
+Тесты Infrastructure слоя:
+- PostgreSQL интеграция
+- CRUD операции
+- Transaction handling
+
 ### Case Steps (`core/case_steps/`)
-Переиспользуемые шаги для тестирования:
-- `quest_operations.go` - операции с квестами (создание, назначение, изменение статуса)
+Переиспользуемые шаги для всех типов тестов:
+- `quest_creation.go` - создание квестов
+- `quest_queries.go` - получение данных квестов
+- `quest_status.go` - операции изменения статуса
 - `http_requests.go` - HTTP запросы к API
+- `database_steps.go` - прямая работа с БД
 
 ### Storage (`core/storage/`)
 Утилиты для прямого доступа к базе данных в тестах:
-- `quest_storage.go` - работа с квестами
-- `location_storage.go` - работа с локациями  
 - `event_storage.go` - работа с событиями
 
 ### Assertions (`core/assertions/`)
-Пользовательские проверки:
-- `quest_assertions.go` - проверки состояния квестов и событий
+Специализированные проверки по слоям:
+- `quest_e2e_assertions.go` - E2E сценарии
+- `quest_http_assertions.go` - HTTP responses  
+- `quest_handler_assertions.go` - Handler логика ✨
+- `quest_assign_assertions.go` - Назначение квестов
+- `quest_field_assertions.go` - Поля и валидация
+- `quest_list_assertions.go` - Списки квестов
+- `quest_single_assertions.go` - Отдельные квесты
 
 ### Test Data Generators (`core/test_data_generators/`)
 Генераторы тестовых данных:
-- `quest_generator.go` - создание тестовых данных для квестов
+- `quest_generator.go` - создание тестовых данных для квестов всех типов
 
 ## Как запускать тесты
 
@@ -65,36 +115,96 @@ CREATE DATABASE quest_manager_test;
 
 ### Запуск тестов
 
-Запуск всех интеграционных тестов:
+#### Все интеграционные тесты:
 ```bash
-go test -tags=integration ./tests/integration/...
+make test-integration
+# или
+go test -tags=integration ./tests/integration/... -v
 ```
 
-Запуск конкретного тестового набора:
+#### По группам тестов:
 ```bash
-go test -tags=integration ./tests/integration/cases/quest/
+# E2E тесты
+go test -tags=integration ./tests/integration/tests/quest_e2e_tests -v
+
+# HTTP API тесты  
+go test -tags=integration ./tests/integration/tests/quest_http_tests -v
+
+# Handler тесты
+go test -tags=integration ./tests/integration/tests/quest_handler_tests -v
+
+# Repository тесты
+make test-repository
+# или
+go test -tags=integration ./tests/integration/tests/repository_tests -v
 ```
 
-Запуск с подробным выводом:
+#### С анализом покрытия:
 ```bash
-go test -tags=integration -v ./tests/integration/...
+make test-coverage-integration
 ```
 
 ## Примеры тестов
 
-### Test Lifecycle (`quest_lifecycle_test.go`)
-Тестирует полный жизненный цикл квеста:
-- Создание квеста
-- Назначение пользователю
-- Изменение статуса
-- Проверка событий
+### E2E Tests (`quest_e2e_tests/`)
+```go
+// assign_quest_e2e_test.go
+func (s *Suite) TestCreateThroughHandlerAssignThroughAPI() {
+    // Создание через Handler слой
+    createdQuest := casesteps.CreateRandomQuestStep(...)
+    
+    // Назначение через HTTP API
+    response := casesteps.AssignQuestHTTPStep(...)
+    
+    // Проверка в БД и событий
+    assertions.VerifyQuestAssignedCorrectly(...)
+}
+```
 
-### API Tests (`quest_api_test.go`)  
-Тестирует HTTP API:
-- Создание квеста через POST /api/v1/quests
-- Назначение через POST /api/v1/quests/{id}/assign
-- Изменение статуса через PATCH /api/v1/quests/{id}/status
-- Получение квеста через GET /api/v1/quests/{id}
+### HTTP API Tests (`quest_http_tests/`)
+```go  
+// create_quest_http_test.go
+func (s *Suite) TestCreateQuestHTTP() {
+    // Подготовка HTTP запроса
+    requestData := testdatagenerators.ValidHTTPQuestData()
+    
+    // HTTP POST /api/v1/quests
+    response := casesteps.CreateQuestHTTPStep(...)
+    
+    // Проверка HTTP response
+    assertions.VerifyHTTPCreateResponse(...)
+}
+```
+
+### Handler Tests (`quest_handler_tests/`)
+```go
+// create_quest_test.go  
+func (s *Suite) TestCreateQuestWithAllParameters() {
+    // Подготовка команды
+    questData := testdatagenerators.SimpleQuestData(...)
+    
+    // Выполнение через Handler
+    createdQuest := casesteps.CreateQuestStep(...)
+    
+    // Проверка с помощью Handler assertions
+    handlerAssertions.VerifyQuestFullMatch(...)
+}
+```
+
+### Repository Tests (`repository_tests/`)
+```go
+// quest_repository_test.go
+func (s *Suite) TestQuestRepository_Save_Success() {
+    // Создание domain объекта
+    quest := domain.NewQuest(...)
+    
+    // Сохранение через Repository
+    savedQuest := s.TestDIContainer.QuestRepository.Save(...)
+    
+    // Проверка персистентности
+    foundQuest := s.TestDIContainer.QuestRepository.GetByID(...)
+}
+```
 
 ## Конфигурация
 
@@ -113,41 +223,74 @@ go test -tags=integration -v ./tests/integration/...
 
 ## Добавление новых тестов
 
-1. Создайте новый файл в `cases/` с суффиксом `_test.go`
-2. Добавьте build tag `//go:build integration`
-3. Используйте `DefaultSuite` как базу
-4. Создавайте переиспользуемые шаги в `case_steps/`
-5. Добавляйте генераторы данных в `test_data_generators/`
-6. Используйте существующие assertions или создавайте новые
+### Выбор типа теста
+1. **E2E** - для тестирования полных сценариев пользователя
+2. **HTTP** - для тестирования API endpoints и валидации
+3. **Handler** - для тестирования application логики без HTTP
+4. **Repository** - для тестирования персистентности и БД
 
-Пример структуры нового теста:
+### Создание нового теста
+
+1. **Выберите подходящую папку** в `tests/`
+2. **Добавьте build tag** `//go:build integration`
+3. **Используйте базовые компоненты** из `core/`
+
+#### Пример E2E теста:
 ```go
 //go:build integration
 
-package newfeature
+package quest_e2e_tests
 
 import (
+    "context"
     "testing"
     "github.com/stretchr/testify/suite"
-    "quest-manager/tests/integration/cases"
+    "quest-manager/tests/integration/tests"
 )
 
-type NewFeatureSuite struct {
-    suite.Suite
-    cases.DefaultSuite
-}
-
-func TestNewFeature(t *testing.T) {
-    suite.Run(t, new(NewFeatureSuite))
-}
-
-func (s *NewFeatureSuite) SetupSuite() {
-    s.DefaultSuite.SetupSuite()
-}
-
-func (s *NewFeatureSuite) TestSomething() {
-    // Arrange
-    // Act  
-    // Assert
+func (s *Suite) TestNewE2EScenario() {
+    ctx := context.Background()
+    
+    // Используйте case_steps
+    quest := casesteps.CreateRandomQuestStep(...)
+    
+    // Используйте assertions
+    e2eAssertions := assertions.NewQuestE2EAssertions(s.Assert())
+    e2eAssertions.VerifyE2EFlow(...)
 }
 ```
+
+#### Пример HTTP теста:
+```go
+func (s *Suite) TestNewHTTPEndpoint() {
+    // Подготовка данных через генераторы
+    requestData := testdatagenerators.CustomQuestData(...)
+    
+    // HTTP запрос через case_steps
+    response := casesteps.NewHTTPRequestStep(...)
+    
+    // Проверка через HTTP assertions
+    httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+    httpAssertions.VerifyHTTPResponse(...)
+}
+```
+
+### Расширение компонентов
+
+#### Новые assertions:
+Создайте файл в `core/assertions/` следуя паттерну:
+```go
+type NewFeatureAssertions struct {
+    assert *assert.Assertions
+}
+
+func NewNewFeatureAssertions(assert *assert.Assertions) *NewFeatureAssertions {
+    return &NewFeatureAssertions{assert: assert}
+}
+```
+
+#### Новые case_steps:
+Добавьте функции в существующие файлы или создайте новый в `core/case_steps/`
+
+#### Новые генераторы данных:
+Расширьте `quest_generator.go` или создайте новый генератор
