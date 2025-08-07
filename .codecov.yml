@@ -1,0 +1,59 @@
+codecov:
+  require_ci_to_pass: true
+  
+coverage:
+  precision: 2
+  round: down
+  range: "60...90"
+  
+  status:
+    project:
+      default:
+        target: 80%
+        threshold: 2%
+        base: auto
+        flags:
+          - unittests
+          - integration
+        paths:
+          - "internal/"
+    patch:
+      default:
+        target: 70%
+        threshold: 5%
+        base: auto
+
+flags:
+  unittests:
+    paths:
+      - tests/domain/
+      - tests/contracts/
+      - tests/pkg/
+  integration:
+    paths:
+      - tests/integration/
+
+ignore:
+  - "cmd/"
+  - "configs/"
+  - "scripts/"
+  - "tests/"
+  - "internal/generated/"
+  - "*.md"
+  - "*.yml"
+  - "*.yaml"
+  - "Dockerfile"
+  - "Makefile"
+  - ".gitignore"
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+  require_changes: false
+  require_base: false
+  require_head: true
+  branches:
+    - main
+
+github_checks:
+  annotations: true
