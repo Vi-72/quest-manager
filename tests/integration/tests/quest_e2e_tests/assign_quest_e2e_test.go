@@ -12,6 +12,7 @@ import (
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/generated/servers"
+	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
 
@@ -85,10 +86,9 @@ func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 	s.Assert().NotNil(updatedQuest.Assignee, "Assignee field should be set")
 	s.Assert().Equal(userID, *updatedQuest.Assignee, "Assignee ID should match")
 
-	// Verify response data matches DB
-	s.Assert().Equal(createdQuest.ID().String(), assignResult.Id, "Response ID should match quest ID")
-	s.Assert().Equal(userID, assignResult.Assignee, "Response assignee should match user ID")
-	s.Assert().Equal(servers.QuestStatusAssigned, assignResult.Status, "Response status should be assigned")
+	// Verify response data matches DB using assign assertions
+	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
+	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, createdQuest.ID(), userID)
 
 	// 4. Verify assignment events were published
 	s.Assert().True(updatedQuest.UpdatedAt.After(updatedQuest.CreatedAt), "Update time should be after creation time")
@@ -107,27 +107,6 @@ func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 	s.Assert().Equal(createdQuest.ID(), listAssignedResult[0].ID(), "Listed quest should match assigned quest")
 
 	// 5. Verify assignment events were saved in the events table
-	questEvents, err := s.TestDIContainer.EventStorage.GetEventsByAggregateID(ctx, createdQuest.ID())
-	s.Require().NoError(err, "Should retrieve events for the assigned quest")
-	s.Assert().GreaterOrEqual(len(questEvents), 2, "Should have at least 2 events (created + assigned)")
-
-	// Check that quest.assigned event exists
-	var questAssignedEventFound bool
-	var questStatusChangedEventFound bool
-	for _, event := range questEvents {
-		if event.EventType == "quest.assigned" {
-			questAssignedEventFound = true
-			s.Assert().Equal(createdQuest.ID().String(), event.AggregateID, "Assign event aggregate ID should match quest ID")
-			s.Assert().NotEmpty(event.Data, "Assign event data should not be empty")
-			s.Assert().True(event.CreatedAt.After(createdQuest.CreatedAt), "Assign event should be after quest creation")
-		}
-		if event.EventType == "quest.status_changed" {
-			questStatusChangedEventFound = true
-			s.Assert().Equal(createdQuest.ID().String(), event.AggregateID, "Status change event aggregate ID should match quest ID")
-			s.Assert().NotEmpty(event.Data, "Status change event data should not be empty")
-			s.Assert().True(event.CreatedAt.After(createdQuest.CreatedAt), "Status change event should be after quest creation")
-		}
-	}
-	s.Assert().True(questAssignedEventFound, "Should find quest.assigned event in events table")
-	s.Assert().True(questStatusChangedEventFound, "Should find quest.status_changed event in events table")
+	e2eAssertions := assertions.NewQuestE2EAssertions(s.Assert(), s.TestDIContainer.EventStorage)
+	e2eAssertions.VerifyQuestAssignmentEvents(ctx, createdQuest.ID(), createdQuest.CreatedAt)
 }

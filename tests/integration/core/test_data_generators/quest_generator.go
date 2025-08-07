@@ -172,3 +172,42 @@ func RandomQuestData() *servers.CreateQuestRequest {
 		Skills:    &selectedSkills,    // Pointer to slice
 	}
 }
+
+// InvalidCoordinatesQuestData creates quest data with invalid coordinates for negative testing
+func InvalidCoordinatesQuestData() servers.CreateQuestRequest {
+	return servers.CreateQuestRequest{
+		Title:           "Invalid Quest",
+		Description:     "Quest with invalid coordinates",
+		Difficulty:      servers.CreateQuestRequestDifficultyEasy,
+		Reward:          1,
+		DurationMinutes: 30,
+		TargetLocation: servers.Coordinate{
+			Latitude:  95.0, // Invalid: > 90
+			Longitude: 37.6176,
+		},
+		ExecutionLocation: servers.Coordinate{
+			Latitude:  55.7520,
+			Longitude: 37.6175,
+		},
+	}
+}
+
+// ValidHTTPQuestData returns valid quest data for HTTP tests
+func ValidHTTPQuestData() map[string]interface{} {
+	return map[string]interface{}{
+		"title":              "Valid Quest",
+		"description":        "Valid description",
+		"difficulty":         "easy",
+		"reward":             3,
+		"duration_minutes":   60,
+		"target_location":    map[string]interface{}{"latitude": 55.7558, "longitude": 37.6176},
+		"execution_location": map[string]interface{}{"latitude": 55.7560, "longitude": 37.6178},
+	}
+}
+
+// HTTPQuestDataWithField creates HTTP test data with a specific field set to custom value
+func HTTPQuestDataWithField(field string, value interface{}) map[string]interface{} {
+	data := ValidHTTPQuestData()
+	data[field] = value
+	return data
+}

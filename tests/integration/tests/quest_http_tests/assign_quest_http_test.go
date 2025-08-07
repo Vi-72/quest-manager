@@ -9,6 +9,8 @@ import (
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
+
+	"github.com/google/uuid"
 )
 
 // API LAYER VALIDATION TESTS
@@ -39,9 +41,10 @@ func (s *Suite) TestAssignQuestHTTP() {
 	s.Require().NoError(parseErr, "Response should be valid JSON")
 
 	// Verify assignment result
-	s.Assert().Equal(createdQuest.Id, assignResult.Id)
-	s.Assert().Equal(userID, assignResult.Assignee)
-	s.Assert().Equal(servers.QuestStatusAssigned, assignResult.Status)
+	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
+	questID, parseErr := uuid.Parse(createdQuest.Id)
+	s.Require().NoError(parseErr, "Created quest ID should be valid UUID")
+	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, questID, userID)
 }
 
 // API LAYER VALIDATION TESTS

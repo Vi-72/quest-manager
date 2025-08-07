@@ -7,6 +7,7 @@ import (
 	"context"
 
 	"quest-manager/internal/core/domain/model/kernel"
+	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
 )
@@ -99,22 +100,9 @@ func (s *Suite) TestCreateQuestWithAllParameters() {
 		executionLocation)
 	createdQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, questData)
 
-	// Assert
-	s.Require().NoError(err)
-	s.Assert().NotEmpty(createdQuest.ID().String(), "Quest should have ID")
-
-	// Verify all custom parameters
-	s.Assert().Equal("Custom Quest Title", createdQuest.Title)
-	s.Assert().Equal("Custom quest description for testing", createdQuest.Description)
-	s.Assert().Equal("hard", string(createdQuest.Difficulty))
-	s.Assert().Equal(5, createdQuest.Reward)
-	s.Assert().Equal(120, createdQuest.DurationMinutes)
-
-	// Verify locations
-	s.Assert().Equal(targetLocation.Latitude(), createdQuest.TargetLocation.Latitude())
-	s.Assert().Equal(targetLocation.Longitude(), createdQuest.TargetLocation.Longitude())
-	s.Assert().Equal(executionLocation.Latitude(), createdQuest.ExecutionLocation.Latitude())
-	s.Assert().Equal(executionLocation.Longitude(), createdQuest.ExecutionLocation.Longitude())
+	// Assert using handler assertions pattern
+	handlerAssertions := assertions.NewQuestHandlerAssertions(s.Assert())
+	handlerAssertions.VerifyQuestFullMatch(createdQuest, questData, err)
 
 	// Coordinates are validated above - handler level doesn't need address validation
 }

@@ -28,6 +28,7 @@ type HTTPRequest struct {
 func (s *Suite) TestCreateQuestHTTP() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	fieldAssertions := assertions.NewQuestFieldAssertions(s.Assert())
 
 	// Pre-condition - prepare quest data
 	questRequest := testdatagenerators.RandomQuestData()
@@ -40,12 +41,8 @@ func (s *Suite) TestCreateQuestHTTP() {
 	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
 	httpAssertions.QuestArraysNotNull(createdQuest)
 
-	// Verify quest data matches request
-	s.Assert().Equal(questRequest.Title, createdQuest.Title)
-	s.Assert().Equal(questRequest.Description, createdQuest.Description)
-	s.Assert().Equal(string(questRequest.Difficulty), string(createdQuest.Difficulty))
-	s.Assert().Equal(questRequest.Reward, createdQuest.Reward)
-	s.Assert().Equal(questRequest.DurationMinutes, createdQuest.DurationMinutes)
+	// Verify quest data matches request using field assertions pattern
+	fieldAssertions.VerifyHTTPResponseMatchesRequest(&createdQuest, questRequest)
 }
 
 func (s *Suite) TestCreateQuestHTTPWithEmptyArrays() {
@@ -116,43 +113,19 @@ func (s *Suite) TestCreateQuestHTTPEmptyStringFields() {
 		field   string
 	}{
 		{
-			name: "empty title - TrimAndValidateString",
-			request: map[string]interface{}{
-				"title":              "",
-				"description":        "Valid description",
-				"difficulty":         "easy",
-				"reward":             1,
-				"duration_minutes":   1,
-				"target_location":    map[string]interface{}{"latitude": 55.7558, "longitude": 37.6176},
-				"execution_location": map[string]interface{}{"latitude": 55.7560, "longitude": 37.6178},
-			},
-			field: "title",
+			name:    "empty title - TrimAndValidateString",
+			request: testdatagenerators.HTTPQuestDataWithField("title", ""),
+			field:   "title",
 		},
 		{
-			name: "empty description - TrimAndValidateString",
-			request: map[string]interface{}{
-				"title":              "Valid title",
-				"description":        "",
-				"difficulty":         "easy",
-				"reward":             1,
-				"duration_minutes":   1,
-				"target_location":    map[string]interface{}{"latitude": 55.7558, "longitude": 37.6176},
-				"execution_location": map[string]interface{}{"latitude": 55.7560, "longitude": 37.6178},
-			},
-			field: "description",
+			name:    "empty description - TrimAndValidateString",
+			request: testdatagenerators.HTTPQuestDataWithField("description", ""),
+			field:   "description",
 		},
 		{
-			name: "empty difficulty - ValidateNotEmpty",
-			request: map[string]interface{}{
-				"title":              "Valid title",
-				"description":        "Valid description",
-				"difficulty":         "",
-				"reward":             1,
-				"duration_minutes":   1,
-				"target_location":    map[string]interface{}{"latitude": 55.7558, "longitude": 37.6176},
-				"execution_location": map[string]interface{}{"latitude": 55.7560, "longitude": 37.6178},
-			},
-			field: "difficulty",
+			name:    "empty difficulty - ValidateNotEmpty",
+			request: testdatagenerators.HTTPQuestDataWithField("difficulty", ""),
+			field:   "difficulty",
 		},
 	}
 
@@ -181,56 +154,24 @@ func (s *Suite) TestCreateQuestHTTPNegativeNumbers() {
 		field   string
 	}{
 		{
-			name: "negative reward",
-			request: map[string]interface{}{
-				"title":              "Valid Quest",
-				"description":        "Valid description",
-				"difficulty":         "easy",
-				"reward":             -1, // API layer should catch this
-				"duration_minutes":   60,
-				"target_location":    map[string]interface{}{"latitude": 55.7558, "longitude": 37.6176},
-				"execution_location": map[string]interface{}{"latitude": 55.7560, "longitude": 37.6178},
-			},
-			field: "reward",
+			name:    "negative reward",
+			request: testdatagenerators.HTTPQuestDataWithField("reward", -1),
+			field:   "reward",
 		},
 		{
-			name: "negative duration",
-			request: map[string]interface{}{
-				"title":              "Valid Quest",
-				"description":        "Valid description",
-				"difficulty":         "easy",
-				"reward":             3,
-				"duration_minutes":   -30, // API layer should catch this
-				"target_location":    map[string]interface{}{"latitude": 55.7558, "longitude": 37.6176},
-				"execution_location": map[string]interface{}{"latitude": 55.7560, "longitude": 37.6178},
-			},
-			field: "duration_minutes",
+			name:    "negative duration",
+			request: testdatagenerators.HTTPQuestDataWithField("duration_minutes", -30),
+			field:   "duration_minutes",
 		},
 		{
-			name: "zero duration",
-			request: map[string]interface{}{
-				"title":              "Valid Quest",
-				"description":        "Valid description",
-				"difficulty":         "easy",
-				"reward":             3,
-				"duration_minutes":   0, // API layer should catch this
-				"target_location":    map[string]interface{}{"latitude": 55.7558, "longitude": 37.6176},
-				"execution_location": map[string]interface{}{"latitude": 55.7560, "longitude": 37.6178},
-			},
-			field: "duration_minutes",
+			name:    "zero duration",
+			request: testdatagenerators.HTTPQuestDataWithField("duration_minutes", 0),
+			field:   "duration_minutes",
 		},
 		{
-			name: "zero reward",
-			request: map[string]interface{}{
-				"title":              "Valid Quest",
-				"description":        "Valid description",
-				"difficulty":         "easy",
-				"reward":             0, // API layer should catch this
-				"duration_minutes":   60,
-				"target_location":    map[string]interface{}{"latitude": 55.7558, "longitude": 37.6176},
-				"execution_location": map[string]interface{}{"latitude": 55.7560, "longitude": 37.6178},
-			},
-			field: "reward",
+			name:    "zero reward",
+			request: testdatagenerators.HTTPQuestDataWithField("reward", 0),
+			field:   "reward",
 		},
 	}
 

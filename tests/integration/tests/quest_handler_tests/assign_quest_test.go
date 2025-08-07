@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 
 	"quest-manager/internal/core/domain/model/quest"
+	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 )
 
@@ -24,10 +25,8 @@ func (s *Suite) TestAssignQuest() {
 	assignResult, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, createdQuest.ID(), userID)
 
 	// Assert
-	s.Require().NoError(err)
-	s.Assert().Equal(createdQuest.ID(), assignResult.ID)
-	s.Assert().Equal(userID, assignResult.Assignee)
-	s.Assert().Equal(string(quest.StatusAssigned), assignResult.Status)
+	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
+	assignAssertions.VerifyQuestAssignedSuccessfully(err, createdQuest, assignResult, userID)
 }
 
 func (s *Suite) TestAssignQuestFromPostedStatus() {
@@ -53,10 +52,8 @@ func (s *Suite) TestAssignQuestFromPostedStatus() {
 	assignResult, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, postedQuest.ID(), userID)
 
 	// Assert
-	s.Require().NoError(err)
-	s.Assert().Equal(postedQuest.ID(), assignResult.ID)
-	s.Assert().Equal(userID, assignResult.Assignee)
-	s.Assert().Equal(string(quest.StatusAssigned), assignResult.Status)
+	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
+	assignAssertions.VerifyQuestAssignedSuccessfully(err, postedQuest, assignResult, userID)
 }
 
 func (s *Suite) TestAssignQuestNotFound() {
