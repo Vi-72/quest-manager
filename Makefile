@@ -97,6 +97,34 @@ test-watch:
 	find . -name "*.go" | entr -c make test-fast
 
 # ========================
+# SCRIPTS
+# ========================
+
+.PHONY: test-stats
+test-stats:
+	@echo "📈 Running test statistics script..."
+	@chmod +x scripts/test-stats.sh
+	@./scripts/test-stats.sh
+
+.PHONY: test-stats-new
+test-stats-new:
+	@echo "📊 Running new test statistics script..."
+	@chmod +x scripts/test-stats-new.sh
+	@./scripts/test-stats-new.sh
+
+.PHONY: coverage-check
+coverage-check:
+	@echo "🔍 Running coverage check script..."
+	@chmod +x scripts/coverage-check.sh
+	@./scripts/coverage-check.sh
+
+.PHONY: coverage-report
+coverage-report:
+	@echo "📋 Running coverage report script..."
+	@chmod +x scripts/coverage-report.sh
+	@./scripts/coverage-report.sh
+
+# ========================
 # DEV SHORTCUT
 # ========================
 
