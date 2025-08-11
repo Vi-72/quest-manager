@@ -55,12 +55,12 @@ test-contracts:
 .PHONY: test-repository
 test-repository:
 	@echo "🗄️ Running repository integration tests only (PostgreSQL)..."
-	go test -tags=integration ./tests/integration/tests/repository_tests -v
+	go test -tags=integration ./tests/integration/tests/repository_tests -v -p 1 -count=1
 
 .PHONY: test-integration
 test-integration:
 	@echo "🔗 Running ALL integration tests (includes repository)..."
-	go test -tags=integration ./tests/integration/... -v
+	go test -tags=integration ./tests/integration/... -v -p 1 -count=1
 
 
 .PHONY: test-coverage
