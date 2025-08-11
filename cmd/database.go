@@ -46,11 +46,10 @@ func CreateDbIfNotExists(host string, port string, user string,
 
 	_, err = db.Exec(fmt.Sprintf(`CREATE DATABASE "%s"`, dbName))
 	if err != nil {
-		if strings.Contains(err.Error(), "already exists") {
-			log.Printf("БД уже существует, продолжаем.")
-		} else {
+		if !strings.Contains(err.Error(), "already exists") {
 			log.Fatalf("Ошибка создания БД: %v", err)
 		}
+		// Database already exists - continue silently
 	}
 }
 
