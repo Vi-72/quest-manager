@@ -55,17 +55,7 @@ jobs:
           sleep 2
         done
 
-    - name: Run Unit Tests
-      run: |
-        echo "🧪 Running Unit Tests..."
-        go test ./tests/domain -v -race -coverprofile=unit_coverage.out
-
-    - name: Run Contract Tests
-      run: |
-        echo "🤝 Running Contract Tests..."
-        go test ./tests/contracts -v -race
-
-    - name: Run Integration Tests with Coverage
+    - name: Run All Tests with Coverage
       env:
         DB_HOST: localhost
         DB_PORT: "5432"
@@ -74,7 +64,13 @@ jobs:
         DB_NAME: quest_manager_test
         DB_SSLMODE: disable
       run: |
-        echo "🔗 Running Integration Tests..."
+        echo "🧪 Running Unit Tests with Coverage..."
+        go test ./tests/domain -v -race -coverprofile=unit_coverage.out
+        
+        echo "🤝 Running Contract Tests..."
+        go test ./tests/contracts -v -race
+        
+        echo "🔗 Running Integration Tests with Coverage..."
         go test -tags=integration -v -race -p 1 -count=1 -coverprofile=integration_coverage.out -coverpkg=./internal/... ./tests/integration/...
 
     - name: Generate Coverage Report
