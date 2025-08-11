@@ -47,26 +47,21 @@ test-unit:
 	@echo "🧪 Running unit tests..."
 	go test ./tests/domain -v
 
-
+.PHONY: test-contracts
+test-contracts:
+	@echo "🤝 Running contract tests..."
+	go test ./tests/contracts -v
 
 .PHONY: test-repository
 test-repository:
-	@echo "🗄️ Running repository integration tests (PostgreSQL)..."
-	go test -tags=integration ./tests/integration/cases/repository -v
-
-
+	@echo "🗄️ Running repository integration tests only (PostgreSQL)..."
+	go test -tags=integration ./tests/integration/tests/repository_tests -v
 
 .PHONY: test-integration
 test-integration:
-	@echo "🔗 Running integration tests..."
+	@echo "🔗 Running ALL integration tests (includes repository)..."
 	go test -tags=integration ./tests/integration/... -v
 
-
-
-.PHONY: test-fast
-test-fast:
-	@echo "⚡ Running fast tests only..."
-	go test -short ./tests/domain -v
 
 .PHONY: test-coverage
 test-coverage:
@@ -87,7 +82,7 @@ test-bench:
 	go test -bench=. -benchmem ./...
 
 .PHONY: test-all
-test-all: test-unit test-repository test-integration
+test-all: test-unit test-contracts test-integration
 	@echo "✅ All tests completed!"
 
 .PHONY: test-watch
