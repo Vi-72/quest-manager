@@ -131,10 +131,10 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(questRepo)
 
 	// Create HTTP Router for API testing
-	testConfig = cmd.Config{
+	appConfig := cmd.Config{
 		EventGoroutineLimit: 5,
 	}
-	compositionRoot := cmd.NewCompositionRoot(testConfig, db)
+	compositionRoot := cmd.NewCompositionRoot(appConfig, db)
 	httpRouter := cmd.NewRouter(compositionRoot)
 
 	return TestDIContainer{
