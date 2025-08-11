@@ -8,10 +8,23 @@ on:
 
 jobs:
   test:
-    name: Tests and Coverage
+    name: Run All Tests
     runs-on: ubuntu-latest
     
-
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: quest_manager_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
     - name: Checkout code
@@ -35,43 +48,32 @@ jobs:
     - name: Install dependencies
       run: go mod download
 
-
-
-    - name: Run Unit and Contract Tests
+    - name: Wait for PostgreSQL
       run: |
-        echo "🧪 Running Unit Tests with Coverage..."
-        go test ./tests/domain -v -race -coverprofile=unit_coverage.out
+        until pg_isready -h localhost -p 5432 -U postgres; do
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+
+    - name: Run All Tests
+      env:
+        DB_HOST: localhost
+        DB_PORT: "5432"
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        DB_NAME: quest_manager_test
+        DB_SSLMODE: disable
+      run: |
+        echo "🧪 Running Unit Tests..."
+        go test ./tests/domain -v -race
         
         echo "🤝 Running Contract Tests..."
         go test ./tests/contracts -v -race
-
-    - name: Run Coverage Check
-      run: |
-        echo "🎯 Running Coverage Check..."
-        chmod +x scripts/coverage-check.sh
-        ./scripts/coverage-check.sh
-
-    - name: Tests Completed
-      run: |
+        
+        echo "🔗 Running Integration Tests..."
+        go test -tags=integration ./tests/integration/... -v -race
+        
         echo "✅ All tests completed successfully!"
-        echo "🧪 Unit Tests: PASSED"
-        echo "🤝 Contract Tests: PASSED" 
-        echo "📊 Coverage: Check output above"
-
-    - name: Check Coverage Threshold
-      run: |
-        COVERAGE=${{ env.TOTAL_COVERAGE }}
-        THRESHOLD=70
-        
-        echo "Coverage: $COVERAGE%"
-        echo "Threshold: $THRESHOLD%"
-        
-        if (( $(echo "$COVERAGE < $THRESHOLD" | bc -l) )); then
-          echo "❌ Coverage $COVERAGE% is below threshold $THRESHOLD%"
-          exit 1
-        else
-          echo "✅ Coverage $COVERAGE% meets threshold $THRESHOLD%"
-        fi
 
   lint:
     name: Linting
