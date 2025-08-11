@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"strings"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
