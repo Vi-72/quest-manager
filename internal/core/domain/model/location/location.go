@@ -1,9 +1,10 @@
 package location
 
 import (
+	"time"
+
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/pkg/ddd"
-	"time"
 
 	"github.com/google/uuid"
 )

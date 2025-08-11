@@ -2,6 +2,7 @@ package locationrepo
 
 import (
 	"context"
+
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/location"
 	"quest-manager/internal/core/ports"

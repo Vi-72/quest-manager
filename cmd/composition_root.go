@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"log"
+
 	"quest-manager/internal/adapters/in/http"
 	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
