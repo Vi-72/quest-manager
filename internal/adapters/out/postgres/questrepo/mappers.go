@@ -96,7 +96,6 @@ func DtoToDomain(dto QuestDTO) (quest.Quest, error) {
 
 // dtoToDomainCommon contains shared logic for converting DTO to domain
 func dtoToDomainCommon(dto QuestDTO, id uuid.UUID, targetCoord, execCoord kernel.GeoCoordinate) (quest.Quest, error) {
-
 	var equipment []string
 	if dto.Equipment != "" {
 		equipment = strings.Split(dto.Equipment, ",")

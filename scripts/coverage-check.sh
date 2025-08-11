@@ -7,10 +7,9 @@
 echo "🎯 Checking Coverage for Internal Code Only..."
 echo "═══════════════════════════════════════════════════════════════"
 
-# Запускаем все тесты с покрытием только для internal/
-# Исключаем tests/ папку из подсчета покрытия
-# Включаем repository тесты с build tag integration
-go test -p 1 -count=1 -tags=integration -coverprofile=internal_coverage.out -coverpkg=./internal/... ./tests/... 2>/dev/null
+# Запускаем только unit и contract тесты с покрытием для internal/
+# Исключаем интеграционные тесты (требуют PostgreSQL)
+go test -coverprofile=internal_coverage.out -coverpkg=./internal/... ./tests/domain ./tests/contracts 2>/dev/null
 
 if [ -f "internal_coverage.out" ]; then
     # Получаем итоговый процент покрытия
