@@ -3,6 +3,7 @@ package tests
 import (
 	"context"
 	"net/http"
+	"os"
 	"time"
 
 	"quest-manager/cmd"
@@ -47,11 +48,14 @@ type TestDIContainer struct {
 
 // NewTestDIContainer создает новый TestDIContainer для тестов
 func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
-	// Создаем тестовую базу данных если ее нет
-	cmd.CreateDbIfNotExists("localhost", "5432", "postgres", "password", "quest_test", "disable")
-
-	// Подключение к тестовой БД
-	databaseURL := "postgres://postgres:password@localhost:5432/quest_test?sslmode=disable"
+	// Читаем database URL из environment или используем default для локальной разработки
+	databaseURL := os.Getenv("DATABASE_URL")
+	if databaseURL == "" {
+		// Default для локальной разработки
+		databaseURL = "postgres://postgres:password@localhost:5432/quest_test?sslmode=disable"
+		// Создаем тестовую базу данных если ее нет (только для локальной разработки)
+		cmd.CreateDbIfNotExists("localhost", "5432", "postgres", "password", "quest_test", "disable")
+	}
 
 	db, sqlDB, err := cmd.MustConnectDB(databaseURL)
 	suiteContainer.Require().NoError(err, "Failed to connect to test database")
