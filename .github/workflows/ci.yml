@@ -67,7 +67,12 @@ jobs:
 
     - name: Run Integration Tests with Coverage
       env:
-        DATABASE_URL: postgres://postgres:postgres@localhost:5432/quest_manager_test?sslmode=disable
+        DB_HOST: localhost
+        DB_PORT: "5432"
+        DB_USER: postgres
+        DB_PASSWORD: postgres
+        DB_NAME: quest_manager_test
+        DB_SSLMODE: disable
       run: |
         echo "🔗 Running Integration Tests..."
         go test -tags=integration -v -race -p 1 -count=1 -coverprofile=integration_coverage.out -coverpkg=./internal/... ./tests/integration/...

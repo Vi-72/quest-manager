@@ -289,8 +289,8 @@ func (s *EventPublisherContractSuite) TestContextHandling() {
 	// Cancel context and test async publish
 	cancel()
 
-	// Contract: PublishAsync should handle cancelled context gracefully (not panic)
+	// Contract: PublishAsync should handle canceled context gracefully (not panic)
 	s.Assert().NotPanics(func() {
 		s.publisher.PublishAsync(ctx, event)
-	}, "PublishAsync should not panic with cancelled context")
+	}, "PublishAsync should not panic with canceled context")
 }

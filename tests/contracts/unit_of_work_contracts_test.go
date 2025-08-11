@@ -184,7 +184,7 @@ func (s *UnitOfWorkContractSuite) TestContextCancellation() {
 	// Cancel the context
 	cancel()
 
-	// Contract: Operations with cancelled context should handle gracefully
+	// Contract: Operations with canceled context should handle gracefully
 	// The exact behavior may vary by implementation:
 	// 1. May return context.Canceled error
 	// 2. May complete successfully if operation was already in progress
@@ -192,7 +192,7 @@ func (s *UnitOfWorkContractSuite) TestContextCancellation() {
 
 	err = s.unitOfWork.Commit(ctx)
 	if err != nil {
-		s.T().Logf("Commit with cancelled context returned error (acceptable): %v", err)
+		s.T().Logf("Commit with canceled context returned error (acceptable): %v", err)
 		// If commit failed due to context cancellation, try rollback
 		_ = s.unitOfWork.Rollback()
 	}

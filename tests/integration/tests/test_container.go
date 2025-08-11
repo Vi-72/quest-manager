@@ -18,6 +18,26 @@ import (
 	"gorm.io/gorm"
 )
 
+// getTestConfig возвращает конфигурацию для тестов, используя те же env переменные что и приложение
+func getTestConfig() cmd.Config {
+	return cmd.Config{
+		DbHost:     getTestEnv("DB_HOST", "localhost"),
+		DbPort:     getTestEnv("DB_PORT", "5432"),
+		DbUser:     getTestEnv("DB_USER", "postgres"),
+		DbPassword: getTestEnv("DB_PASSWORD", "password"),
+		DbName:     getTestEnv("DB_NAME", "quest_test"),
+		DbSslMode:  getTestEnv("DB_SSLMODE", "disable"),
+	}
+}
+
+// getTestEnv получает environment переменную или возвращает default значение
+func getTestEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
 // TestDIContainer содержит все зависимости для интеграционных тестов
 type TestDIContainer struct {
 	SuiteDIContainer
@@ -48,14 +68,29 @@ type TestDIContainer struct {
 
 // NewTestDIContainer создает новый TestDIContainer для тестов
 func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
-	// Читаем database URL из environment или используем default для локальной разработки
-	databaseURL := os.Getenv("DATABASE_URL")
-	if databaseURL == "" {
-		// Default для локальной разработки
-		databaseURL = "postgres://postgres:password@localhost:5432/quest_test?sslmode=disable"
-		// Создаем тестовую базу данных если ее нет (только для локальной разработки)
-		cmd.CreateDbIfNotExists("localhost", "5432", "postgres", "password", "quest_test", "disable")
-	}
+	// Используем тот же подход что и в основном приложении
+	testConfig := getTestConfig()
+
+	// Создаем базу данных если ее нет (для локальной разработки и CI)
+	cmd.CreateDbIfNotExists(
+		testConfig.DbHost,
+		testConfig.DbPort,
+		testConfig.DbUser,
+		testConfig.DbPassword,
+		testConfig.DbName,
+		testConfig.DbSslMode,
+	)
+
+	// Формируем connection string используя ту же функцию что и в приложении
+	databaseURL, err := cmd.MakeConnectionString(
+		testConfig.DbHost,
+		testConfig.DbPort,
+		testConfig.DbUser,
+		testConfig.DbPassword,
+		testConfig.DbName,
+		testConfig.DbSslMode,
+	)
+	suiteContainer.Require().NoError(err, "Failed to create database connection string")
 
 	db, sqlDB, err := cmd.MustConnectDB(databaseURL)
 	suiteContainer.Require().NoError(err, "Failed to connect to test database")
@@ -96,7 +131,7 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(questRepo)
 
 	// Create HTTP Router for API testing
-	testConfig := cmd.Config{
+	testConfig = cmd.Config{
 		EventGoroutineLimit: 5,
 	}
 	compositionRoot := cmd.NewCompositionRoot(testConfig, db)
@@ -155,7 +190,7 @@ func (c *TestDIContainer) CleanupDatabase() error {
 
 // WaitForEventProcessing actively waits until the expected number of events is stored.
 // If expectedCount is 0, the method waits until the number of events stops changing.
-// Waiting is cancelled by a context with timeout to avoid hanging.
+// Waiting is canceled by a context with timeout to avoid hanging.
 func (c *TestDIContainer) WaitForEventProcessing(expectedCount int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()

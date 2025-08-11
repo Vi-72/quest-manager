@@ -115,7 +115,7 @@ func TestQuest_ChangeStatus_InvalidEnumStatus(t *testing.T) {
 		{"invalid status", quest.Status("invalid")},
 		{"random string", quest.Status("random_status")},
 		{"pending status", quest.Status("pending")},
-		{"cancelled status", quest.Status("cancelled")},
+		{"canceled status", quest.Status("canceled")},
 	}
 
 	for _, tt := range tests {

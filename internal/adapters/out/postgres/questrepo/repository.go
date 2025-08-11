@@ -40,8 +40,9 @@ func (r *Repository) Save(ctx context.Context, q quest.Quest) error {
 	if err != nil {
 		if !isInTransaction {
 			if rollbackErr := r.tracker.Rollback(); rollbackErr != nil {
-			// Log rollback error but don't override the original error
-		}
+				// Log rollback error but don't override the original error
+				_ = rollbackErr
+			}
 		}
 		return errs.WrapInfrastructureError("failed to save quest", err)
 	}
