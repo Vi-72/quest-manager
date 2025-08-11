@@ -76,11 +76,6 @@ test-coverage-integration:
 	go test -tags=integration -coverprofile=coverage-integration.out ./tests/integration/...
 	go tool cover -html=coverage-integration.out -o coverage-integration.html
 
-.PHONY: test-bench
-test-bench:
-	@echo "🚀 Running benchmark tests..."
-	go test -bench=. -benchmem ./...
-
 .PHONY: test-all
 test-all: test-unit test-contracts test-integration
 	@echo "✅ All tests completed!"
@@ -89,7 +84,7 @@ test-all: test-unit test-contracts test-integration
 test-watch:
 	@echo "👀 Watching for changes and running tests..."
 	# Requires 'entr' tool: brew install entr
-	find . -name "*.go" | entr -c make test-fast
+	find . -name "*.go" | entr -c make test
 
 # ========================
 # SCRIPTS
@@ -101,23 +96,11 @@ test-stats:
 	@chmod +x scripts/test-stats.sh
 	@./scripts/test-stats.sh
 
-.PHONY: test-stats-new
-test-stats-new:
-	@echo "📊 Running new test statistics script..."
-	@chmod +x scripts/test-stats-new.sh
-	@./scripts/test-stats-new.sh
-
 .PHONY: coverage-check
 coverage-check:
 	@echo "🔍 Running coverage check script..."
 	@chmod +x scripts/coverage-check.sh
 	@./scripts/coverage-check.sh
-
-.PHONY: coverage-report
-coverage-report:
-	@echo "📋 Running coverage report script..."
-	@chmod +x scripts/coverage-report.sh
-	@./scripts/coverage-report.sh
 
 # ========================
 # DEV SHORTCUT
