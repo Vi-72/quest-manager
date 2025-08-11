@@ -44,12 +44,21 @@ func CreateDbIfNotExists(host string, port string, user string,
 		}
 	}(db)
 
-	_, err = db.Exec(fmt.Sprintf(`CREATE DATABASE "%s"`, dbName))
+	// Проверяем существует ли БД
+	var exists bool
+	checkQuery := `SELECT EXISTS(SELECT datname FROM pg_catalog.pg_database WHERE datname = $1)`
+	err = db.QueryRow(checkQuery, dbName).Scan(&exists)
 	if err != nil {
-		if !strings.Contains(err.Error(), "already exists") {
+		log.Fatalf("Ошибка проверки существования БД: %v", err)
+	}
+
+	// Создаём БД только если её нет
+	if !exists {
+		_, err = db.Exec(fmt.Sprintf(`CREATE DATABASE "%s"`, dbName))
+		if err != nil {
 			log.Fatalf("Ошибка создания БД: %v", err)
 		}
-		// Database already exists - continue silently
+		log.Printf("База данных '%s' создана", dbName)
 	}
 }
 
