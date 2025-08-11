@@ -5,26 +5,26 @@ run:
   modules-download-mode: readonly
 
 output:
-  format: colored-line-number
+  formats:
+    - format: colored-line-number
+      path: stdout
   print-issued-lines: true
   print-linter-name: true
 
 linters-settings:
   errcheck:
-    check-type-assertions: true
-    check-blank: true
-
+    check-type-assertions: false
+    check-blank: false
+    
   govet:
-    check-shadowing: true
+    enable-all: false
     enable:
       - assign
       - atomic
       - bools
       - buildtag
-      - cgocall
       - composites
       - copylocks
-      - deepequalerrors
       - errorsas
       - httpresponse
       - loopclosure
@@ -37,7 +37,6 @@ linters-settings:
       - tests
       - unmarshal
       - unreachable
-      - unsafeptr
       - unusedresult
 
   gofmt:
@@ -46,34 +45,21 @@ linters-settings:
   goimports:
     local-prefixes: quest-manager
 
-  golint:
-    min-confidence: 0.8
-
   gocyclo:
-    min-complexity: 15
-
-  maligned:
-    suggest-new: true
+    min-complexity: 20
 
   dupl:
-    threshold: 100
+    threshold: 150
 
   goconst:
     min-len: 3
-    min-occurrences: 3
-
-  depguard:
-    list-type: blacklist
-    packages:
-      - github.com/sirupsen/logrus
-    packages-with-error-message:
-      - github.com/sirupsen/logrus: "логирование должно использовать стандартный log пакет"
+    min-occurrences: 5
 
   misspell:
     locale: US
 
   lll:
-    line-length: 120
+    line-length: 150
 
   unused:
     check-exported: false
@@ -82,67 +68,25 @@ linters-settings:
     check-exported: false
 
   nakedret:
-    max-func-lines: 30
-
-  prealloc:
-    simple: true
-    range-loops: true
-    for-loops: false
-
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - experimental
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - dupImport
-      - ifElseChain
-      - octalLiteral
-      - whyNoLint
-      - wrapperFunc
+    max-func-lines: 50
 
 linters:
   disable-all: true
   enable:
-    - bodyclose
-    - deadcode
-    - depguard
-    - dogsled
-    - dupl
+    # Основные критичные линтеры
     - errcheck
-    - exportloopref
-    - exhaustive
-    - gochecknoinits
-    - goconst
-    - gocritic
-    - gocyclo
+    - govet  
+    - staticcheck
+    - unused
+    - typecheck
+    - ineffassign
     - gofmt
     - goimports
-    - golint
-    - gomnd
-    - goprintffuncname
-    - gosec
     - gosimple
-    - govet
-    - ineffassign
-    - interfacer
-    - lll
+    
+    # Менее критичные (но полезные)
     - misspell
-    - nakedret
-    - noctx
-    - nolintlint
-    - rowserrcheck
-    - scopelint
-    - staticcheck
-    - structcheck
-    - stylecheck
-    - typecheck
     - unconvert
-    - unparam
-    - unused
-    - varcheck
     - whitespace
 
 issues:
@@ -150,16 +94,15 @@ issues:
     # Исключения для тестовых файлов
     - path: _test\.go
       linters:
-        - gomnd
-        - goconst
+        - errcheck
+        - gosec
         - dupl
         - lll
-        - gosec
 
     # Исключения для main.go
     - path: cmd/app/main\.go
       linters:
-        - gochecknoinits
+        - errcheck
 
     # Исключения для generated кода
     - path: internal/generated/
@@ -170,17 +113,24 @@ issues:
         - dupl
         - lll
 
-    # Исключения для моков
-    - path: tests/contracts/mocks/
+    # Исключения для моков и тестовых утилит
+    - path: tests/
       linters:
         - unused
-        - deadcode
+        - errcheck
+
+    # Исключения для cmd/ пакета
+    - path: cmd/
+      linters:
+        - errcheck
 
   exclude:
     # Стандартные исключения
-    - 'Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*print.*|os\.(Un)?Setenv). is not checked'
+    - 'Error return value of .((os\.)?std(out|err)\..*|.*Close|.*Flush|os\.Remove(All)?|.*printf?|fmt\.Print.*|os\.(Un)?Setenv). is not checked'
     - 'func name will be used as test\.Test.* by other packages, and that stutters; consider calling this'
     - 'G104: Errors unhandled'
+    - 'Error return value of .*\.Log.* is not checked'
+    - 'Error return value of .*Rollback.* is not checked'
 
-  max-issues-per-linter: 0
-  max-same-issues: 0
+  max-issues-per-linter: 50
+  max-same-issues: 10

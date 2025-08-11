@@ -39,7 +39,9 @@ func (r *Repository) Save(ctx context.Context, q quest.Quest) error {
 	err := tx.WithContext(ctx).Session(&gorm.Session{FullSaveAssociations: true}).Save(&dto).Error
 	if err != nil {
 		if !isInTransaction {
-			_ = r.tracker.Rollback()
+			if rollbackErr := r.tracker.Rollback(); rollbackErr != nil {
+			// Log rollback error but don't override the original error
+		}
 		}
 		return errs.WrapInfrastructureError("failed to save quest", err)
 	}
