@@ -24,7 +24,6 @@ func (s *Suite) TestChangeQuestStatusHTTPValidation() {
 	statusRequest := &servers.ChangeStatusRequest{
 		Status: servers.QuestStatusPosted,
 	}
-
 	changeReq := casesteps.ChangeQuestStatusHTTPRequest(createdQuest.ID().String(), statusRequest)
 	changeResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, changeReq)
 
@@ -66,7 +65,6 @@ func (s *Suite) TestChangeQuestStatusHTTPInvalidUUID() {
 	statusRequest := &servers.ChangeStatusRequest{
 		Status: servers.QuestStatusPosted,
 	}
-
 	changeReq := casesteps.ChangeQuestStatusHTTPRequest("invalid-uuid-format", statusRequest)
 	changeResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, changeReq)
 

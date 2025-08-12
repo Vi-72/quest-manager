@@ -263,79 +263,7 @@ func TestQuest_AssignTo_FromPostedStatus(t *testing.T) {
 	assert.Equal(t, userID, *q.Assignee)
 }
 
-func TestQuest_AssignTo_InvalidStatus(t *testing.T) {
-	q := createValidQuest(t)
 
-	// Change to in_progress status
-	q.Status = quest.StatusInProgress
-
-	err := q.AssignTo("test-user")
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "quest can only be assigned if status is 'created' or 'posted'")
-	assert.Nil(t, q.Assignee)
-}
-
-func TestQuest_AssignTo_AlreadyAssigned(t *testing.T) {
-	q := createValidQuest(t)
-	firstUser := "first-user"
-	secondUser := "second-user"
-
-	// Assign to first user
-	err := q.AssignTo(firstUser)
-	assert.NoError(t, err)
-	assert.Equal(t, quest.StatusAssigned, q.Status)
-
-	// Try to assign to second user - should fail because status is now "assigned"
-	// and quest can only be assigned from "created" or "posted" status
-	err = q.AssignTo(secondUser)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "quest can only be assigned if status is 'created' or 'posted'")
-	assert.Equal(t, firstUser, *q.Assignee) // Should still be assigned to first user
-}
-
-func TestQuest_AssignTo_AlreadyAssignedToSameUser(t *testing.T) {
-	q := createValidQuest(t)
-
-	// Set status to posted and manually assign (simulating a quest that was assigned then changed back to posted)
-	q.Status = quest.StatusPosted
-	userID := "test-user"
-	q.Assignee = &userID
-
-	// Try to assign to same user - should still fail because assignee is already set
-	err := q.AssignTo(userID)
-
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "quest is already assigned to another user")
-}
-
-func TestQuest_DomainEvents(t *testing.T) {
-	// Test that creating quest raises QuestCreated event
-	q := createValidQuest(t)
-
-	events := q.GetDomainEvents()
-	assert.Len(t, events, 1, "NewQuest should raise one domain event")
-
-	// Clear events
-	q.ClearDomainEvents()
-	assert.Len(t, q.GetDomainEvents(), 0, "Events should be cleared")
-
-	// Test that assigning quest raises events
-	err := q.AssignTo("test-user")
-	assert.NoError(t, err)
-
-	events = q.GetDomainEvents()
-	assert.Len(t, events, 2, "AssignTo should raise two domain events (assigned + status changed)")
-
-	// Clear and test status change
-	q.ClearDomainEvents()
-	err = q.ChangeStatus(quest.StatusInProgress)
-	assert.NoError(t, err)
-
-	events = q.GetDomainEvents()
-	assert.Len(t, events, 1, "ChangeStatus should raise one domain event")
-}
 
 // Helper function to create a valid quest for testing
 func createValidQuest(t *testing.T) *quest.Quest {

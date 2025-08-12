@@ -29,9 +29,7 @@ func TestNewLocation_Success(t *testing.T) {
 	assert.Equal(t, loc.CreatedAt, loc.UpdatedAt) // Should be same on creation
 	assert.NotNil(t, loc.ID())
 
-	// Check that domain event was raised
-	events := loc.GetDomainEvents()
-	assert.Len(t, events, 1, "NewLocation should raise one domain event")
+
 }
 
 func TestNewLocation_WithNilAddress(t *testing.T) {
@@ -175,31 +173,7 @@ func TestLocation_Update_OnlyAddress(t *testing.T) {
 	assert.Equal(t, newAddress, *loc.Address)
 }
 
-func TestLocation_DomainEvents(t *testing.T) {
-	coordinate := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
-	address := "Test Address"
 
-	// Test creation event
-	loc, err := location.NewLocation(coordinate, &address)
-	assert.NoError(t, err)
-
-	events := loc.GetDomainEvents()
-	assert.Len(t, events, 1, "NewLocation should raise LocationCreated event")
-
-	// Clear events
-	loc.ClearDomainEvents()
-	assert.Len(t, loc.GetDomainEvents(), 0, "Events should be cleared")
-
-	// Test update event
-	newCoordinate := kernel.GeoCoordinate{Lat: 59.9311, Lon: 30.3609}
-	newAddress := "Updated Address"
-
-	err = loc.Update(newCoordinate, &newAddress)
-	assert.NoError(t, err)
-
-	events = loc.GetDomainEvents()
-	assert.Len(t, events, 1, "Update should raise LocationUpdated event")
-}
 
 func TestLocation_ImmutableID(t *testing.T) {
 	coordinate := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}

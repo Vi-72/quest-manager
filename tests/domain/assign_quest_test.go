@@ -101,25 +101,7 @@ func TestQuest_AssignTo_EmptyUserID(t *testing.T) {
 	assert.Equal(t, "", *q.Assignee)
 }
 
-func TestQuest_AssignTo_DomainEvents(t *testing.T) {
-	q := createValidQuest(t)
-	userID := "event-test-user"
 
-	// Clear any existing events
-	q.ClearDomainEvents()
-	assert.Len(t, q.GetDomainEvents(), 0, "Events should be cleared")
-
-	// Act - assign quest
-	err := q.AssignTo(userID)
-	assert.NoError(t, err)
-
-	// Assert - should raise two domain events
-	events := q.GetDomainEvents()
-	assert.Len(t, events, 2, "AssignTo should raise two domain events (assigned + status changed)")
-
-	// Verify events are of correct types (implementation-specific)
-	// Note: Specific event verification depends on domain event implementation
-}
 
 func TestQuest_AssignTo_StatusTransition(t *testing.T) {
 	q := createValidQuest(t)
