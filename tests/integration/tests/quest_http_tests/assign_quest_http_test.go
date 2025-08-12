@@ -8,9 +8,6 @@ import (
 	"quest-manager/internal/generated/servers"
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
-	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
-
-	"github.com/google/uuid"
 )
 
 // API LAYER VALIDATION TESTS
@@ -18,18 +15,15 @@ import (
 
 func (s *Suite) TestAssignQuestHTTP() {
 	ctx := context.Background()
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
 
-	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomCreateQuestRequest()
-	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
-	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
-	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
+	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
+	s.Require().NoError(err)
 
-	// Act - assign quest via HTTP API
+	// Act - assign quest via HTTP API (this is what we're testing)
 	userID := "123e4567-e89b-12d3-a456-426614174000" // Valid UUID
-	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.Id, userID)
+	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID().String(), userID)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert
@@ -42,30 +36,23 @@ func (s *Suite) TestAssignQuestHTTP() {
 	s.Require().NoError(parseErr, "Response should be valid JSON")
 
 	// Verify assignment result
-	questID, parseErr := uuid.Parse(createdQuest.Id)
-	s.Require().NoError(parseErr, "Created quest ID should be valid UUID")
-	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, questID, userID)
+	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, createdQuest.ID(), userID)
 }
-
-// API LAYER VALIDATION TESTS
-// Only tests that correspond to ValidateAssignQuestRequest function
 
 func (s *Suite) TestAssignQuestHTTPMissingRequiredFields() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
-	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomCreateQuestRequest()
-	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
-	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
-	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
+	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
+	s.Require().NoError(err)
 
 	// Act - send request with empty JSON body to test ValidateBody function
 	emptyBodyRequest := map[string]interface{}{} // Empty object
 
 	assignReq := casesteps.HTTPRequest{
 		Method:      "POST",
-		URL:         "/api/v1/quests/" + createdQuest.Id + "/assign",
+		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
 		Body:        emptyBodyRequest,
 		ContentType: "application/json",
 	}
@@ -79,11 +66,9 @@ func (s *Suite) TestAssignQuestHTTPMissingUserID() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
-	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomCreateQuestRequest()
-	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
-	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
-	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
+	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
+	s.Require().NoError(err)
 
 	// Act - send request without user_id field
 	requestBody := map[string]interface{}{
@@ -92,7 +77,7 @@ func (s *Suite) TestAssignQuestHTTPMissingUserID() {
 
 	assignReq := casesteps.HTTPRequest{
 		Method:      "POST",
-		URL:         "/api/v1/quests/" + createdQuest.Id + "/assign",
+		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
 		Body:        requestBody,
 		ContentType: "application/json",
 	}
@@ -106,11 +91,9 @@ func (s *Suite) TestAssignQuestHTTPEmptyUserID() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
-	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomCreateQuestRequest()
-	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
-	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
-	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
+	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
+	s.Require().NoError(err)
 
 	// Act - send request with empty user_id
 	requestBody := map[string]interface{}{
@@ -119,7 +102,7 @@ func (s *Suite) TestAssignQuestHTTPEmptyUserID() {
 
 	assignReq := casesteps.HTTPRequest{
 		Method:      "POST",
-		URL:         "/api/v1/quests/" + createdQuest.Id + "/assign",
+		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
 		Body:        requestBody,
 		ContentType: "application/json",
 	}
@@ -133,11 +116,9 @@ func (s *Suite) TestAssignQuestHTTPInvalidUserIDFormat() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
-	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomCreateQuestRequest()
-	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
-	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
-	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
+	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
+	s.Require().NoError(err)
 
 	// Test cases with invalid UUID formats (ValidateUUID function tests)
 	testCases := []struct {
@@ -171,7 +152,7 @@ func (s *Suite) TestAssignQuestHTTPInvalidUserIDFormat() {
 
 			assignReq := casesteps.HTTPRequest{
 				Method:      "POST",
-				URL:         "/api/v1/quests/" + createdQuest.Id + "/assign",
+				URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
 				Body:        requestBody,
 				ContentType: "application/json",
 			}
@@ -240,17 +221,14 @@ func (s *Suite) TestAssignQuestHTTPInvalidQuestIDFormat() {
 func (s *Suite) TestAssignQuestHTTPMalformedJSON() {
 	ctx := context.Background()
 
-	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomCreateQuestRequest()
-	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
-	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
-	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
+	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
+	s.Require().NoError(err)
 
 	// Act - send malformed JSON
 	malformedRequest := casesteps.HTTPRequest{
 		Method:      "POST",
-		URL:         "/api/v1/quests/" + createdQuest.Id + "/assign",
+		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
 		Body:        `{"user_id": "invalid-json", }`, // Malformed JSON
 		ContentType: "application/json",
 	}
@@ -266,15 +244,13 @@ func (s *Suite) TestAssignQuestHTTPPersistence() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
-	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomCreateQuestRequest()
-	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
-	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
-	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
+	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
+	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
+	s.Require().NoError(err)
 
 	// Act - assign quest via HTTP API
 	userID := "123e4567-e89b-12d3-a456-426614174000"
-	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.Id, userID)
+	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID().String(), userID)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert assignment
@@ -282,14 +258,14 @@ func (s *Suite) TestAssignQuestHTTPPersistence() {
 	s.Require().Equal(http.StatusOK, assignResp.StatusCode)
 
 	// Verify quest is persisted with assignment by retrieving it via HTTP API
-	getReq := casesteps.GetQuestHTTPRequest(createdQuest.Id)
+	getReq := casesteps.GetQuestHTTPRequest(createdQuest.ID().String())
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert retrieval
 	retrievedQuest := httpAssertions.QuestHTTPGetSuccessfully(getResp, err)
 
 	// Verify quest is assigned
-	s.Assert().Equal(createdQuest.Id, retrievedQuest.Id)
+	s.Assert().Equal(createdQuest.ID().String(), retrievedQuest.Id)
 	s.Assert().NotNil(retrievedQuest.Assignee, "Quest should have assignee")
 	s.Assert().Equal(userID, *retrievedQuest.Assignee)
 	s.Assert().Equal(servers.QuestStatusAssigned, retrievedQuest.Status)

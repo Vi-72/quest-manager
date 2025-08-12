@@ -101,8 +101,6 @@ func TestQuest_AssignTo_EmptyUserID(t *testing.T) {
 	assert.Equal(t, "", *q.Assignee)
 }
 
-
-
 func TestQuest_AssignTo_StatusTransition(t *testing.T) {
 	q := createValidQuest(t)
 	userID := "transition-test-user"

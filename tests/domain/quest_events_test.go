@@ -63,7 +63,7 @@ func TestQuest_ChangeStatus_DomainEvents(t *testing.T) {
 
 	// Clear creation events
 	q.ClearDomainEvents()
-	
+
 	// Act - change status (valid transition: created -> posted)
 	err := q.ChangeStatus(quest.StatusPosted)
 	assert.NoError(t, err)
@@ -86,8 +86,8 @@ func TestQuest_GetDomainEvents_Immutability(t *testing.T) {
 	// Modifying returned slice should not affect original
 	if len(events1) > 0 {
 		originalLen := len(events1)
-		events1 = append(events1, events1[0]) // Try to modify
-		
+		_ = append(events1, events1[0]) // Try to modify (deliberately not using result)
+
 		events3 := q.GetDomainEvents()
 		assert.Equal(t, originalLen, len(events3), "Modifying returned events should not affect original")
 	}

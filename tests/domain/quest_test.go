@@ -263,8 +263,6 @@ func TestQuest_AssignTo_FromPostedStatus(t *testing.T) {
 	assert.Equal(t, userID, *q.Assignee)
 }
 
-
-
 // Helper function to create a valid quest for testing
 func createValidQuest(t *testing.T) *quest.Quest {
 	targetLocation := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}

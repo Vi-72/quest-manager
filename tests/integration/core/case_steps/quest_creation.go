@@ -87,11 +87,11 @@ func CreateQuestStep(
 ) (quest.Quest, error) {
 	// Convert to command using factory method
 	cmd := questData.ToCreateCommand()
-	
+
 	// Generate test addresses for locations (handler layer needs addresses)
 	targetAddress := "Target Address: Test Street 123, Test City"
 	executionAddress := "Execution Address: Test Avenue 456, Test City"
-	
+
 	// Make sure execution location is slightly different from target to get different addresses
 	if questData.TargetLocation.Equals(questData.ExecutionLocation) {
 		cmd.ExecutionLocation = kernel.GeoCoordinate{
@@ -101,7 +101,7 @@ func CreateQuestStep(
 		// Also make execution address different if coordinates are the same
 		executionAddress = "Execution Address: Test Avenue 789, Different City"
 	}
-	
+
 	// Set addresses (required by handler layer)
 	cmd.TargetAddress = &targetAddress
 	cmd.ExecutionAddress = &executionAddress

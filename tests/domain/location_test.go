@@ -28,8 +28,6 @@ func TestNewLocation_Success(t *testing.T) {
 	assert.False(t, loc.UpdatedAt.IsZero())
 	assert.Equal(t, loc.CreatedAt, loc.UpdatedAt) // Should be same on creation
 	assert.NotNil(t, loc.ID())
-
-
 }
 
 func TestNewLocation_WithNilAddress(t *testing.T) {
@@ -172,8 +170,6 @@ func TestLocation_Update_OnlyAddress(t *testing.T) {
 	assert.Equal(t, coordinate, loc.Coordinate)
 	assert.Equal(t, newAddress, *loc.Address)
 }
-
-
 
 func TestLocation_ImmutableID(t *testing.T) {
 	coordinate := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
