@@ -19,9 +19,10 @@ import (
 func (s *Suite) TestAssignQuestHTTP() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
 
 	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomQuestData()
+	questRequest := testdatagenerators.RandomCreateQuestRequest()
 	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
@@ -41,7 +42,6 @@ func (s *Suite) TestAssignQuestHTTP() {
 	s.Require().NoError(parseErr, "Response should be valid JSON")
 
 	// Verify assignment result
-	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
 	questID, parseErr := uuid.Parse(createdQuest.Id)
 	s.Require().NoError(parseErr, "Created quest ID should be valid UUID")
 	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, questID, userID)
@@ -55,7 +55,7 @@ func (s *Suite) TestAssignQuestHTTPMissingRequiredFields() {
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomQuestData()
+	questRequest := testdatagenerators.RandomCreateQuestRequest()
 	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
@@ -80,7 +80,7 @@ func (s *Suite) TestAssignQuestHTTPMissingUserID() {
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomQuestData()
+	questRequest := testdatagenerators.RandomCreateQuestRequest()
 	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
@@ -107,7 +107,7 @@ func (s *Suite) TestAssignQuestHTTPEmptyUserID() {
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomQuestData()
+	questRequest := testdatagenerators.RandomCreateQuestRequest()
 	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
@@ -134,7 +134,7 @@ func (s *Suite) TestAssignQuestHTTPInvalidUserIDFormat() {
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomQuestData()
+	questRequest := testdatagenerators.RandomCreateQuestRequest()
 	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
@@ -241,7 +241,7 @@ func (s *Suite) TestAssignQuestHTTPMalformedJSON() {
 	ctx := context.Background()
 
 	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomQuestData()
+	questRequest := testdatagenerators.RandomCreateQuestRequest()
 	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
@@ -267,7 +267,7 @@ func (s *Suite) TestAssignQuestHTTPPersistence() {
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Pre-condition - create quest
-	questRequest := testdatagenerators.RandomQuestData()
+	questRequest := testdatagenerators.RandomCreateQuestRequest()
 	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
 	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)

@@ -31,7 +31,7 @@ func (s *Suite) TestCreateQuestHTTP() {
 	fieldAssertions := assertions.NewQuestFieldAssertions(s.Assert())
 
 	// Pre-condition - prepare quest data
-	questRequest := testdatagenerators.RandomQuestData()
+	questRequest := testdatagenerators.RandomCreateQuestRequest()
 
 	// Act - create quest via HTTP API
 	createReq := casesteps.CreateQuestHTTPRequest(questRequest)
@@ -222,7 +222,7 @@ func (s *Suite) TestCreateQuestHTTPPersistence() {
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Pre-condition - prepare quest data
-	questRequest := testdatagenerators.RandomQuestData()
+	questRequest := testdatagenerators.RandomCreateQuestRequest()
 
 	// Act - create quest via HTTP API
 	createReq := casesteps.CreateQuestHTTPRequest(questRequest)

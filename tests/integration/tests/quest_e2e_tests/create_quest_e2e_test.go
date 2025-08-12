@@ -82,7 +82,7 @@ func (s *E2ESuite) TestCreateQuestThroughAPIInvalidCoordinates() {
 	initialLocationCount := len(initialLocations)
 
 	// Prepare request with invalid coordinates (latitude > 90)
-	questRequest := testdatagenerators.InvalidCoordinatesQuestData()
+	questRequest := testdatagenerators.InvalidCoordinatesCreateQuestRequest()
 
 	// Execute HTTP request
 	createReq := casesteps.CreateQuestHTTPRequest(questRequest)

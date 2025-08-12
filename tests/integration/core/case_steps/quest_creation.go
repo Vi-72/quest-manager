@@ -55,10 +55,8 @@ func CreateRandomQuestStep(
 	ctx context.Context,
 	handler commands.CreateQuestCommandHandler,
 ) (quest.Quest, error) {
-	requestData := testdatagenerators.RandomQuestData()
-	questCmd := convertCreateQuestRequestToCommand(requestData)
-
-	return handler.Handle(ctx, questCmd)
+	randomData := testdatagenerators.RandomQuestData()
+	return CreateQuestStep(ctx, handler, randomData)
 }
 
 // CreateMultipleRandomQuests создает несколько квестов и проверяет ошибки
@@ -87,34 +85,26 @@ func CreateQuestStep(
 	handler commands.CreateQuestCommandHandler,
 	questData testdatagenerators.QuestTestData,
 ) (quest.Quest, error) {
-	// Generate test addresses for locations
+	// Convert to command using factory method
+	cmd := questData.ToCreateCommand()
+	
+	// Generate test addresses for locations (handler layer needs addresses)
 	targetAddress := "Target Address: Test Street 123, Test City"
 	executionAddress := "Execution Address: Test Avenue 456, Test City"
-
+	
 	// Make sure execution location is slightly different from target to get different addresses
 	if questData.TargetLocation.Equals(questData.ExecutionLocation) {
-		questData.ExecutionLocation = kernel.GeoCoordinate{
+		cmd.ExecutionLocation = kernel.GeoCoordinate{
 			Lat: questData.ExecutionLocation.Latitude() + 0.001,
 			Lon: questData.ExecutionLocation.Longitude() + 0.001,
 		}
 		// Also make execution address different if coordinates are the same
 		executionAddress = "Execution Address: Test Avenue 789, Different City"
 	}
-
-	cmd := commands.CreateQuestCommand{
-		Title:             questData.Title,
-		Description:       questData.Description,
-		Difficulty:        questData.Difficulty,
-		Reward:            questData.Reward,
-		DurationMinutes:   questData.DurationMinutes,
-		TargetLocation:    questData.TargetLocation,
-		TargetAddress:     &targetAddress,
-		ExecutionLocation: questData.ExecutionLocation,
-		ExecutionAddress:  &executionAddress,
-		Creator:           questData.Creator,
-		Equipment:         questData.Equipment,
-		Skills:            questData.Skills,
-	}
+	
+	// Set addresses (required by handler layer)
+	cmd.TargetAddress = &targetAddress
+	cmd.ExecutionAddress = &executionAddress
 
 	return handler.Handle(ctx, cmd)
 }

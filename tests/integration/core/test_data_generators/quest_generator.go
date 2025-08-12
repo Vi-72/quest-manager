@@ -5,24 +5,58 @@ import (
 	"math/rand"
 	"os"
 	"strconv"
+	"time"
 
+	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/generated/servers"
 )
 
-var questRand *rand.Rand
+// ============================
+// RNG (сид из ENV или дефолт)
+// ============================
+
+var defaultRng *rand.Rand
 
 func init() {
-	seed := int64(1)
+	seed := time.Now().UnixNano()
 	if s, ok := os.LookupEnv("QUEST_GENERATOR_SEED"); ok {
 		if parsed, err := strconv.ParseInt(s, 10, 64); err == nil {
 			seed = parsed
 		}
 	}
-	questRand = rand.New(rand.NewSource(seed))
+	defaultRng = rand.New(rand.NewSource(seed))
 }
 
-// QuestTestData содержит данные для создания тестового квеста
+// ============================
+// Базовые константы/хелперы
+// ============================
+
+var (
+	MoscowCenter = kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
+	MoscowNear   = kernel.GeoCoordinate{Lat: 55.7539, Lon: 37.6202}
+)
+
+func clampFloat64(x, lo, hi float64) float64 {
+	if x < lo {
+		return lo
+	}
+	if x > hi {
+		return hi
+	}
+	return x
+}
+
+func pick[T any](r *rand.Rand, xs []T) T {
+	return xs[r.Intn(len(xs))]
+}
+
+func ptr[T any](v T) *T { return &v }
+
+// ============================
+// Модель тестовых данных
+// ============================
+
 type QuestTestData struct {
 	Title             string
 	Description       string
@@ -36,99 +70,156 @@ type QuestTestData struct {
 	Skills            []string
 }
 
-// DefaultTestCoordinate returns default coordinates for testing (Moscow center)
-func DefaultTestCoordinate() kernel.GeoCoordinate {
-	return kernel.GeoCoordinate{
-		Lat: 55.7558, // Moscow latitude
-		Lon: 37.6176, // Moscow longitude
+// ============================
+// Конвертеры
+// ============================
+
+func (data QuestTestData) ToCreateCommand() commands.CreateQuestCommand {
+	return commands.CreateQuestCommand{
+		Title:             data.Title,
+		Description:       data.Description,
+		Difficulty:        data.Difficulty,
+		Reward:            data.Reward,
+		DurationMinutes:   data.DurationMinutes,
+		TargetLocation:    data.TargetLocation,
+		ExecutionLocation: data.ExecutionLocation,
+		Creator:           data.Creator,
+		Equipment:         data.Equipment,
+		Skills:            data.Skills,
 	}
 }
 
-// DefaultQuestData возвращает стандартные данные для квеста
-func DefaultQuestData() QuestTestData {
-	return QuestTestData{
-		Title:           "Test Quest",
-		Description:     "A test quest for integration testing",
-		Difficulty:      "medium",
-		Reward:          3,
-		DurationMinutes: 60,
-		Creator:         "test-creator",
-		TargetLocation: kernel.GeoCoordinate{
-			Lat: 25.7558,
-			Lon: 37.6176,
-		},
-		ExecutionLocation: kernel.GeoCoordinate{
-			Lat: 55.7539,
-			Lon: 77.4802,
-		},
-		Equipment: []string{"map", "compass"},
-		Skills:    []string{"navigation", "observation"},
+func (data QuestTestData) ToHTTPRequest() map[string]interface{} {
+	return map[string]interface{}{
+		"title":              data.Title,
+		"description":        data.Description,
+		"difficulty":         data.Difficulty,
+		"reward":             data.Reward,
+		"duration_minutes":   data.DurationMinutes,
+		"creator":            data.Creator,
+		"target_location":    map[string]interface{}{"latitude": data.TargetLocation.Lat, "longitude": data.TargetLocation.Lon},
+		"execution_location": map[string]interface{}{"latitude": data.ExecutionLocation.Lat, "longitude": data.ExecutionLocation.Lon},
+		"equipment":          data.Equipment,
+		"skills":             data.Skills,
 	}
 }
 
-// EmptyArraysQuestData возвращает данные для квеста с пустыми массивами Equipment и Skills
-func EmptyArraysQuestData() QuestTestData {
-	return QuestTestData{
-		Title:           "Empty Arrays Test Quest",
-		Description:     "A test quest with empty equipment and skills arrays",
-		Difficulty:      "easy",
-		Reward:          2,
-		DurationMinutes: 30,
-		Creator:         "test-creator",
-		TargetLocation: kernel.GeoCoordinate{
-			Lat: 25.7558,
-			Lon: 37.6176,
+func (data QuestTestData) ToCreateQuestRequest() servers.CreateQuestRequest {
+	return servers.CreateQuestRequest{
+		Title:           data.Title,
+		Description:     data.Description,
+		Difficulty:      servers.CreateQuestRequestDifficulty(data.Difficulty),
+		Reward:          data.Reward,
+		DurationMinutes: data.DurationMinutes,
+		TargetLocation: servers.Coordinate{
+			Latitude:  float32(data.TargetLocation.Lat),
+			Longitude: float32(data.TargetLocation.Lon),
 		},
-		ExecutionLocation: kernel.GeoCoordinate{
-			Lat: 55.7539,
-			Lon: 77.4802,
+		ExecutionLocation: servers.Coordinate{
+			Latitude:  float32(data.ExecutionLocation.Lat),
+			Longitude: float32(data.ExecutionLocation.Lon),
 		},
-		Equipment: []string{}, // Empty array
-		Skills:    []string{}, // Empty array
+		Equipment: ptr(data.Equipment),
+		Skills:    ptr(data.Skills),
 	}
 }
 
-// QuestDataWithLocations возвращает данные для квеста с заданными локациями и дефолтными названиями
-func QuestDataWithLocations(targetLoc, execLoc kernel.GeoCoordinate) QuestTestData {
-	data := DefaultQuestData()
-	data.TargetLocation = targetLoc
-	data.ExecutionLocation = execLoc
+// ============================
+// Option-паттерн
+// ============================
+
+type Option func(*QuestTestData, *rand.Rand)
+
+func NewQuest(opts ...Option) QuestTestData {
+	// База по умолчанию
+	data := QuestTestData{
+		Title:             "Test Quest",
+		Description:       "A test quest for integration testing",
+		Difficulty:        "medium",
+		Reward:            3,
+		DurationMinutes:   60,
+		Creator:           "test-creator",
+		TargetLocation:    MoscowCenter,
+		ExecutionLocation: MoscowNear,
+		Equipment:         []string{"map", "compass"},
+		Skills:            []string{"navigation", "observation"},
+	}
+	// Прогоняем опции на дефолтном RNG
+	for _, opt := range opts {
+		opt(&data, defaultRng)
+	}
 	return data
 }
 
-// SimpleQuestData возвращает данные для простого квеста с заданными параметрами
-func SimpleQuestData(title, description, difficulty string, reward, duration int, targetLoc, execLoc kernel.GeoCoordinate) QuestTestData {
-	data := DefaultQuestData()
-	data.Title = title
-	data.Description = description
-	data.Difficulty = difficulty
-	data.Reward = reward
-	data.DurationMinutes = duration
-	data.TargetLocation = targetLoc
-	data.ExecutionLocation = execLoc
-	return data
+// ---- Готовые опции (композиция, без дублирования):
+
+func WithRand(rng *rand.Rand) Option {
+	return func(q *QuestTestData, _ *rand.Rand) { // подменим RNG через замыкание
+		// Ничего не меняем в q — эта опция полезна как "обёртка" для других WithRandom* опций
+		// Используйте вместе: NewQuest(WithRand(myRng), WithRandom(...))
+		defaultRng = rng
+	}
 }
 
-// RandomQuestData генерирует случайные данные для квеста
-func RandomQuestData() *servers.CreateQuestRequest {
-	r := questRand
+func WithTitle(title string) Option {
+	return func(q *QuestTestData, _ *rand.Rand) { q.Title = title }
+}
 
-	difficulties := []servers.CreateQuestRequestDifficulty{
-		servers.CreateQuestRequestDifficultyEasy,
-		servers.CreateQuestRequestDifficultyMedium,
-		servers.CreateQuestRequestDifficultyHard,
+func WithDescription(desc string) Option {
+	return func(q *QuestTestData, _ *rand.Rand) { q.Description = desc }
+}
+
+func WithDifficulty(diff string) Option {
+	return func(q *QuestTestData, _ *rand.Rand) { q.Difficulty = diff }
+}
+
+func WithReward(reward int) Option {
+	return func(q *QuestTestData, _ *rand.Rand) { q.Reward = reward }
+}
+
+func WithDuration(minutes int) Option {
+	return func(q *QuestTestData, _ *rand.Rand) { q.DurationMinutes = minutes }
+}
+
+func WithCreator(creator string) Option {
+	return func(q *QuestTestData, _ *rand.Rand) { q.Creator = creator }
+}
+
+func WithLocations(target, exec kernel.GeoCoordinate) Option {
+	return func(q *QuestTestData, _ *rand.Rand) {
+		q.TargetLocation = target
+		q.ExecutionLocation = exec
 	}
+}
 
+func WithEquipment(eq []string) Option {
+	return func(q *QuestTestData, _ *rand.Rand) { q.Equipment = eq }
+}
+
+func WithSkills(sk []string) Option {
+	return func(q *QuestTestData, _ *rand.Rand) { q.Skills = sk }
+}
+
+func WithEmptyArrays() Option {
+	return func(q *QuestTestData, _ *rand.Rand) {
+		q.Equipment = []string{}
+		q.Skills = []string{}
+	}
+}
+
+func WithInvalidCoordinates() Option {
+	return func(q *QuestTestData, _ *rand.Rand) {
+		q.TargetLocation = kernel.GeoCoordinate{Lat: 95.0, Lon: 37.6176} // специально невалидно
+	}
+}
+
+// Случайная генерация (компонуется с остальными)
+func WithRandom() Option {
+	difficulties := []string{"easy", "medium", "hard"}
 	titles := []string{
-		"Treasure Hunt",
-		"City Explorer",
-		"Mystery Solver",
-		"Adventure Seeker",
-		"Photo Quest",
-		"Cultural Journey",
-		"Food Discovery",
+		"Treasure Hunt", "City Explorer", "Mystery Solver",
+		"Adventure Seeker", "Photo Quest", "Cultural Journey", "Food Discovery",
 	}
-
 	equipment := [][]string{
 		{"map", "compass"},
 		{"camera", "notebook"},
@@ -136,7 +227,6 @@ func RandomQuestData() *servers.CreateQuestRequest {
 		{"binoculars", "magnifying glass"},
 		{"flashlight", "rope"},
 	}
-
 	skills := [][]string{
 		{"navigation", "observation"},
 		{"photography", "research"},
@@ -145,69 +235,144 @@ func RandomQuestData() *servers.CreateQuestRequest {
 		{"physical fitness", "communication"},
 	}
 
-	selectedEquipment := equipment[r.Intn(len(equipment))]
-	selectedSkills := skills[r.Intn(len(skills))]
+	return func(q *QuestTestData, r *rand.Rand) {
+		q.Title = fmt.Sprintf("%s #%d", pick(r, titles), r.Intn(1000))
+		q.Description = fmt.Sprintf("Generated test quest %d for integration testing", r.Intn(10000))
+		q.Difficulty = pick(r, difficulties)
+		q.Reward = r.Intn(5) + 1
+		q.DurationMinutes = (r.Intn(6) + 1) * 30
+		q.Equipment = pick(r, equipment)
+		q.Skills = pick(r, skills)
 
-	// Generate addresses for locations
-	targetAddress := "Test Target Address: Moscow Center"
-	executionAddress := "Test Execution Address: Moscow Suburbs"
-
-	return &servers.CreateQuestRequest{
-		Title:           titles[r.Intn(len(titles))] + fmt.Sprintf(" #%d", r.Intn(1000)),
-		Description:     fmt.Sprintf("Generated test quest %d for integration testing", r.Intn(10000)),
-		Difficulty:      difficulties[r.Intn(len(difficulties))],
-		Reward:          r.Intn(5) + 1,        // 1-5
-		DurationMinutes: (r.Intn(6) + 1) * 30, // 30, 60, 90, 120, 150, 180 minutes
-		TargetLocation: servers.Coordinate{
-			Address:   &targetAddress,
-			Latitude:  float32(55.7 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
-			Longitude: float32(37.6 + (r.Float64()-0.5)*0.1), // Moscow area ±0.05°
-		},
-		ExecutionLocation: servers.Coordinate{
-			Address:   &executionAddress,
-			Latitude:  float32(65.7 + (r.Float64()-0.5)*0.1), // Different area ±0.05°
-			Longitude: float32(47.6 + (r.Float64()-0.5)*0.1), // Different area ±0.05°
-		},
-		Equipment: &selectedEquipment, // Pointer to slice
-		Skills:    &selectedSkills,    // Pointer to slice
+		// Координаты около Москвы в пределах ~±0.05°
+		q.TargetLocation = kernel.GeoCoordinate{
+			Lat: 55.7 + (r.Float64()-0.5)*0.1,
+			Lon: 37.6 + (r.Float64()-0.5)*0.1,
+		}
+		q.ExecutionLocation = kernel.GeoCoordinate{
+			Lat: 55.7 + (r.Float64()-0.5)*0.1,
+			Lon: 37.6 + (r.Float64()-0.5)*0.1,
+		}
+		// при желании можно clamp-нуть:
+		q.TargetLocation.Lat = clampFloat64(q.TargetLocation.Lat, -90, 90)
+		q.ExecutionLocation.Lat = clampFloat64(q.ExecutionLocation.Lat, -90, 90)
 	}
 }
 
-// InvalidCoordinatesQuestData creates quest data with invalid coordinates for negative testing
-func InvalidCoordinatesQuestData() servers.CreateQuestRequest {
-	return servers.CreateQuestRequest{
-		Title:           "Invalid Quest",
-		Description:     "Quest with invalid coordinates",
-		Difficulty:      servers.CreateQuestRequestDifficultyEasy,
-		Reward:          1,
-		DurationMinutes: 30,
-		TargetLocation: servers.Coordinate{
-			Latitude:  95.0, // Invalid: > 90
-			Longitude: 37.6176,
-		},
-		ExecutionLocation: servers.Coordinate{
-			Latitude:  55.7520,
-			Longitude: 37.6175,
-		},
-	}
+// ============================
+// Функции для обратной совместимости
+// ============================
+
+// DefaultQuestData возвращает стандартные данные для квеста
+func DefaultQuestData() QuestTestData {
+	return NewQuest()
 }
 
-// ValidHTTPQuestData returns valid quest data for HTTP tests
+// EmptyArraysQuestData возвращает данные с пустыми массивами
+func EmptyArraysQuestData() QuestTestData {
+	return NewQuest(WithEmptyArrays())
+}
+
+// RandomQuestData возвращает случайные данные для квеста
+func RandomQuestData() QuestTestData {
+	return NewQuest(WithRandom())
+}
+
+// InvalidCoordinatesQuestData возвращает данные с некорректными координатами
+func InvalidCoordinatesQuestData() QuestTestData {
+	return NewQuest(WithInvalidCoordinates())
+}
+
+// QuestDataWithLocations возвращает данные с заданными локациями
+func QuestDataWithLocations(targetLoc, execLoc kernel.GeoCoordinate) QuestTestData {
+	return NewQuest(WithLocations(targetLoc, execLoc))
+}
+
+// SimpleQuestData возвращает простые данные с заданными параметрами
+func SimpleQuestData(title, description, difficulty string, reward, duration int, targetLoc, execLoc kernel.GeoCoordinate) QuestTestData {
+	return NewQuest(
+		WithTitle(title),
+		WithDescription(description),
+		WithDifficulty(difficulty),
+		WithReward(reward),
+		WithDuration(duration),
+		WithLocations(targetLoc, execLoc),
+	)
+}
+
+// ============================
+// Хелперы для *servers.CreateQuestRequest
+// ============================
+
+// DefaultCreateQuestRequest возвращает стандартный запрос
+func DefaultCreateQuestRequest() *servers.CreateQuestRequest {
+	req := NewQuest().ToCreateQuestRequest()
+	return &req
+}
+
+// EmptyArraysCreateQuestRequest возвращает запрос с пустыми массивами
+func EmptyArraysCreateQuestRequest() *servers.CreateQuestRequest {
+	req := NewQuest(WithEmptyArrays()).ToCreateQuestRequest()
+	return &req
+}
+
+// RandomCreateQuestRequest возвращает случайный запрос
+func RandomCreateQuestRequest() *servers.CreateQuestRequest {
+	req := NewQuest(WithRandom()).ToCreateQuestRequest()
+	return &req
+}
+
+// InvalidCoordinatesCreateQuestRequest возвращает запрос с некорректными координатами
+func InvalidCoordinatesCreateQuestRequest() *servers.CreateQuestRequest {
+	req := NewQuest(WithInvalidCoordinates()).ToCreateQuestRequest()
+	return &req
+}
+
+// CreateQuestRequestWithLocations возвращает запрос с заданными локациями
+func CreateQuestRequestWithLocations(targetLoc, execLoc kernel.GeoCoordinate) *servers.CreateQuestRequest {
+	req := NewQuest(WithLocations(targetLoc, execLoc)).ToCreateQuestRequest()
+	return &req
+}
+
+// SimpleCreateQuestRequest возвращает простой запрос
+func SimpleCreateQuestRequest(title, description string, difficulty servers.CreateQuestRequestDifficulty, reward, duration int, targetLoc, execLoc kernel.GeoCoordinate) *servers.CreateQuestRequest {
+	req := NewQuest(
+		WithTitle(title),
+		WithDescription(description),
+		WithDifficulty(string(difficulty)),
+		WithReward(reward),
+		WithDuration(duration),
+		WithLocations(targetLoc, execLoc),
+	).ToCreateQuestRequest()
+	return &req
+}
+
+// ============================
+// Хелперы для HTTP и прочего
+// ============================
+
+// ValidHTTPQuestData возвращает валидные данные для HTTP тестов
 func ValidHTTPQuestData() map[string]interface{} {
-	return map[string]interface{}{
-		"title":              "Valid Quest",
-		"description":        "Valid description",
-		"difficulty":         "easy",
-		"reward":             3,
-		"duration_minutes":   60,
-		"target_location":    map[string]interface{}{"latitude": 55.7558, "longitude": 37.6176},
-		"execution_location": map[string]interface{}{"latitude": 55.7560, "longitude": 37.6178},
-	}
+	return NewQuest().ToHTTPRequest()
 }
 
-// HTTPQuestDataWithField creates HTTP test data with a specific field set to custom value
+// HTTPQuestDataWithField создает HTTP данные с кастомным полем
 func HTTPQuestDataWithField(field string, value interface{}) map[string]interface{} {
-	data := ValidHTTPQuestData()
+	data := NewQuest().ToHTTPRequest()
 	data[field] = value
 	return data
+}
+
+// ============================
+// Экспорт констант для обратной совместимости
+// ============================
+
+// DefaultTestCoordinate возвращает стандартные координаты для тестов (Москва центр)
+func DefaultTestCoordinate() kernel.GeoCoordinate {
+	return MoscowCenter
+}
+
+// SecondTestCoordinate возвращает вторые тестовые координаты (Москва пригород)
+func SecondTestCoordinate() kernel.GeoCoordinate {
+	return MoscowNear
 }
