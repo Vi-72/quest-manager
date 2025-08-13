@@ -1,15 +1,11 @@
 package quest_e2e_tests
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
-	"net/http/httptest"
 	"time"
 
-	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/generated/servers"
 	"quest-manager/tests/integration/core/assertions"
@@ -23,7 +19,7 @@ import (
 func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 	ctx := context.Background()
 
-	// 1. Create quest through handler (not API)
+	// 1. Create quest through handler (not API) using helper
 	questData := testdatagenerators.SimpleQuestData(
 		"Handler Created Quest",
 		"Quest created via handler for E2E assign test",
@@ -34,46 +30,23 @@ func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 		testdatagenerators.DefaultTestCoordinate(),
 	)
 
-	createCmd := commands.CreateQuestCommand{
-		Title:             questData.Title,
-		Description:       questData.Description,
-		Difficulty:        questData.Difficulty,
-		Reward:            questData.Reward,
-		DurationMinutes:   questData.DurationMinutes,
-		Creator:           questData.Creator,
-		TargetLocation:    questData.TargetLocation,
-		ExecutionLocation: questData.ExecutionLocation,
-		Equipment:         questData.Equipment,
-		Skills:            questData.Skills,
-	}
-
-	createdQuest, err := s.TestDIContainer.CreateQuestHandler.Handle(ctx, createCmd)
-	s.Require().NoError(err, "Quest creation through handler should succeed")
-	s.Require().NotNil(createdQuest, "Created quest should not be nil")
+	createdQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, questData)
+	s.Require().NoError(err)
 
 	// Wait for async processing
 	time.Sleep(100 * time.Millisecond)
 
-	// 2. Assign quest through API
+	// 2. Assign quest through API using helper
 	userID := uuid.New().String()
-	assignRequest := servers.AssignQuestRequest{
-		UserId: userID,
-	}
-
-	requestBody, err := json.Marshal(assignRequest)
-	s.Require().NoError(err)
-
-	// Make assign request through HTTP API
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/api/v1/quests/%s/assign", createdQuest.ID()), bytes.NewReader(requestBody))
-	req.Header.Set("Content-Type", "application/json")
-	recorder := httptest.NewRecorder()
-	s.TestDIContainer.HTTPRouter.ServeHTTP(recorder, req)
+	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID().String(), userID)
+	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Check HTTP response
-	s.Assert().Equal(http.StatusOK, recorder.Code, "Quest assignment should succeed")
+	s.Require().NoError(err, "HTTP request should not fail")
+	s.Assert().Equal(http.StatusOK, assignResp.StatusCode, "Quest assignment should succeed")
 
 	var assignResult servers.AssignQuestResult
-	err = json.Unmarshal(recorder.Body.Bytes(), &assignResult)
+	err = json.Unmarshal([]byte(assignResp.Body), &assignResult)
 	s.Require().NoError(err, "Should unmarshal assign response")
 
 	// Wait for async processing
