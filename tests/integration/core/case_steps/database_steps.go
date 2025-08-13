@@ -7,12 +7,6 @@ import (
 	"quest-manager/internal/core/domain/model/quest"
 )
 
-// DatabaseRecordCounts represents counts of records in different tables
-type DatabaseRecordCounts struct {
-	QuestCount    int
-	LocationCount int
-}
-
 // CountInitialDatabaseRecords is a helper to get initial record counts before test operations
 func CountInitialDatabaseRecords(
 	ctx context.Context,

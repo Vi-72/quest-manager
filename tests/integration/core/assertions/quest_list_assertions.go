@@ -76,10 +76,10 @@ func (a *QuestListAssertions) QuestWithIDNotExists(quests []quest.Quest, questID
 func (a *QuestListAssertions) QuestListHTTPAllAssignedToUser(httpQuests []servers.Quest, expectedUserID string, expectedCount int) {
 	a.assert.Len(httpQuests, expectedCount, "Should return %d assigned quests", expectedCount)
 
-	for i, quest := range httpQuests {
-		a.assert.NotNil(quest.Assignee, "Quest at index %d should have an assignee", i)
-		a.assert.Equal(expectedUserID, *quest.Assignee, "Quest at index %d should be assigned to the expected user", i)
-		a.assert.Equal(servers.QuestStatusAssigned, quest.Status, "Quest at index %d should have 'assigned' status", i)
+	for i, httpQuest := range httpQuests {
+		a.assert.NotNil(httpQuest.Assignee, "Quest at index %d should have an assignee", i)
+		a.assert.Equal(expectedUserID, *httpQuest.Assignee, "Quest at index %d should be assigned to the expected user", i)
+		a.assert.Equal(servers.QuestStatusAssigned, httpQuest.Status, "Quest at index %d should have 'assigned' status", i)
 	}
 }
 
