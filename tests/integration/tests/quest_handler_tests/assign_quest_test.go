@@ -15,6 +15,7 @@ import (
 
 func (s *Suite) TestAssignQuest() {
 	ctx := context.Background()
+	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
 
 	// Pre-condition - create quest
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
@@ -25,12 +26,12 @@ func (s *Suite) TestAssignQuest() {
 	assignResult, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, createdQuest.ID(), userID)
 
 	// Assert
-	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
 	assignAssertions.VerifyQuestAssignedSuccessfully(err, createdQuest, assignResult, userID)
 }
 
 func (s *Suite) TestAssignQuestFromPostedStatus() {
 	ctx := context.Background()
+	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
 
 	// Pre-condition - create quest and change to posted status
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
@@ -52,7 +53,6 @@ func (s *Suite) TestAssignQuestFromPostedStatus() {
 	assignResult, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, postedQuest.ID(), userID)
 
 	// Assert
-	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
 	assignAssertions.VerifyQuestAssignedSuccessfully(err, postedQuest, assignResult, userID)
 }
 

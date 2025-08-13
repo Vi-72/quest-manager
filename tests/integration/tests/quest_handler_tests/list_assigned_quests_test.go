@@ -13,6 +13,7 @@ import (
 
 func (s *Suite) TestListAssignedQuests() {
 	ctx := context.Background()
+	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 
 	// Pre-condition - create multiple quests and assign them to a specific user
 	testUserID := "test-user-123"
@@ -31,7 +32,6 @@ func (s *Suite) TestListAssignedQuests() {
 
 	// Assert
 	s.Require().NoError(err)
-	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 	listAssertions.QuestsHaveMinimumCount(quests, expectedCount)
 	listAssertions.QuestsContainAllCreated(createdQuests, quests)
 

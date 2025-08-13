@@ -84,6 +84,7 @@ func (s *Suite) TestCreateQuestWithCustomLocations() {
 
 func (s *Suite) TestCreateQuestWithAllParameters() {
 	ctx := context.Background()
+	handlerAssertions := assertions.NewQuestHandlerAssertions(s.Assert())
 
 	// Pre-condition - prepare specific test data
 	targetLocation := kernel.GeoCoordinate{Lat: 40.7128, Lon: -74.0060}     // NYC
@@ -101,7 +102,6 @@ func (s *Suite) TestCreateQuestWithAllParameters() {
 	createdQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, questData)
 
 	// Assert using handler assertions pattern
-	handlerAssertions := assertions.NewQuestHandlerAssertions(s.Assert())
 	handlerAssertions.VerifyQuestFullMatch(createdQuest, questData, err)
 
 	// Coordinates are validated above - handler level doesn't need address validation

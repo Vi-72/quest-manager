@@ -13,6 +13,7 @@ import (
 
 func (s *Suite) TestGetQuestByID() {
 	ctx := context.Background()
+	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
 
 	// Pre-condition - create quest
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
@@ -23,9 +24,6 @@ func (s *Suite) TestGetQuestByID() {
 
 	// Assert
 	s.Require().NoError(err)
-
-	// Create assertions for single quest verification
-	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
 	singleAssertions.QuestMatchesCreated(foundQuest, createdQuest)
 	singleAssertions.QuestHasValidLocationData(foundQuest)
 }
@@ -46,6 +44,7 @@ func (s *Suite) TestGetQuestByIDNotFound() {
 
 func (s *Suite) TestGetQuestByIDHasAddresses() {
 	ctx := context.Background()
+	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
 
 	// Pre-condition - create quest with explicit different locations
 	targetLocation := testdatagenerators.DefaultTestCoordinate()
@@ -65,9 +64,6 @@ func (s *Suite) TestGetQuestByIDHasAddresses() {
 
 	// Assert
 	s.Require().NoError(err)
-
-	// Create assertions for location verification
-	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
 	singleAssertions.QuestHasValidLocationData(foundQuest)
 	s.Assert().Contains(*foundQuest.TargetAddress, "Target Address", "Target address should contain expected prefix")
 	s.Assert().Contains(*foundQuest.ExecutionAddress, "Execution Address", "Execution address should contain expected prefix")

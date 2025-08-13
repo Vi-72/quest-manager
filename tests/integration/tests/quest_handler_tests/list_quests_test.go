@@ -13,6 +13,7 @@ import (
 
 func (s *Suite) TestListQuests() {
 	ctx := context.Background()
+	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 
 	// Pre-condition - create multiple quests
 	expectedCount := 2
@@ -24,9 +25,6 @@ func (s *Suite) TestListQuests() {
 
 	// Assert
 	s.Require().NoError(err)
-
-	// Create assertions for list verification
-	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 	listAssertions.QuestsHaveMinimumCount(quests, expectedCount)
 	listAssertions.QuestsContainAllCreated(createdQuests, quests)
 }
@@ -44,6 +42,7 @@ func (s *Suite) TestListQuestsEmpty() {
 
 func (s *Suite) TestListQuestsWithValidStatus() {
 	ctx := context.Background()
+	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 
 	// Pre-condition - create multiple quests
 	expectedCount := 3
@@ -64,14 +63,13 @@ func (s *Suite) TestListQuestsWithValidStatus() {
 	// Assert
 	s.Require().NoError(err)
 	s.Assert().GreaterOrEqual(len(quests), 1, "Should have at least one quest with StatusPosted")
-
-	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 	listAssertions.QuestsAllHaveStatus(quests, targetStatus)
 	listAssertions.QuestWithIDExists(quests, createdQuests[0].ID().String())
 }
 
 func (s *Suite) TestListQuestsWithEmptyStatus() {
 	ctx := context.Background()
+	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 
 	// Pre-condition - create multiple quests
 	expectedCount := 2
@@ -83,9 +81,6 @@ func (s *Suite) TestListQuestsWithEmptyStatus() {
 
 	// Assert
 	s.Require().NoError(err)
-
-	// Create assertions for list verification
-	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 	listAssertions.QuestsHaveMinimumCount(quests, expectedCount)
 	listAssertions.QuestsContainAllCreated(createdQuests, quests)
 }

@@ -14,6 +14,7 @@ import (
 
 func (s *Suite) TestSearchQuestsByRadius() {
 	ctx := context.Background()
+	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 
 	// Pre-condition - create quest at specific location
 	centerLocation := testdatagenerators.DefaultTestCoordinate() // Moscow center: 55.7558, 37.6176
@@ -47,7 +48,6 @@ func (s *Suite) TestSearchQuestsByRadius() {
 	s.Require().NoError(err)
 
 	// Should find the near quest but not the far quest
-	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 	listAssertions.QuestWithIDExists(foundQuests, nearQuest.ID().String())
 	listAssertions.QuestWithIDNotExists(foundQuests, farQuest.ID().String())
 }
@@ -73,6 +73,7 @@ func (s *Suite) TestSearchQuestsByRadiusEmpty() {
 
 func (s *Suite) TestSearchQuestsByRadiusMultipleQuests() {
 	ctx := context.Background()
+	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 
 	// Pre-condition - create multiple quests at different distances
 	centerLocation := kernel.GeoCoordinate{Lat: 50.0, Lon: 10.0}
@@ -115,8 +116,6 @@ func (s *Suite) TestSearchQuestsByRadiusMultipleQuests() {
 	// Assert
 	s.Require().NoError(err)
 	s.Assert().GreaterOrEqual(len(foundQuests), 2, "Should find at least 2 quests within radius")
-
-	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 	listAssertions.QuestWithIDExists(foundQuests, quest1.ID().String())
 	listAssertions.QuestWithIDExists(foundQuests, quest2.ID().String())
 	listAssertions.QuestWithIDNotExists(foundQuests, quest3.ID().String())
@@ -124,6 +123,7 @@ func (s *Suite) TestSearchQuestsByRadiusMultipleQuests() {
 
 func (s *Suite) TestSearchQuestsByRadiusWithTargetAndExecutionLocations() {
 	ctx := context.Background()
+	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 
 	// Pre-condition - create quest where target is near but execution is far
 	centerLocation := kernel.GeoCoordinate{Lat: 40.0, Lon: 20.0}
@@ -152,7 +152,5 @@ func (s *Suite) TestSearchQuestsByRadiusWithTargetAndExecutionLocations() {
 
 	// Assert
 	s.Require().NoError(err)
-
-	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 	listAssertions.QuestWithIDExists(foundQuests, quest.ID().String())
 }
