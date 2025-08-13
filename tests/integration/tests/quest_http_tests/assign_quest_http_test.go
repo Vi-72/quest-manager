@@ -50,12 +50,7 @@ func (s *Suite) TestAssignQuestHTTPMissingRequiredFields() {
 	// Act - send request with empty JSON body to test ValidateBody function
 	emptyBodyRequest := map[string]interface{}{} // Empty object
 
-	assignReq := casesteps.HTTPRequest{
-		Method:      "POST",
-		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
-		Body:        emptyBodyRequest,
-		ContentType: "application/json",
-	}
+	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID().String(), emptyBodyRequest)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert - API layer should reject incomplete body
@@ -75,12 +70,7 @@ func (s *Suite) TestAssignQuestHTTPMissingUserID() {
 		// user_id is missing
 	}
 
-	assignReq := casesteps.HTTPRequest{
-		Method:      "POST",
-		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
-		Body:        requestBody,
-		ContentType: "application/json",
-	}
+	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID().String(), requestBody)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert - API layer should reject missing user_id
@@ -100,12 +90,7 @@ func (s *Suite) TestAssignQuestHTTPEmptyUserID() {
 		"user_id": "", // Empty user_id - ValidateUUID should catch this
 	}
 
-	assignReq := casesteps.HTTPRequest{
-		Method:      "POST",
-		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
-		Body:        requestBody,
-		ContentType: "application/json",
-	}
+	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID().String(), requestBody)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert - API layer should reject empty user_id
@@ -150,12 +135,7 @@ func (s *Suite) TestAssignQuestHTTPInvalidUserIDFormat() {
 				"user_id": tc.userID,
 			}
 
-			assignReq := casesteps.HTTPRequest{
-				Method:      "POST",
-				URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
-				Body:        requestBody,
-				ContentType: "application/json",
-			}
+			assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID().String(), requestBody)
 			assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 			// Assert - API layer should reject invalid UUID format
@@ -197,12 +177,7 @@ func (s *Suite) TestAssignQuestHTTPInvalidQuestIDFormat() {
 				"user_id": "123e4567-e89b-12d3-a456-426614174000", // Valid UUID
 			}
 
-			assignReq := casesteps.HTTPRequest{
-				Method:      "POST",
-				URL:         "/api/v1/quests/" + tc.questID + "/assign",
-				Body:        requestBody,
-				ContentType: "application/json",
-			}
+			assignReq := casesteps.AssignQuestHTTPRequestWithBody(tc.questID, requestBody)
 			assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 			// Assert - API layer should reject invalid quest ID format

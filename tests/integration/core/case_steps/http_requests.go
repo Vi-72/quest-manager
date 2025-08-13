@@ -88,14 +88,19 @@ func CreateQuestHTTPRequest(questData interface{}) HTTPRequest {
 	}
 }
 
-// AssignQuestHTTPRequest создает HTTP запрос для назначения квеста
-func AssignQuestHTTPRequest(questID string, userID string) HTTPRequest {
+// AssignQuestHTTPRequestWithBody создает HTTP запрос для назначения квеста с кастомным телом запроса
+func AssignQuestHTTPRequestWithBody(questID string, requestBody interface{}) HTTPRequest {
 	return HTTPRequest{
 		Method:      "POST",
 		URL:         "/api/v1/quests/" + questID + "/assign",
-		Body:        map[string]string{"user_id": userID},
+		Body:        requestBody,
 		ContentType: "application/json",
 	}
+}
+
+// AssignQuestHTTPRequest создает HTTP запрос для назначения квеста
+func AssignQuestHTTPRequest(questID string, userID string) HTTPRequest {
+	return AssignQuestHTTPRequestWithBody(questID, map[string]string{"user_id": userID})
 }
 
 // GetQuestHTTPRequest создает HTTP запрос для получения квеста
