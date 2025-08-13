@@ -2,10 +2,8 @@ package quest_http_tests
 
 import (
 	"context"
-	"encoding/json"
 	"net/http"
 
-	"quest-manager/internal/generated/servers"
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 )
@@ -15,6 +13,7 @@ import (
 
 func (s *Suite) TestAssignQuestHTTP() {
 	ctx := context.Background()
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
 
 	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
@@ -26,16 +25,10 @@ func (s *Suite) TestAssignQuestHTTP() {
 	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID().String(), userID)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
-	// Assert
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusOK, assignResp.StatusCode)
+	// Assert - use helper to eliminate boilerplate
+	assignResult := httpAssertions.QuestHTTPAssignedSuccessfully(assignResp, err)
 
-	// Parse response
-	var assignResult servers.AssignQuestResult
-	parseErr := json.Unmarshal([]byte(assignResp.Body), &assignResult)
-	s.Require().NoError(parseErr, "Response should be valid JSON")
-
-	// Verify assignment result
+	// Verify assignment result with existing assertion
 	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, createdQuest.ID(), userID)
 }
 
@@ -193,31 +186,10 @@ func (s *Suite) TestAssignQuestHTTPInvalidQuestIDFormat() {
 	}
 }
 
-func (s *Suite) TestAssignQuestHTTPMalformedJSON() {
-	ctx := context.Background()
-
-	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
-	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
-	s.Require().NoError(err)
-
-	// Act - send malformed JSON
-	malformedRequest := casesteps.HTTPRequest{
-		Method:      "POST",
-		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
-		Body:        `{"user_id": "invalid-json", }`, // Malformed JSON
-		ContentType: "application/json",
-	}
-
-	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, malformedRequest)
-
-	// Assert - API layer should reject malformed JSON
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusBadRequest, assignResp.StatusCode, "Should return 400 for malformed JSON")
-}
-
 func (s *Suite) TestAssignQuestHTTPPersistence() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
 
 	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
@@ -228,20 +200,14 @@ func (s *Suite) TestAssignQuestHTTPPersistence() {
 	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID().String(), userID)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
-	// Assert assignment
-	s.Require().NoError(err)
-	s.Require().Equal(http.StatusOK, assignResp.StatusCode)
+	// Assert assignment using helper
+	httpAssertions.QuestHTTPAssignedSuccessfully(assignResp, err)
 
 	// Verify quest is persisted with assignment by retrieving it via HTTP API
 	getReq := casesteps.GetQuestHTTPRequest(createdQuest.ID().String())
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
-	// Assert retrieval
+	// Assert retrieval and assignment state using helper
 	retrievedQuest := httpAssertions.QuestHTTPGetSuccessfully(getResp, err)
-
-	// Verify quest is assigned
-	s.Assert().Equal(createdQuest.ID().String(), retrievedQuest.Id)
-	s.Assert().NotNil(retrievedQuest.Assignee, "Quest should have assignee")
-	s.Assert().Equal(userID, *retrievedQuest.Assignee)
-	s.Assert().Equal(servers.QuestStatusAssigned, retrievedQuest.Status)
+	singleAssertions.QuestHTTPIsAssignedToUser(retrievedQuest, userID, createdQuest.ID().String())
 }

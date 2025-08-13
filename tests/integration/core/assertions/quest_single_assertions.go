@@ -88,3 +88,11 @@ func (a *QuestSingleAssertions) QuestHTTPHasDifferentLocations(q servers.Quest) 
 	a.assert.NotEqual(q.TargetLocation.Latitude, q.ExecutionLocation.Latitude, "Target and execution locations should have different latitudes")
 	a.assert.NotEqual(q.TargetLocation.Longitude, q.ExecutionLocation.Longitude, "Target and execution locations should have different longitudes")
 }
+
+// QuestHTTPIsAssignedToUser verifies that HTTP quest is properly assigned to a specific user
+func (a *QuestSingleAssertions) QuestHTTPIsAssignedToUser(quest servers.Quest, expectedUserID, originalQuestID string) {
+	a.assert.Equal(originalQuestID, quest.Id, "Quest ID should match original")
+	a.assert.NotNil(quest.Assignee, "Quest should have assignee")
+	a.assert.Equal(expectedUserID, *quest.Assignee, "Quest should be assigned to expected user")
+	a.assert.Equal(servers.QuestStatusAssigned, quest.Status, "Quest should have assigned status")
+}

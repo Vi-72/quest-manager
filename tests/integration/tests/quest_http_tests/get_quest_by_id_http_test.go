@@ -17,6 +17,8 @@ import (
 
 func (s *Suite) TestGetQuestByIDHTTP() {
 	ctx := context.Background()
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
 
 	// Pre-condition - create quest via handler (for setup)
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
@@ -27,17 +29,16 @@ func (s *Suite) TestGetQuestByIDHTTP() {
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 	foundQuest := httpAssertions.QuestHTTPGetSuccessfully(getResp, err)
 
 	// Verify quest data matches created quest
-	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
 	singleAssertions.QuestHTTPMatchesDomain(foundQuest, createdQuest)
 	singleAssertions.QuestHTTPHasValidLocationData(foundQuest)
 }
 
 func (s *Suite) TestGetQuestByIDHTTPNotFound() {
 	ctx := context.Background()
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Pre-condition - use non-existent quest ID
 	nonExistentID := uuid.New().String()
@@ -47,7 +48,6 @@ func (s *Suite) TestGetQuestByIDHTTPNotFound() {
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert - should return 404 error
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 	httpAssertions.QuestHTTPErrorResponse(getResp, err, http.StatusNotFound, "not found")
 }
 
@@ -69,6 +69,8 @@ func (s *Suite) TestGetQuestByIDHTTPInvalidID() {
 
 func (s *Suite) TestGetQuestByIDHTTPHasAddresses() {
 	ctx := context.Background()
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
 
 	// Pre-condition - create quest with explicit different locations via handler
 	targetLocation := testdatagenerators.DefaultTestCoordinate()
@@ -88,11 +90,9 @@ func (s *Suite) TestGetQuestByIDHTTPHasAddresses() {
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 	foundQuest := httpAssertions.QuestHTTPGetSuccessfully(getResp, err)
 
 	// Verify quest data matches created quest
-	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
 	singleAssertions.QuestHTTPMatchesDomain(foundQuest, createdQuest)
 	singleAssertions.QuestHTTPHasValidLocationData(foundQuest)
 	singleAssertions.QuestHTTPHasDifferentLocations(foundQuest)
@@ -100,6 +100,8 @@ func (s *Suite) TestGetQuestByIDHTTPHasAddresses() {
 
 func (s *Suite) TestGetQuestByIDHTTPEmptyArrays() {
 	ctx := context.Background()
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
+	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
 
 	// Pre-condition - create quest with empty Equipment and Skills arrays
 	emptyData := testdatagenerators.EmptyArraysQuestData()
@@ -112,11 +114,9 @@ func (s *Suite) TestGetQuestByIDHTTPEmptyArrays() {
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 	foundQuest := httpAssertions.QuestHTTPGetSuccessfully(getResp, err)
 
 	// Verify quest data matches created quest
-	singleAssertions := assertions.NewQuestSingleAssertions(s.Assert())
 	singleAssertions.QuestHTTPMatchesDomain(foundQuest, createdQuest)
 
 	// Specifically verify that empty arrays are returned as [] and not null

@@ -2,6 +2,7 @@ package assertions
 
 import (
 	"quest-manager/internal/core/domain/model/quest"
+	"quest-manager/internal/generated/servers"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -69,4 +70,30 @@ func (a *QuestListAssertions) QuestWithIDNotExists(quests []quest.Quest, questID
 		}
 	}
 	a.assert.False(found, "Quest with ID %s should NOT be present in the list", questID)
+}
+
+// QuestListHTTPAllAssignedToUser verifies that all HTTP quests in the list are assigned to specified user
+func (a *QuestListAssertions) QuestListHTTPAllAssignedToUser(httpQuests []servers.Quest, expectedUserID string, expectedCount int) {
+	a.assert.Len(httpQuests, expectedCount, "Should return %d assigned quests", expectedCount)
+
+	for i, quest := range httpQuests {
+		a.assert.NotNil(quest.Assignee, "Quest at index %d should have an assignee", i)
+		a.assert.Equal(expectedUserID, *quest.Assignee, "Quest at index %d should be assigned to the expected user", i)
+		a.assert.Equal(servers.QuestStatusAssigned, quest.Status, "Quest at index %d should have 'assigned' status", i)
+	}
+}
+
+// QuestListHTTPContainsAllCreated verifies that all created quests are present in the HTTP response list
+func (a *QuestListAssertions) QuestListHTTPContainsAllCreated(httpQuests []servers.Quest, createdQuests []quest.Quest) {
+	// Create map from HTTP quest IDs for fast lookup
+	httpQuestIDs := make(map[string]bool)
+	for _, q := range httpQuests {
+		httpQuestIDs[q.Id] = true
+	}
+
+	// Verify that each created quest is present in the HTTP response
+	for _, createdQuest := range createdQuests {
+		questID := createdQuest.ID().String()
+		a.assert.Contains(httpQuestIDs, questID, "Created quest %s should be in HTTP response list", questID)
+	}
 }

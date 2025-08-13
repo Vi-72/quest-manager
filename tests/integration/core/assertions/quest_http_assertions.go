@@ -87,3 +87,19 @@ func (a *QuestHTTPAssertions) QuestHTTPErrorResponse(resp *casesteps.HTTPRespons
 		a.assert.Contains(resp.Body, expectedMessage, "Error should contain expected message")
 	}
 }
+
+// QuestHTTPAssignedSuccessfully verifies HTTP assign quest success and parses response
+// Eliminates boilerplate for assign HTTP tests
+func (a *QuestHTTPAssertions) QuestHTTPAssignedSuccessfully(assignResp *casesteps.HTTPResponse, err error) servers.AssignQuestResult {
+	a.assert.NoError(err, "HTTP request should not fail")
+	a.assert.Equal(http.StatusOK, assignResp.StatusCode, "Should return 200 OK for assign")
+
+	var assignResult servers.AssignQuestResult
+	parseErr := json.Unmarshal([]byte(assignResp.Body), &assignResult)
+	a.assert.NoError(parseErr, "Response should be valid JSON")
+	a.assert.NotEmpty(assignResult.Id, "Assign result should have quest ID")
+	a.assert.NotEmpty(assignResult.Assignee, "Assign result should have assignee")
+	a.assert.Equal(servers.QuestStatusAssigned, assignResult.Status, "Assign result should have assigned status")
+
+	return assignResult
+}
