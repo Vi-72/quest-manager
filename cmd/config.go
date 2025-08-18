@@ -1,12 +1,26 @@
 package cmd
 
+import (
+	"log"
+	"os"
+)
+
 type Config struct {
-	HttpPort            string
-	DbHost              string
-	DbPort              string
-	DbUser              string
-	DbPassword          string
-	DbName              string
-	DbSslMode           string
-	EventGoroutineLimit int
+	HTTPPort  string
+	JWTSecret string
+}
+
+func LoadConfig() Config {
+	return Config{
+		HTTPPort:  getEnv("HTTP_PORT"),
+		JWTSecret: getEnv("JWT_SECRET"),
+	}
+}
+
+func getEnv(key string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		log.Fatalf("missing environment variable %s", key)
+	}
+	return val
 }

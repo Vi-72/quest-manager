@@ -3,13 +3,14 @@ module quest-manager
 go 1.23.0
 
 require (
-	github.com/getkin/kin-openapi v0.132.0
-	github.com/go-chi/chi/v5 v5.2.2
-	github.com/google/uuid v1.6.0
-	github.com/joho/godotenv v1.5.1
-	github.com/lib/pq v1.10.9
-	github.com/oapi-codegen/runtime v1.1.1
-	github.com/stretchr/testify v1.9.0
+        github.com/getkin/kin-openapi v0.132.0
+        github.com/go-chi/chi/v5 v5.2.2
+       github.com/go-chi/jwtauth/v5 v5.0.0
+        github.com/google/uuid v1.6.0
+        github.com/joho/godotenv v1.5.1
+        github.com/lib/pq v1.10.9
+        github.com/oapi-codegen/runtime v1.1.1
+        github.com/stretchr/testify v1.9.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.0
 )
