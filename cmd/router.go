@@ -7,6 +7,7 @@ import (
 	"quest-manager/internal/adapters/in/http/validations"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware" // ← добавлено
 
 	"quest-manager/internal/adapters/in/http/problems"
 	"quest-manager/internal/generated/servers"
@@ -17,6 +18,18 @@ const apiV1Prefix = "/api/v1"
 
 func NewRouter(root *CompositionRoot) http.Handler {
 	router := chi.NewRouter()
+
+	// --- Базовые middleware ---
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.Logger)
+
+	// --- Health check ---
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"status":"ok"}`))
+	})
 
 	// Swagger JSON
 	router.Get("/openapi.json", func(w http.ResponseWriter, r *http.Request) {
@@ -32,14 +45,14 @@ func NewRouter(root *CompositionRoot) http.Handler {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write(bytes)
+		_, _ = w.Write(bytes)
 	})
 
 	// Swagger UI
 	router.Get("/docs", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`
+		_, _ = w.Write([]byte(`
 			<!DOCTYPE html>
 			<html lang="en">
 			<head>
