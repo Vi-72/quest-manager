@@ -14,9 +14,9 @@ import (
 
 func (s *Suite) TestCreateQuest() {
 	ctx := context.Background()
+	defaultData := testdatagenerators.DefaultQuestData()
 
 	// Act - create quest with default data
-	defaultData := testdatagenerators.DefaultQuestData()
 	createdQuest, err := casesteps.CreateQuestStep(ctx, s.TestDIContainer.CreateQuestHandler, defaultData)
 
 	// Assert

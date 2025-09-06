@@ -4,6 +4,7 @@ package domain
 // Tests for domain model business rules and validation logic
 
 import (
+	"strconv"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -81,7 +82,7 @@ func TestNewQuest_InvalidReward(t *testing.T) {
 	invalidRewards := []int{0, -1, 6, 10, 100}
 
 	for _, reward := range invalidRewards {
-		t.Run("reward_"+string(rune(reward+'0')), func(t *testing.T) {
+		t.Run("reward_"+strconv.Itoa(reward), func(t *testing.T) {
 			_, err := quest.NewQuest(
 				"Test Quest",
 				"Test description",
@@ -178,7 +179,7 @@ func TestNewQuest_ValidRewardBoundaries(t *testing.T) {
 	validRewards := []int{1, 2, 3, 4, 5}
 
 	for _, reward := range validRewards {
-		t.Run("reward_"+string(rune(reward+'0')), func(t *testing.T) {
+		t.Run("reward_"+strconv.Itoa(reward), func(t *testing.T) {
 			q, err := quest.NewQuest(
 				"Test Quest",
 				"Test description",
