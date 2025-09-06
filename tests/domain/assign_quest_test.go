@@ -172,3 +172,18 @@ func TestQuest_AssignTo_MultipleAssignmentAttempts(t *testing.T) {
 	assert.Contains(t, err.Error(), "quest is already assigned to another user")
 	assert.Equal(t, firstUser, *q.Assignee, "Assignee should not change")
 }
+
+func TestQuest_AssignTo_AfterPostingViaChangeStatus(t *testing.T) {
+	q := createValidQuest(t)
+
+	// Post the quest using ChangeStatus to ensure proper transition
+	err := q.ChangeStatus(quest.StatusPosted)
+	assert.NoError(t, err)
+
+	userID := "post-change-user"
+	err = q.AssignTo(userID)
+
+	assert.NoError(t, err)
+	assert.Equal(t, quest.StatusAssigned, q.Status)
+	assert.Equal(t, userID, *q.Assignee)
+}
