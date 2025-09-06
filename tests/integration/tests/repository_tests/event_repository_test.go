@@ -11,6 +11,7 @@ import (
 
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/pkg/ddd"
+	"quest-manager/internal/pkg/timeprovider"
 	teststorage "quest-manager/tests/integration/core/storage"
 
 	"github.com/google/uuid"
@@ -33,7 +34,7 @@ func (s *Suite) TestEventRepository_Publish_SingleEvent() {
 	s.Require().NoError(err)
 
 	// Verify event was stored (using our event storage helper)
-	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB)
+	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB, timeprovider.RealTimeProvider{})
 	events, err := eventStorage.GetEventsByType(ctx, "test.event")
 	s.Require().NoError(err)
 	s.Len(events, 1)
@@ -69,7 +70,7 @@ func (s *Suite) TestEventRepository_Publish_MultipleEvents() {
 	s.Require().NoError(err)
 
 	// Verify all events were stored
-	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB)
+	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB, timeprovider.RealTimeProvider{})
 
 	allEvents, err := eventStorage.GetEventsByAggregateID(ctx, aggregateID)
 	s.Require().NoError(err)
@@ -95,7 +96,7 @@ func (s *Suite) TestEventRepository_Publish_EmptyEvents() {
 	s.Require().NoError(err)
 
 	// Verify no events were stored
-	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB)
+	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB, timeprovider.RealTimeProvider{})
 	count, err := eventStorage.CountEvents(ctx)
 	s.Require().NoError(err)
 	s.Equal(int64(0), count)
@@ -120,7 +121,7 @@ func (s *Suite) TestEventRepository_Publish_WithTransaction() {
 	s.Require().NoError(err)
 
 	// Within transaction, events should be visible
-	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB)
+	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB, timeprovider.RealTimeProvider{})
 	events, err := eventStorage.GetEventsByType(ctx, "transaction.test")
 	s.Require().NoError(err)
 	s.Len(events, 2)
@@ -163,7 +164,7 @@ func (s *Suite) TestEventRepository_Publish_ComplexDomainScenario() {
 	s.Require().NoError(err)
 
 	// Assert - verify complete event sequence
-	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB)
+	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB, timeprovider.RealTimeProvider{})
 	questEvents, err := eventStorage.GetEventsByAggregateID(ctx, q.ID())
 	s.Require().NoError(err)
 	s.GreaterOrEqual(len(questEvents), 3) // At least 3 events
@@ -216,7 +217,7 @@ func (s *Suite) TestEventRepository_PostgreSQL_JSONEventData() {
 	s.Require().NoError(err)
 
 	// Assert - verify complex JSON is preserved
-	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB)
+	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB, timeprovider.RealTimeProvider{})
 	events, err := eventStorage.GetEventsByType(ctx, "complex.json.test")
 	s.Require().NoError(err)
 	s.Len(events, 1)
@@ -251,7 +252,7 @@ func (s *Suite) TestEventRepository_PostgreSQL_ConcurrentEventPublishing() {
 	s.Require().NoError(err2)
 
 	// Verify both events were stored correctly
-	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB)
+	eventStorage := teststorage.NewEventStorage(s.TestDIContainer.DB, timeprovider.RealTimeProvider{})
 	events, err := eventStorage.GetEventsByType(ctx, "concurrent.test")
 	s.Require().NoError(err)
 	s.Len(events, 2)

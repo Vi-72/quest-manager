@@ -2,7 +2,6 @@ package quest_e2e_tests
 
 import (
 	"context"
-	"time"
 
 	"quest-manager/internal/generated/servers"
 	"quest-manager/tests/integration/core/assertions"
@@ -93,7 +92,7 @@ func (s *E2ESuite) TestCreateQuestThroughAPIInvalidCoordinates() {
 	s.Assert().Equal(400, createResp.StatusCode, "Should return bad request for invalid coordinates")
 
 	// Wait for any async processing
-	time.Sleep(100 * time.Millisecond)
+	s.TestDIContainer.WaitForEventProcessing(0)
 
 	// 2. Verify quest table has no new records
 	finalQuests, err := s.TestDIContainer.QuestRepository.FindAll(ctx)

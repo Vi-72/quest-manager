@@ -6,6 +6,7 @@ import (
 
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/pkg/ddd"
+	"quest-manager/internal/pkg/timeprovider"
 
 	"github.com/google/uuid"
 )
@@ -62,13 +63,14 @@ type Quest struct {
 	TargetAddress    *string
 	ExecutionAddress *string
 
-	Equipment []string
-	Skills    []string
-	Status    Status
-	Creator   string
-	Assignee  *string
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	Equipment    []string
+	Skills       []string
+	Status       Status
+	Creator      string
+	Assignee     *string
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	TimeProvider timeprovider.TimeProvider
 }
 
 // NewQuest creates a new quest instance with "created" status.
@@ -109,7 +111,8 @@ func NewQuest(
 	}
 
 	questID := uuid.New()
-	now := time.Now()
+	tp := timeprovider.RealTimeProvider{}
+	now := tp.Now()
 
 	quest := Quest{
 		BaseAggregate:     ddd.NewBaseAggregate(questID),
@@ -126,6 +129,7 @@ func NewQuest(
 		Creator:           creator,
 		CreatedAt:         now,
 		UpdatedAt:         now,
+		TimeProvider:      tp,
 	}
 
 	// Create domain event
@@ -149,7 +153,7 @@ func (q *Quest) AssignTo(userID string) error {
 	oldStatus := q.Status
 	q.Assignee = &userID
 	q.Status = StatusAssigned
-	q.UpdatedAt = time.Now()
+	q.UpdatedAt = q.TimeProvider.Now()
 
 	// Create domain events
 	q.RaiseDomainEvent(NewQuestAssigned(q.ID(), userID))
@@ -172,12 +176,17 @@ func (q *Quest) ChangeStatus(newStatus Status) error {
 
 	oldStatus := q.Status
 	q.Status = newStatus
-	q.UpdatedAt = time.Now()
+	q.UpdatedAt = q.TimeProvider.Now()
 
 	// Create domain event
 	q.RaiseDomainEvent(NewQuestStatusChanged(q.ID(), oldStatus, newStatus))
 
 	return nil
+}
+
+// SetTimeProvider overrides the time provider used by the quest (primarily for tests).
+func (q *Quest) SetTimeProvider(tp timeprovider.TimeProvider) {
+	q.TimeProvider = tp
 }
 
 // isValidStatusTransition checks validity of transition between statuses

@@ -11,6 +11,7 @@ import (
 
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/location"
+	"quest-manager/internal/pkg/timeprovider"
 )
 
 func TestNewLocation_Success(t *testing.T) {
@@ -97,8 +98,10 @@ func TestLocation_Update_Success(t *testing.T) {
 	// Clear domain events from creation
 	loc.ClearDomainEvents()
 
-	// Small delay to ensure UpdatedAt changes
-	time.Sleep(1 * time.Millisecond)
+	fakeTime := timeprovider.NewFake(loc.UpdatedAt)
+	loc.SetTimeProvider(fakeTime)
+
+	fakeTime.Advance(1 * time.Millisecond)
 
 	// Update location
 	newCoordinate := kernel.GeoCoordinate{Lat: 59.9311, Lon: 30.3609} // St. Petersburg
@@ -207,8 +210,10 @@ func TestLocation_TimestampBehavior(t *testing.T) {
 	// CreatedAt should equal UpdatedAt on creation
 	assert.Equal(t, createdAt, originalUpdatedAt, "CreatedAt should equal UpdatedAt on creation")
 
-	// Small delay to ensure time difference
-	time.Sleep(2 * time.Millisecond)
+	fakeTime := timeprovider.NewFake(loc.UpdatedAt)
+	loc.SetTimeProvider(fakeTime)
+
+	fakeTime.Advance(2 * time.Millisecond)
 
 	// Update location
 	newCoordinate := kernel.GeoCoordinate{Lat: 59.9311, Lon: 30.3609}

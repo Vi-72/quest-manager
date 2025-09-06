@@ -4,6 +4,7 @@ import (
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/location"
 	"quest-manager/internal/pkg/ddd"
+	"quest-manager/internal/pkg/timeprovider"
 
 	"github.com/google/uuid"
 )
@@ -38,6 +39,7 @@ func DtoToDomain(dto LocationDTO) (*location.Location, error) {
 		Address:       dto.Address,
 		CreatedAt:     dto.CreatedAt,
 		UpdatedAt:     dto.UpdatedAt,
+		TimeProvider:  timeprovider.RealTimeProvider{},
 	}
 
 	return l, nil

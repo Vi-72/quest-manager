@@ -8,16 +8,26 @@ import (
 	"gorm.io/gorm"
 
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
+	"quest-manager/internal/pkg/timeprovider"
 )
 
 // EventStorage предоставляет методы для работы с событиями в тестах
 type EventStorage struct {
-	db *gorm.DB
+	db           *gorm.DB
+	timeProvider timeprovider.TimeProvider
 }
 
 // NewEventStorage создает новый EventStorage
-func NewEventStorage(db *gorm.DB) *EventStorage {
-	return &EventStorage{db: db}
+func NewEventStorage(db *gorm.DB, tp timeprovider.TimeProvider) *EventStorage {
+	if tp == nil {
+		tp = timeprovider.RealTimeProvider{}
+	}
+	return &EventStorage{db: db, timeProvider: tp}
+}
+
+// SetTimeProvider overrides the time provider used by EventStorage.
+func (s *EventStorage) SetTimeProvider(tp timeprovider.TimeProvider) {
+	s.timeProvider = tp
 }
 
 // GetEventByID получает событие из базы данных по ID
@@ -95,9 +105,9 @@ func (s *EventStorage) CountEventsByAggregateID(ctx context.Context, aggregateID
 
 // WaitForEvents ждет появления определенного количества событий (для асинхронных операций)
 func (s *EventStorage) WaitForEvents(ctx context.Context, expectedCount int64, timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
+	deadline := s.timeProvider.Now().Add(timeout)
 
-	for time.Now().Before(deadline) {
+	for s.timeProvider.Now().Before(deadline) {
 		count, err := s.CountEvents(ctx)
 		if err != nil {
 			return err
@@ -107,7 +117,7 @@ func (s *EventStorage) WaitForEvents(ctx context.Context, expectedCount int64, t
 			return nil
 		}
 
-		time.Sleep(10 * time.Millisecond)
+		s.timeProvider.Advance(10 * time.Millisecond)
 	}
 
 	return ErrTimeout
@@ -115,9 +125,9 @@ func (s *EventStorage) WaitForEvents(ctx context.Context, expectedCount int64, t
 
 // WaitForEventsOfType ждет появления событий определенного типа
 func (s *EventStorage) WaitForEventsOfType(ctx context.Context, eventType string, expectedCount int64, timeout time.Duration) error {
-	deadline := time.Now().Add(timeout)
+	deadline := s.timeProvider.Now().Add(timeout)
 
-	for time.Now().Before(deadline) {
+	for s.timeProvider.Now().Before(deadline) {
 		count, err := s.CountEventsByType(ctx, eventType)
 		if err != nil {
 			return err
@@ -127,7 +137,7 @@ func (s *EventStorage) WaitForEventsOfType(ctx context.Context, eventType string
 			return nil
 		}
 
-		time.Sleep(10 * time.Millisecond)
+		s.timeProvider.Advance(10 * time.Millisecond)
 	}
 
 	return ErrTimeout

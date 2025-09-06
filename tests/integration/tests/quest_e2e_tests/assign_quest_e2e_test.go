@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"time"
 
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/generated/servers"
@@ -34,7 +33,7 @@ func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 	s.Require().NoError(err)
 
 	// Wait for async processing
-	time.Sleep(100 * time.Millisecond)
+	s.TestDIContainer.WaitForEventProcessing(0)
 
 	// 2. Assign quest through API using helper
 	userID := uuid.New().String()
@@ -50,7 +49,7 @@ func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 	s.Require().NoError(err, "Should unmarshal assign response")
 
 	// Wait for async processing
-	time.Sleep(100 * time.Millisecond)
+	s.TestDIContainer.WaitForEventProcessing(0)
 
 	// 3. Verify database data is updated
 	updatedQuest, err := s.TestDIContainer.QuestRepository.GetByID(ctx, createdQuest.ID())

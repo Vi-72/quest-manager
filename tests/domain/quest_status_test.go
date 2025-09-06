@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"quest-manager/internal/core/domain/model/quest"
+	"quest-manager/internal/pkg/timeprovider"
 )
 
 func TestIsValidStatus(t *testing.T) {
@@ -50,11 +51,12 @@ func TestQuest_ChangeStatus_ValidTransitions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			q := createValidQuest(t)
+			fakeTime := timeprovider.NewFake(q.UpdatedAt)
+			q.SetTimeProvider(fakeTime)
 			q.Status = tt.fromStatus
 			originalUpdatedAt := q.UpdatedAt
 
-			// Small delay to ensure UpdatedAt changes
-			time.Sleep(1 * time.Millisecond)
+			fakeTime.Advance(1 * time.Millisecond)
 
 			err := q.ChangeStatus(tt.toStatus)
 

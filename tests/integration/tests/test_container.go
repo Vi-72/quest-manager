@@ -13,6 +13,7 @@ import (
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/ports"
+	"quest-manager/internal/pkg/timeprovider"
 	teststorage "quest-manager/tests/integration/core/storage"
 
 	"gorm.io/gorm"
@@ -64,6 +65,8 @@ type TestDIContainer struct {
 
 	// HTTP Router for API testing
 	HTTPRouter http.Handler
+
+	TimeProvider timeprovider.TimeProvider
 }
 
 // NewTestDIContainer создает новый TestDIContainer для тестов
@@ -108,7 +111,8 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	locationRepo := unitOfWork.LocationRepository()
 
 	// Создание EventStorage для тестирования
-	eventStorage := teststorage.NewEventStorage(db)
+	timeProv := timeprovider.RealTimeProvider{}
+	eventStorage := teststorage.NewEventStorage(db, timeProv)
 
 	// Создание обработчиков команд
 	createQuestHandler := commands.NewCreateQuestCommandHandler(
@@ -162,7 +166,8 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 		SearchQuestsByRadiusHandler: searchQuestsByRadiusHandler,
 		ListAssignedQuestsHandler:   listAssignedQuestsHandler,
 
-		HTTPRouter: httpRouter,
+		HTTPRouter:   httpRouter,
+		TimeProvider: timeProv,
 	}
 }
 
@@ -195,9 +200,8 @@ func (c *TestDIContainer) WaitForEventProcessing(expectedCount int64) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	storage := teststorage.NewEventStorage(c.DB)
-	ticker := time.NewTicker(10 * time.Millisecond)
-	defer ticker.Stop()
+	storage := teststorage.NewEventStorage(c.DB, c.TimeProvider)
+	interval := 10 * time.Millisecond
 
 	var lastCount int64 = -1
 
@@ -206,7 +210,7 @@ func (c *TestDIContainer) WaitForEventProcessing(expectedCount int64) {
 		case <-ctx.Done():
 			c.Require().Fail("timeout waiting for events")
 			return
-		case <-ticker.C:
+		default:
 			count, err := storage.CountEvents(ctx)
 			c.Require().NoError(err)
 
@@ -220,6 +224,8 @@ func (c *TestDIContainer) WaitForEventProcessing(expectedCount int64) {
 				}
 				lastCount = count
 			}
+
+			c.TimeProvider.Advance(interval)
 		}
 	}
 }

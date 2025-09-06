@@ -6,6 +6,7 @@ import (
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/pkg/ddd"
+	"quest-manager/internal/pkg/timeprovider"
 
 	"github.com/google/uuid"
 )
@@ -126,6 +127,7 @@ func dtoToDomainCommon(dto QuestDTO, id uuid.UUID, targetCoord, execCoord kernel
 		Assignee:          dto.Assignee,
 		CreatedAt:         dto.CreatedAt,
 		UpdatedAt:         dto.UpdatedAt,
+		TimeProvider:      timeprovider.RealTimeProvider{},
 	}
 
 	// Опциональные ссылки на локации
