@@ -304,18 +304,6 @@ func SimpleQuestData(title, description, difficulty string, reward, duration int
 // Хелперы для *servers.CreateQuestRequest
 // ============================
 
-// DefaultCreateQuestRequest возвращает стандартный запрос
-func DefaultCreateQuestRequest() *servers.CreateQuestRequest {
-	req := NewQuest().ToCreateQuestRequest()
-	return &req
-}
-
-// EmptyArraysCreateQuestRequest возвращает запрос с пустыми массивами
-func EmptyArraysCreateQuestRequest() *servers.CreateQuestRequest {
-	req := NewQuest(WithEmptyArrays()).ToCreateQuestRequest()
-	return &req
-}
-
 // RandomCreateQuestRequest возвращает случайный запрос
 func RandomCreateQuestRequest() *servers.CreateQuestRequest {
 	req := NewQuest(WithRandom()).ToCreateQuestRequest()
@@ -328,33 +316,9 @@ func InvalidCoordinatesCreateQuestRequest() *servers.CreateQuestRequest {
 	return &req
 }
 
-// CreateQuestRequestWithLocations возвращает запрос с заданными локациями
-func CreateQuestRequestWithLocations(targetLoc, execLoc kernel.GeoCoordinate) *servers.CreateQuestRequest {
-	req := NewQuest(WithLocations(targetLoc, execLoc)).ToCreateQuestRequest()
-	return &req
-}
-
-// SimpleCreateQuestRequest возвращает простой запрос
-func SimpleCreateQuestRequest(title, description string, difficulty servers.CreateQuestRequestDifficulty, reward, duration int, targetLoc, execLoc kernel.GeoCoordinate) *servers.CreateQuestRequest {
-	req := NewQuest(
-		WithTitle(title),
-		WithDescription(description),
-		WithDifficulty(string(difficulty)),
-		WithReward(reward),
-		WithDuration(duration),
-		WithLocations(targetLoc, execLoc),
-	).ToCreateQuestRequest()
-	return &req
-}
-
 // ============================
 // Хелперы для HTTP и прочего
 // ============================
-
-// ValidHTTPQuestData возвращает валидные данные для HTTP тестов
-func ValidHTTPQuestData() map[string]interface{} {
-	return NewQuest().ToHTTPRequest()
-}
 
 // HTTPQuestDataWithField создает HTTP данные с кастомным полем
 func HTTPQuestDataWithField(field string, value interface{}) map[string]interface{} {
@@ -370,9 +334,4 @@ func HTTPQuestDataWithField(field string, value interface{}) map[string]interfac
 // DefaultTestCoordinate возвращает стандартные координаты для тестов (Москва центр)
 func DefaultTestCoordinate() kernel.GeoCoordinate {
 	return MoscowCenter
-}
-
-// SecondTestCoordinate возвращает вторые тестовые координаты (Москва пригород)
-func SecondTestCoordinate() kernel.GeoCoordinate {
-	return MoscowNear
 }
