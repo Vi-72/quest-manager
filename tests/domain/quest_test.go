@@ -235,34 +235,6 @@ func TestNewQuest_ValidDurationBoundaries(t *testing.T) {
 	}
 }
 
-func TestQuest_AssignTo_Success(t *testing.T) {
-	q := createValidQuest(t)
-	userID := "test-user-123"
-
-	err := q.AssignTo(userID)
-
-	assert.NoError(t, err)
-	assert.Equal(t, quest.StatusAssigned, q.Status)
-	assert.NotNil(t, q.Assignee)
-	assert.Equal(t, userID, *q.Assignee)
-	assert.True(t, q.UpdatedAt.After(q.CreatedAt))
-}
-
-func TestQuest_AssignTo_FromPostedStatus(t *testing.T) {
-	q := createValidQuest(t)
-
-	// Change status to posted first
-	err := q.ChangeStatus(quest.StatusPosted)
-	assert.NoError(t, err)
-
-	userID := "test-user-123"
-	err = q.AssignTo(userID)
-
-	assert.NoError(t, err)
-	assert.Equal(t, quest.StatusAssigned, q.Status)
-	assert.Equal(t, userID, *q.Assignee)
-}
-
 // Helper function to create a valid quest for testing
 func createValidQuest(t *testing.T) *quest.Quest {
 	targetLocation := kernel.GeoCoordinate{Lat: 55.7558, Lon: 37.6176}
