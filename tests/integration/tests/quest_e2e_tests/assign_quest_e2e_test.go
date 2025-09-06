@@ -15,7 +15,7 @@ import (
 	"github.com/google/uuid"
 )
 
-// Test 3: Create quest via handler, assign via API, verify database and events
+// Test 1: Create quest via handler, assign via API, verify database and events
 func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 	ctx := context.Background()
 
