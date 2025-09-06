@@ -19,8 +19,11 @@ func TestQuest_NewQuest_DomainEvents(t *testing.T) {
 	events := q.GetDomainEvents()
 	assert.Len(t, events, 1, "NewQuest should raise one domain event (quest.created)")
 
-	// Verify event is of correct type (implementation-specific)
-	// Note: Specific event verification depends on domain event implementation
+	// Verify event type and payload
+	if assert.IsType(t, quest.QuestCreated{}, events[0]) {
+		evt := events[0].(quest.QuestCreated)
+		assert.Equal(t, "test-creator", evt.Creator)
+	}
 }
 
 func TestQuest_AssignTo_DomainEvents(t *testing.T) {
@@ -39,8 +42,18 @@ func TestQuest_AssignTo_DomainEvents(t *testing.T) {
 	events := q.GetDomainEvents()
 	assert.Len(t, events, 2, "AssignTo should raise two domain events (assigned + status changed)")
 
-	// Verify events are of correct types (implementation-specific)
-	// Note: Specific event verification depends on domain event implementation
+	// Verify QuestAssigned event
+	if assert.IsType(t, quest.QuestAssigned{}, events[0]) {
+		evt := events[0].(quest.QuestAssigned)
+		assert.Equal(t, userID, evt.UserID)
+	}
+
+	// Verify QuestStatusChanged event
+	if assert.IsType(t, quest.QuestStatusChanged{}, events[1]) {
+		evt := events[1].(quest.QuestStatusChanged)
+		assert.Equal(t, quest.StatusCreated, evt.OldStatus)
+		assert.Equal(t, quest.StatusAssigned, evt.NewStatus)
+	}
 }
 
 func TestQuest_ClearDomainEvents(t *testing.T) {
@@ -71,6 +84,12 @@ func TestQuest_ChangeStatus_DomainEvents(t *testing.T) {
 	// Assert - should raise one domain event for status change
 	events := q.GetDomainEvents()
 	assert.Len(t, events, 1, "ChangeStatus should raise one domain event")
+
+	if assert.IsType(t, quest.QuestStatusChanged{}, events[0]) {
+		evt := events[0].(quest.QuestStatusChanged)
+		assert.Equal(t, quest.StatusCreated, evt.OldStatus)
+		assert.Equal(t, quest.StatusPosted, evt.NewStatus)
+	}
 }
 
 func TestQuest_GetDomainEvents_Immutability(t *testing.T) {
