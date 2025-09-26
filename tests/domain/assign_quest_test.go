@@ -6,6 +6,7 @@ package domain
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	"quest-manager/internal/core/domain/model/quest"
@@ -41,7 +42,7 @@ func TestQuest_AssignTo_AllInvalidStatuses(t *testing.T) {
 			// Change to invalid status for assignment
 			q.Status = tc.status
 
-			err := q.AssignTo("test-user")
+			err := q.AssignTo(uuid.New())
 
 			assert.Error(t, err)
 			assert.Contains(t, err.Error(), tc.expectedErr)
@@ -55,11 +56,11 @@ func TestQuest_AssignTo_AlreadyAssignedToDifferentUser(t *testing.T) {
 
 	// Set status to posted and manually assign to first user
 	q.Status = quest.StatusPosted
-	firstUserID := "first-user"
+	firstUserID := uuid.New()
 	q.Assignee = &firstUserID
 
 	// Try to assign to different user - should fail because assignee is already set
-	secondUserID := "second-user"
+	secondUserID := uuid.New()
 	err := q.AssignTo(secondUserID)
 
 	assert.Error(t, err)
@@ -79,7 +80,7 @@ func TestQuest_AssignTo_ValidStatusBoundaries(t *testing.T) {
 			q.Status = status
 			q.Assignee = nil // Ensure no assignee
 
-			userID := "test-user-" + string(status)
+			userID := uuid.New() // Each test gets a unique UUID
 			err := q.AssignTo(userID)
 
 			assert.NoError(t, err)
@@ -92,18 +93,19 @@ func TestQuest_AssignTo_ValidStatusBoundaries(t *testing.T) {
 func TestQuest_AssignTo_EmptyUserID(t *testing.T) {
 	q := createValidQuest(t)
 
-	// Test empty user ID
-	err := q.AssignTo("")
+	// Test valid user ID (UUID validation is now at API layer)
+	userID := uuid.New()
+	err := q.AssignTo(userID)
 
-	assert.NoError(t, err, "Domain layer doesn't validate empty user ID - that's API layer responsibility")
+	assert.NoError(t, err, "Valid UUID should be accepted")
 	assert.Equal(t, quest.StatusAssigned, q.Status)
 	assert.NotNil(t, q.Assignee)
-	assert.Equal(t, "", *q.Assignee)
+	assert.Equal(t, userID, *q.Assignee)
 }
 
 func TestQuest_AssignTo_StatusTransition(t *testing.T) {
 	q := createValidQuest(t)
-	userID := "transition-test-user"
+	userID := uuid.New()
 
 	// Record original status
 	originalStatus := q.Status
@@ -120,7 +122,7 @@ func TestQuest_AssignTo_StatusTransition(t *testing.T) {
 
 func TestQuest_AssignTo_TimestampUpdate(t *testing.T) {
 	q := createValidQuest(t)
-	userID := "timestamp-test-user"
+	userID := uuid.New()
 
 	// Record original timestamps
 	originalCreatedAt := q.CreatedAt
@@ -138,7 +140,7 @@ func TestQuest_AssignTo_TimestampUpdate(t *testing.T) {
 
 func TestQuest_AssignTo_AssigneeFieldUpdate(t *testing.T) {
 	q := createValidQuest(t)
-	userID := "assignee-test-user"
+	userID := uuid.New()
 
 	// Verify initial state
 	assert.Nil(t, q.Assignee, "Initially quest should have no assignee")
@@ -154,8 +156,8 @@ func TestQuest_AssignTo_AssigneeFieldUpdate(t *testing.T) {
 
 func TestQuest_AssignTo_MultipleAssignmentAttempts(t *testing.T) {
 	q := createValidQuest(t)
-	firstUser := "first-user"
-	secondUser := "second-user"
+	firstUser := uuid.New()
+	secondUser := uuid.New()
 
 	// First assignment should succeed
 	err := q.AssignTo(firstUser)
@@ -180,7 +182,7 @@ func TestQuest_AssignTo_AfterPostingViaChangeStatus(t *testing.T) {
 	err := q.ChangeStatus(quest.StatusPosted)
 	assert.NoError(t, err)
 
-	userID := "post-change-user"
+	userID := uuid.New()
 	err = q.AssignTo(userID)
 
 	assert.NoError(t, err)

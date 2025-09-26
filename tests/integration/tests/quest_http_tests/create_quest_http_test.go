@@ -14,7 +14,7 @@ import (
 )
 
 // API LAYER VALIDATION TESTS
-// Only tests that correspond to ValidateCreateQuestRequest function
+// Focused on OpenAPI-driven request validation behavior
 
 // HTTPRequest represents HTTP request for testing (duplicated here for convenience)
 type HTTPRequest struct {
@@ -87,13 +87,13 @@ func (s *Suite) TestCreateQuestHTTPWithEmptyArrays() {
 }
 
 // API LAYER VALIDATION TESTS
-// Only tests that correspond to ValidateCreateQuestRequest function
+// Focused on OpenAPI-driven request validation behavior
 
 func (s *Suite) TestCreateQuestHTTPMissingRequiredFields() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
-	// Act - send request with empty JSON body to test ValidateBody function
+	// Act - send request with empty JSON body to test OpenAPI required-body validation
 	emptyBodyRequest := map[string]interface{}{} // Empty object
 
 	createReq := casesteps.CreateQuestHTTPRequest(emptyBodyRequest)
@@ -106,24 +106,24 @@ func (s *Suite) TestCreateQuestHTTPMissingRequiredFields() {
 func (s *Suite) TestCreateQuestHTTPEmptyStringFields() {
 	ctx := context.Background()
 
-	// Test cases with empty string fields (TrimAndValidateString function tests)
+	// Test cases with empty string fields (OpenAPI string constraints)
 	testCases := []struct {
 		name    string
 		request map[string]interface{}
 		field   string
 	}{
 		{
-			name:    "empty title - TrimAndValidateString",
+			name:    "empty title - OpenAPI validation",
 			request: testdatagenerators.HTTPQuestDataWithField("title", ""),
 			field:   "title",
 		},
 		{
-			name:    "empty description - TrimAndValidateString",
+			name:    "empty description - OpenAPI validation",
 			request: testdatagenerators.HTTPQuestDataWithField("description", ""),
 			field:   "description",
 		},
 		{
-			name:    "empty difficulty - ValidateNotEmpty",
+			name:    "empty difficulty - OpenAPI validation",
 			request: testdatagenerators.HTTPQuestDataWithField("difficulty", ""),
 			field:   "difficulty",
 		},
@@ -147,7 +147,7 @@ func (s *Suite) TestCreateQuestHTTPNegativeNumbers() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
-	// Test cases with negative numbers (API layer technical validation)
+	// Test cases with negative numbers (OpenAPI numeric constraints)
 	testCases := []struct {
 		name    string
 		request map[string]interface{}

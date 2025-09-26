@@ -164,7 +164,7 @@ func (s *CreateQuestCommandHandlerContractSuite) TestHandleInvalidDifficulty() {
 	s.Assert().True(errors.As(err, &domainErr), "Should return domain validation error")
 }
 
-// Note: Coordinate validation is handled at the API layer via validations.ConvertAPICoordinateToKernel
+// Note: Coordinate validation is handled at the API layer before hitting the command handler
 // Command handlers receive already validated GeoCoordinate structures
 
 // AssignQuestCommandHandler contract tests
@@ -194,7 +194,7 @@ func (s *AssignQuestCommandHandlerContractSuite) TestHandleValidAssignment() {
 	// Contract: Handler should successfully assign quest to user
 	assignCmd := commands.AssignQuestCommand{
 		ID:     createdQuest.ID(),
-		UserID: "test-user-123",
+		UserID: uuid.New(),
 	}
 
 	// Contract: Handle should return assignment result without error
@@ -212,7 +212,7 @@ func (s *AssignQuestCommandHandlerContractSuite) TestHandleNonExistentQuest() {
 	nonExistentID := uuid.New()
 	assignCmd := commands.AssignQuestCommand{
 		ID:     nonExistentID,
-		UserID: "test-user-123",
+		UserID: uuid.New(),
 	}
 
 	// Contract: Handle should return not found error
@@ -247,7 +247,7 @@ func (s *AssignQuestCommandHandlerContractSuite) TestHandleAlreadyAssignedQuest(
 	// First assignment
 	firstAssignCmd := commands.AssignQuestCommand{
 		ID:     createdQuest.ID(),
-		UserID: "first-user",
+		UserID: uuid.New(),
 	}
 	_, err = s.handler.Handle(s.ctx, firstAssignCmd)
 	s.Require().NoError(err)
@@ -255,7 +255,7 @@ func (s *AssignQuestCommandHandlerContractSuite) TestHandleAlreadyAssignedQuest(
 	// Contract: Handler should return domain validation error for already assigned quest
 	secondAssignCmd := commands.AssignQuestCommand{
 		ID:     createdQuest.ID(),
-		UserID: "second-user",
+		UserID: uuid.New(),
 	}
 
 	// Contract: Handle should return validation error

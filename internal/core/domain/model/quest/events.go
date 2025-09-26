@@ -22,10 +22,10 @@ func NewQuestCreated(questID uuid.UUID, creator string) QuestCreated {
 // QuestAssigned represents quest assignment event
 type QuestAssigned struct {
 	ddd.BaseEvent
-	UserID string `json:"user_id"`
+	UserID uuid.UUID `json:"user_id"`
 }
 
-func NewQuestAssigned(questID uuid.UUID, userID string) QuestAssigned {
+func NewQuestAssigned(questID uuid.UUID, userID uuid.UUID) QuestAssigned {
 	return QuestAssigned{
 		BaseEvent: ddd.NewBaseEvent(questID, "quest.assigned"),
 		UserID:    userID,

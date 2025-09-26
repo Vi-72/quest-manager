@@ -11,7 +11,7 @@ import (
 )
 
 // API LAYER VALIDATION TESTS
-// Only tests that correspond to ValidateChangeQuestStatusRequest function
+// Focused on OpenAPI-driven request validation behavior
 
 func (s *Suite) TestChangeQuestStatusHTTPValidation() {
 	ctx := context.Background()
@@ -48,7 +48,7 @@ func (s *Suite) TestChangeQuestStatusHTTPMissingBody() {
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
 	s.Require().NoError(err)
 
-	// Act - send request with empty object to test ValidateBody function
+	// Act - send request with empty object to test OpenAPI required-field validation
 	emptyBodyRequest := map[string]interface{}{} // Empty object (missing required fields)
 	changeReq := casesteps.ChangeQuestStatusHTTPRequest(createdQuest.ID().String(), emptyBodyRequest)
 	changeResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, changeReq)
@@ -80,7 +80,7 @@ func (s *Suite) TestChangeQuestStatusHTTPEmptyStatus() {
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
 	s.Require().NoError(err)
 
-	// Act - send request with empty status (ValidateNotEmpty function test)
+	// Act - send request with empty status (OpenAPI enum validation)
 	emptyStatusRequest := map[string]interface{}{
 		"status": "",
 	}

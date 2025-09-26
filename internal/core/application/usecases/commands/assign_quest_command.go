@@ -7,12 +7,12 @@ import (
 // AssignQuestCommand represents the input for assigning a quest to a user.
 type AssignQuestCommand struct {
 	ID     uuid.UUID
-	UserID string
+	UserID uuid.UUID
 }
 
 // AssignQuestResult represents the output after assignment.
 type AssignQuestResult struct {
 	ID       uuid.UUID
-	Assignee string
+	Assignee uuid.UUID
 	Status   string
 }

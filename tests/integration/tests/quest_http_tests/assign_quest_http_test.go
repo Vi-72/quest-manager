@@ -2,14 +2,12 @@ package quest_http_tests
 
 import (
 	"context"
-	"net/http"
 
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 )
 
-// API LAYER VALIDATION TESTS
-// Only tests that correspond to ValidateAssignQuestRequest function
+// API layer validation tests driven by OpenAPI request validation
 
 func (s *Suite) TestAssignQuestHTTP() {
 	ctx := context.Background()
@@ -40,7 +38,7 @@ func (s *Suite) TestAssignQuestHTTPMissingRequiredFields() {
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
 	s.Require().NoError(err)
 
-	// Act - send request with empty JSON body to test ValidateBody function
+	// Act - send request with empty JSON body to test OpenAPI required-body validation
 	emptyBodyRequest := map[string]interface{}{} // Empty object
 
 	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID().String(), emptyBodyRequest)
@@ -80,7 +78,7 @@ func (s *Suite) TestAssignQuestHTTPEmptyUserID() {
 
 	// Act - send request with empty user_id
 	requestBody := map[string]interface{}{
-		"user_id": "", // Empty user_id - ValidateUUID should catch this
+		"user_id": "", // Empty user_id - OpenAPI format validation should catch this
 	}
 
 	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID().String(), requestBody)
@@ -98,7 +96,7 @@ func (s *Suite) TestAssignQuestHTTPInvalidUserIDFormat() {
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
 	s.Require().NoError(err)
 
-	// Test cases with invalid UUID formats (ValidateUUID function tests)
+	// Test cases with invalid UUID formats (OpenAPI format validation)
 	testCases := []struct {
 		name   string
 		userID string
@@ -139,8 +137,9 @@ func (s *Suite) TestAssignQuestHTTPInvalidUserIDFormat() {
 
 func (s *Suite) TestAssignQuestHTTPInvalidQuestIDFormat() {
 	ctx := context.Background()
+	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
-	// Test cases with invalid quest ID formats in URL path (ValidateUUID function tests)
+	// Test cases with invalid quest ID formats in URL path (OpenAPI path parameter validation)
 	testCases := []struct {
 		name    string
 		questID string
@@ -174,13 +173,9 @@ func (s *Suite) TestAssignQuestHTTPInvalidQuestIDFormat() {
 			assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 			// Assert - API layer should reject invalid quest ID format
-			s.Require().NoError(err, "HTTP request should not fail")
-			s.Require().Equal(http.StatusBadRequest, assignResp.StatusCode, "Should return 400 for invalid quest ID")
-			// Framework level validation message may be different from application level
+			httpAssertions.QuestHTTPValidationError(assignResp, err, "questId")
 			if tc.questID == "" {
 				s.Assert().Contains(assignResp.Body, "empty", "Error should mention empty quest ID")
-			} else {
-				s.Assert().Contains(assignResp.Body, "questId", "Error should mention quest ID field")
 			}
 		})
 	}

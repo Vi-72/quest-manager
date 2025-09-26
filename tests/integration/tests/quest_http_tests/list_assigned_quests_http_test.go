@@ -1,7 +1,7 @@
 package quest_http_tests
 
 // API LAYER VALIDATION TESTS
-// Only tests that correspond to ValidateCreateQuestRequest function
+// Focused on OpenAPI-driven request validation behavior
 
 import (
 	"context"

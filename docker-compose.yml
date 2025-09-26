@@ -2,10 +2,11 @@ services:
 
   postgres:
     image: postgres:13.3
-    container_name: postgres-dataset
+    container_name: quest_manager
     environment:
-      POSTGRES_USER: "username"
-      POSTGRES_PASSWORD: "secret"
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "password"
+      POSTGRES_DB: "quest_manager"
     ports:
       - "5432:5432"
     volumes:

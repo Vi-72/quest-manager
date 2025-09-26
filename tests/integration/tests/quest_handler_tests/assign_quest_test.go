@@ -22,7 +22,7 @@ func (s *Suite) TestAssignQuest() {
 	s.Require().NoError(err)
 
 	// Act - assign quest with valid data
-	userID := "test-user-123"
+	userID := "550e8400-e29b-41d4-a716-446655440001" // Valid UUID
 	assignResult, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, createdQuest.ID(), userID)
 
 	// Assert
@@ -49,7 +49,7 @@ func (s *Suite) TestAssignQuestFromPostedStatus() {
 	s.Assert().Equal(quest.StatusPosted, postedQuest.Status)
 
 	// Act - assign quest from posted status
-	userID := "test-user-456"
+	userID := "550e8400-e29b-41d4-a716-446655440002" // Valid UUID
 	assignResult, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, postedQuest.ID(), userID)
 
 	// Assert
@@ -60,8 +60,8 @@ func (s *Suite) TestAssignQuestNotFound() {
 	ctx := context.Background()
 
 	// Act - try to assign non-existent quest (handler should return 404 error)
-	nonExistentQuestID := uuid.New() // Generate random UUID
-	userID := "test-user-123"
+	nonExistentQuestID := uuid.New()                 // Generate random UUID
+	userID := "550e8400-e29b-41d4-a716-446655440003" // Valid UUID
 	_, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, nonExistentQuestID, userID)
 
 	// Assert - handler should return not found error
@@ -78,7 +78,7 @@ func (s *Suite) TestAssignQuestInvalidStatus() {
 	s.Require().NoError(err)
 
 	// First assign quest to a user
-	firstUserID := "first-user"
+	firstUserID := "550e8400-e29b-41d4-a716-446655440004" // Valid UUID
 	_, err = casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, createdQuest.ID(), firstUserID)
 	s.Require().NoError(err)
 
@@ -94,7 +94,7 @@ func (s *Suite) TestAssignQuestInvalidStatus() {
 	s.Assert().Equal(quest.StatusInProgress, inProgressQuest.Status)
 
 	// Act - try to assign quest with invalid status (domain validation error → 400)
-	secondUserID := "test-user-789"
+	secondUserID := "550e8400-e29b-41d4-a716-446655440005" // Valid UUID
 	_, err = casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, inProgressQuest.ID(), secondUserID)
 
 	// Assert - handler should return domain validation error
@@ -110,12 +110,12 @@ func (s *Suite) TestAssignQuestAlreadyAssigned() {
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
 	s.Require().NoError(err)
 
-	firstUserID := "first-user-123"
+	firstUserID := "550e8400-e29b-41d4-a716-446655440006" // Valid UUID
 	_, err = casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, createdQuest.ID(), firstUserID)
 	s.Require().NoError(err)
 
 	// Act - try to assign already assigned quest to second user (domain validation error → 400)
-	secondUserID := "second-user-456"
+	secondUserID := "550e8400-e29b-41d4-a716-446655440007" // Valid UUID
 	_, err = casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, createdQuest.ID(), secondUserID)
 
 	// Assert - handler should return domain validation error
@@ -132,7 +132,7 @@ func (s *Suite) TestAssignQuestPersistence() {
 	s.Require().NoError(err)
 
 	// Act - assign quest
-	userID := "persistent-user-123"
+	userID := "550e8400-e29b-41d4-a716-446655440008" // Valid UUID
 	assignResult, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, createdQuest.ID(), userID)
 	s.Require().NoError(err)
 
@@ -143,7 +143,7 @@ func (s *Suite) TestAssignQuestPersistence() {
 	s.Require().NoError(err)
 	s.Assert().Equal(assignResult.ID, foundQuest.ID())
 	s.Assert().NotNil(foundQuest.Assignee, "Quest should have assignee")
-	s.Assert().Equal(userID, *foundQuest.Assignee)
+	s.Assert().Equal(userID, foundQuest.Assignee.String())
 	s.Assert().Equal(quest.StatusAssigned, foundQuest.Status)
 
 	// Verify timestamps are updated
@@ -163,7 +163,7 @@ func (s *Suite) TestAssignQuestWithSameUserMultipleTimes() {
 	s.Require().NoError(err)
 
 	// Act - assign both quests to same user
-	userID := "multi-quest-user-123"
+	userID := "550e8400-e29b-41d4-a716-446655440009" // Valid UUID
 
 	firstAssignResult, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, firstQuest.ID(), userID)
 	s.Require().NoError(err)
@@ -173,11 +173,11 @@ func (s *Suite) TestAssignQuestWithSameUserMultipleTimes() {
 
 	// Assert - both assignments should succeed
 	s.Assert().Equal(firstQuest.ID(), firstAssignResult.ID)
-	s.Assert().Equal(userID, firstAssignResult.Assignee)
+	s.Assert().Equal(userID, firstAssignResult.Assignee.String())
 	s.Assert().Equal(string(quest.StatusAssigned), firstAssignResult.Status)
 
 	s.Assert().Equal(secondQuest.ID(), secondAssignResult.ID)
-	s.Assert().Equal(userID, secondAssignResult.Assignee)
+	s.Assert().Equal(userID, secondAssignResult.Assignee.String())
 	s.Assert().Equal(string(quest.StatusAssigned), secondAssignResult.Status)
 
 	// Verify both quests are assigned to the same user

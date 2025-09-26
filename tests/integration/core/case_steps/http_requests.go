@@ -133,7 +133,7 @@ func ListAssignedQuestsHTTPRequest(userID string) HTTPRequest {
 }
 
 // SearchQuestsByRadiusHTTPRequest создает HTTP запрос для поиска квестов по радиусу
-func SearchQuestsByRadiusHTTPRequest(lat, lon, radiusKm float64) HTTPRequest {
+func SearchQuestsByRadiusHTTPRequest(lat, lon, radiusKm float32) HTTPRequest {
 	url := fmt.Sprintf("/api/v1/quests/search-radius?lat=%f&lon=%f&radius_km=%f", lat, lon, radiusKm)
 	return HTTPRequest{
 		Method: "GET",

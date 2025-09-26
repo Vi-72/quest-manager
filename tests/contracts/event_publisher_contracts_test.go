@@ -96,7 +96,7 @@ func (s *EventPublisherContractSuite) TestPublishMultipleEvents() {
 
 	event2 := quest.NewQuestAssigned(
 		uuid.New(),
-		"test-assignee",
+		uuid.New(), // test-assignee as UUID
 	)
 
 	event3 := quest.NewQuestStatusChanged(
@@ -222,7 +222,7 @@ func (s *EventPublisherContractSuite) TestPublishSyncAndAsyncIndependence() {
 
 		asyncEvent := quest.NewQuestAssigned(
 			uuid.New(),
-			"async-assignee",
+			uuid.New(), // async-assignee as UUID
 		)
 
 		// Publish synchronously

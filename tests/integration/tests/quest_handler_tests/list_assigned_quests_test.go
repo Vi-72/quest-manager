@@ -16,7 +16,7 @@ func (s *Suite) TestListAssignedQuests() {
 	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 
 	// Pre-condition - create multiple quests and assign them to a specific user
-	testUserID := "test-user-123"
+	testUserID := "550e8400-e29b-41d4-a716-446655440010" // Valid UUID
 	expectedCount := 2
 	createdQuests, err := casesteps.CreateMultipleRandomQuests(ctx, s.TestDIContainer.CreateQuestHandler, expectedCount)
 	s.Require().NoError(err)
@@ -37,7 +37,7 @@ func (s *Suite) TestListAssignedQuests() {
 
 	// Verify all returned quests are assigned to the correct user
 	for _, q := range quests {
-		s.Assert().Equal(testUserID, *q.Assignee, "Quest should be assigned to the test user")
+		s.Assert().Equal(testUserID, q.Assignee.String(), "Quest should be assigned to the test user")
 		s.Assert().Equal(quest.StatusAssigned, q.Status, "Quest should have 'assigned' status")
 	}
 }

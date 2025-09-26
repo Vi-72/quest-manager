@@ -4,13 +4,13 @@ import (
 	"errors"
 	"net/http"
 
-	"quest-manager/internal/adapters/in/http/validations"
-
+	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware" // ← добавлено
+	chimiddleware "github.com/go-chi/chi/v5/middleware"
 
 	v1 "quest-manager/api/http/quests/v1"
-	"quest-manager/internal/adapters/in/http/problems"
+	httperrors "quest-manager/internal/adapters/in/http/errors"
+	validationmiddleware "quest-manager/internal/adapters/in/http/middleware"
 	"quest-manager/internal/pkg/errs"
 )
 
@@ -20,9 +20,21 @@ func NewRouter(root *CompositionRoot) http.Handler {
 	router := chi.NewRouter()
 
 	// --- Базовые middleware ---
-	router.Use(middleware.RequestID)
-	router.Use(middleware.Recoverer)
-	router.Use(middleware.Logger)
+	router.Use(chimiddleware.RequestID)
+	router.Use(chimiddleware.Recoverer)
+	router.Use(chimiddleware.Logger)
+
+	swagger, err := v1.GetSwagger()
+	if err != nil {
+		panic("failed to load OpenAPI spec: " + err.Error())
+	}
+
+	swagger.Servers = []*openapi3.Server{{URL: apiV1Prefix}}
+
+	requestValidator, err := validationmiddleware.NewOpenAPIValidationMiddleware(swagger)
+	if err != nil {
+		panic("failed to init OpenAPI validation middleware: " + err.Error())
+	}
 
 	// --- Health check ---
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -33,12 +45,7 @@ func NewRouter(root *CompositionRoot) http.Handler {
 
 	// Swagger JSON
 	router.Get("/openapi.json", func(w http.ResponseWriter, r *http.Request) {
-		spec, err := v1.GetSwagger()
-		if err != nil {
-			http.Error(w, "failed to load OpenAPI spec: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		bytes, err := spec.MarshalJSON()
+		bytes, err := swagger.MarshalJSON()
 		if err != nil {
 			http.Error(w, "failed to marshal OpenAPI: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -82,24 +89,15 @@ func NewRouter(root *CompositionRoot) http.Handler {
 	apiHandler := v1.NewStrictHandlerWithOptions(strictHandler, nil, v1.StrictHTTPServerOptions{
 		RequestErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
 			// Handle parameter parsing errors with detailed messages
-			problem := problems.NewBadRequest("Invalid request parameters: " + err.Error())
+			problem := httperrors.NewBadRequest("Invalid request parameters: " + err.Error())
 			problem.WriteResponse(w)
 		},
 		ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-			// Check if it's a validation error from our pkg/validations
-			var validationErr *validations.ValidationError
-			if errors.As(err, &validationErr) {
-				// Convert validation error to Problem Details and return
-				problem := validations.ConvertValidationErrorToProblem(validationErr)
-				problem.WriteResponse(w)
-				return
-			}
-
 			// Check if it's a domain validation error from application layer
 			var domainValidationErr *errs.DomainValidationError
 			if errors.As(err, &domainValidationErr) {
 				// Convert to 400 Bad Request
-				problem := validations.ConvertDomainValidationErrorToProblem(domainValidationErr)
+				problem := httperrors.NewDomainValidationProblem(domainValidationErr)
 				problem.WriteResponse(w)
 				return
 			}
@@ -108,18 +106,23 @@ func NewRouter(root *CompositionRoot) http.Handler {
 			var notFoundErr *errs.NotFoundError
 			if errors.As(err, &notFoundErr) {
 				// Convert to 404 Not Found
-				problem := validations.ConvertNotFoundErrorToProblem(notFoundErr)
+				problem := httperrors.NewNotFoundProblem(notFoundErr)
 				problem.WriteResponse(w)
 				return
 			}
 
 			// Handle other response errors
-			problem := problems.NewBadRequest("Response error: " + err.Error())
+			problem := httperrors.NewBadRequest("Response error: " + err.Error())
 			problem.WriteResponse(w)
 		},
 	})
 
-	apiRouter := v1.HandlerFromMuxWithBaseURL(apiHandler, router, apiV1Prefix)
+	apiRouter := chi.NewRouter()
+	apiRouter.Use(requestValidator)
 
-	return apiRouter
+	v1.HandlerFromMux(apiHandler, apiRouter)
+
+	router.Mount(apiV1Prefix, apiRouter)
+
+	return router
 }

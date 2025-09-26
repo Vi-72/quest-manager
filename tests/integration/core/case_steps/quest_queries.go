@@ -43,7 +43,7 @@ func SearchQuestsByRadiusStep(
 	ctx context.Context,
 	handler queries.SearchQuestsByRadiusQueryHandler,
 	center kernel.GeoCoordinate,
-	radiusKm float64,
+	radiusKm float32,
 ) ([]quest.Quest, error) {
-	return handler.Handle(ctx, center, radiusKm)
+	return handler.Handle(ctx, center, float64(radiusKm))
 }

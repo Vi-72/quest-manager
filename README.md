@@ -59,7 +59,7 @@ quest-manager/
 │   └── config.go           # Конфигурация
 ├── internal/               # 🏗️ Основной код приложения
 │   ├── adapters/           # Адаптеры (Hexagonal Architecture)
-│   │   ├── in/http/        # HTTP handlers & validations
+│   │   ├── in/http/        # HTTP handlers & middleware
 │   │   └── out/postgres/   # Репозитории БД
 │   │       ├── questrepo/  # Quest repository
 │   │       └── locationrepo/ # Location repository  
@@ -148,11 +148,10 @@ VALUES (uuid, '', lat, lon, '', '');
 
 ### 📝 Уровни валидации
 
-1. **Технические проверки** (`internal/adapters/in/http/validations/`)
-   - Формат данных (UUID, координаты, не пустые строки)
-   - Синтаксис и диапазоны значений
-   - Безопасность (размеры полей)
-   - **Результат**: 400 Bad Request
+1. **Технические проверки** (OpenAPI middleware)
+   - Форматы, обязательные поля, enum и диапазоны значений
+   - Выполняются автоматически через `internal/adapters/in/http/middleware`
+   - **Результат**: 400 Bad Request (Problem Details)
 
 2. **Бизнес-правила** (доменная модель)
    - Enum значения (difficulty, status)
@@ -167,46 +166,26 @@ VALUES (uuid, '', lat, lon, '', '');
 ### 🚨 Обработка ошибок
 
 ```go
-// Кастомные типы ошибок
-type DomainValidationError struct { Field, Message string }
-type NotFoundError struct { Resource, ID string }
-
-// Централизованная обработка в middleware
 ResponseErrorHandlerFunc: func(w http.ResponseWriter, r *http.Request, err error) {
-    switch err := err.(type) {
-    case *validations.ValidationError:
-        // 400 Bad Request
-    case *errs.DomainValidationError:
-        // 400 Bad Request  
-    case *errs.NotFoundError:
-        // 404 Not Found
+    switch {
+    case errors.As(err, &domainErr):
+        problems.NewDomainValidationProblem(domainErr).WriteResponse(w)
+    case errors.As(err, &notFoundErr):
+        problems.NewNotFoundProblem(notFoundErr).WriteResponse(w)
     default:
-        // 500 Internal Server Error
+        problems.NewBadRequest("Response error: " + err.Error()).WriteResponse(w)
     }
 }
-```
-
-### 📁 Структура валидации
-
-```
-internal/adapters/in/http/validations/
-├── common.go           # Базовые типы и общие функции
-├── coordinates.go      # Валидация и конвертация координат
-├── create_quest.go     # Валидация создания квеста  
-├── assign_quest.go     # Валидация назначения квеста
-├── change_quest_status.go # Валидация смены статуса
-└── error_converters.go # Конвертация ошибок в Problem Details
 ```
 
 ### 🔄 Процесс валидации
 
 ```go
 // 1. HTTP Layer - технические проверки
-validatedData, err := validations.ValidateCreateQuestRequest(request.Body)
-// latitude/longitude format, ranges, required fields
+validationmiddleware.Validate(r) // latitude/longitude format, ranges, required fields
 
 // 2. Domain Layer - бизнес-правила  
-quest, err := quest.NewQuest(validatedData.Title, validatedData.Difficulty, ...)
+quest, err := quest.NewQuest(dto.Title, dto.Difficulty, ...)
 // difficulty enum, business invariants
 
 // 3. Application Layer - ресурсы

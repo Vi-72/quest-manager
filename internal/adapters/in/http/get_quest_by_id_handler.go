@@ -4,14 +4,12 @@ import (
 	"context"
 
 	v1 "quest-manager/api/http/quests/v1"
-
-	"github.com/google/uuid"
 )
 
 // GetQuestById implements GET /api/v1/quests/{quest_id} from OpenAPI.
 func (a *ApiHandler) GetQuestById(ctx context.Context, request v1.GetQuestByIdRequestObject) (v1.GetQuestByIdResponseObject, error) {
 	// QuestId is already UUID type from OpenAPI, just convert to uuid.UUID
-	questID := uuid.UUID(request.QuestId)
+	questID := request.QuestId
 
 	// Get quest directly
 	quest, err := a.getQuestByIDHandler.Handle(ctx, questID)

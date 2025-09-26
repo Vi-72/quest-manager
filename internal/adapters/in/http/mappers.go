@@ -2,16 +2,17 @@ package http
 
 import (
 	v1 "quest-manager/api/http/quests/v1"
-	"quest-manager/internal/adapters/in/http/validations"
 	"quest-manager/internal/core/domain/model/quest"
+
+	"github.com/google/uuid"
 )
 
 // QuestToAPI converts domain quest to API format
 func QuestToAPI(q quest.Quest) v1.Quest {
 	// Convert target and execution locations
 	// Note: addresses are not denormalized in Quest, they're in separate Location entities
-	targetLocation := validations.ConvertKernelCoordinateToAPI(q.TargetLocation, nil)
-	executionLocation := validations.ConvertKernelCoordinateToAPI(q.ExecutionLocation, nil)
+	targetLocation := convertKernelCoordinateToAPI(q.TargetLocation, nil)
+	executionLocation := convertKernelCoordinateToAPI(q.ExecutionLocation, nil)
 
 	// Convert optional fields to pointers, ensure empty arrays instead of null
 	equipment := &q.Equipment
@@ -44,10 +45,19 @@ func QuestToAPI(q quest.Quest) v1.Quest {
 		Skills:              skills,
 		Status:              v1.QuestStatus(q.Status),
 		Creator:             q.Creator,
-		Assignee:            q.Assignee,
+		Assignee:            convertUUIDPtrToStringPtr(q.Assignee),
 		CreatedAt:           q.CreatedAt,
 		UpdatedAt:           q.UpdatedAt,
 		TargetLocationId:    targetLocationId,
 		ExecutionLocationId: executionLocationId,
 	}
+}
+
+// convertUUIDPtrToStringPtr converts *uuid.UUID to *string
+func convertUUIDPtrToStringPtr(uuidPtr *uuid.UUID) *string {
+	if uuidPtr == nil {
+		return nil
+	}
+	str := uuidPtr.String()
+	return &str
 }
