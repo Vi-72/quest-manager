@@ -323,9 +323,11 @@ components:
       properties:
         id:
           type: string
+          format: uuid
           description: Quest ID
         assignee:
           type: string
+          format: uuid
           description: User ID who was assigned to the quest
         status:
           $ref: '#/components/schemas/QuestStatus'
@@ -339,9 +341,11 @@ components:
       properties:
         id:
           type: string
+          format: uuid
           description: Quest ID
         assignee:
           type: string
+          format: uuid
           nullable: true
           description: User ID who is assigned to the quest (null if not assigned)
         status:
@@ -355,6 +359,7 @@ components:
       properties:
         id:
           type: string
+          format: uuid
         title:
           type: string
         description:
@@ -389,6 +394,7 @@ components:
           type: string
         assignee:
           type: string
+          format: uuid
           nullable: true
         created_at:
           type: string

@@ -77,7 +77,8 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 	// Form result from updated quest
 	var assignee *string
 	if q.Assignee != nil {
-		assignee = q.Assignee
+		assigneeStr := q.Assignee.String()
+		assignee = &assigneeStr
 	}
 
 	return ChangeQuestStatusResult{

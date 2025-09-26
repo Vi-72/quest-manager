@@ -27,7 +27,7 @@ func (a *ApiHandler) ChangeQuestStatus(ctx context.Context, request v1.ChangeQue
 
 	// Form response from operation result
 	apiResult := v1.ChangeQuestStatusResult{
-		Id:       result.ID.String(),
+		Id:       result.ID,
 		Assignee: result.Assignee,
 		Status:   v1.QuestStatus(result.Status),
 	}
