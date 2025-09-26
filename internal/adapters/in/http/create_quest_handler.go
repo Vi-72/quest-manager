@@ -4,34 +4,51 @@ import (
 	"context"
 
 	v1 "quest-manager/api/http/quests/v1"
-	httpValidations "quest-manager/internal/adapters/in/http/validations"
+	"quest-manager/internal/adapters/in/http/errors"
 	"quest-manager/internal/core/application/usecases/commands"
 )
 
 // CreateQuest implements POST /api/v1/quests from OpenAPI.
 func (a *ApiHandler) CreateQuest(ctx context.Context, request v1.CreateQuestRequestObject) (v1.CreateQuestResponseObject, error) {
-	// Validate request and get processed data
-	validatedData, validationErr := httpValidations.ValidateCreateQuestRequest(request.Body)
-	if validationErr != nil {
-		// Return detailed error through middleware handler
-		return nil, validationErr
+	if request.Body == nil {
+		return nil, errors.NewBadRequest("request body is required")
+	}
+
+	targetLocation, err := convertAPICoordinateToKernel(request.Body.TargetLocation)
+	if err != nil {
+		return nil, errors.NewBadRequest("Request validation failed: target_location invalid coordinate values (" + err.Error() + ")")
+	}
+
+	executionLocation, err := convertAPICoordinateToKernel(request.Body.ExecutionLocation)
+	if err != nil {
+		return nil, errors.NewBadRequest("Request validation failed: execution_location invalid coordinate values (" + err.Error() + ")")
+	}
+
+	equipment := []string{}
+	if request.Body.Equipment != nil {
+		equipment = *request.Body.Equipment
+	}
+
+	skills := []string{}
+	if request.Body.Skills != nil {
+		skills = *request.Body.Skills
 	}
 
 	// Extract creator from context or set default (in real app this should be taken from auth token)
 	creator := "system" // TODO: get from user token
 
 	cmd := commands.CreateQuestCommand{
-		Title:             validatedData.Title,
-		Description:       validatedData.Description,
-		Difficulty:        validatedData.Difficulty, // Pass string directly
-		Reward:            validatedData.Reward,
-		DurationMinutes:   validatedData.DurationMinutes,
-		TargetLocation:    validatedData.TargetLocation,
-		TargetAddress:     validatedData.TargetAddress,
-		ExecutionLocation: validatedData.ExecutionLocation,
-		ExecutionAddress:  validatedData.ExecutionAddress,
-		Equipment:         validatedData.Equipment,
-		Skills:            validatedData.Skills,
+		Title:             request.Body.Title,
+		Description:       request.Body.Description,
+		Difficulty:        string(request.Body.Difficulty),
+		Reward:            request.Body.Reward,
+		DurationMinutes:   request.Body.DurationMinutes,
+		TargetLocation:    targetLocation,
+		TargetAddress:     request.Body.TargetLocation.Address,
+		ExecutionLocation: executionLocation,
+		ExecutionAddress:  request.Body.ExecutionLocation.Address,
+		Equipment:         equipment,
+		Skills:            skills,
 		Creator:           creator,
 	}
 

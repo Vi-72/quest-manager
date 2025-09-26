@@ -39,9 +39,15 @@ func AssignQuestStep(
 	questID uuid.UUID,
 	userID string,
 ) (commands.AssignQuestResult, error) {
+	// Convert string userID to UUID
+	userUUID, err := uuid.Parse(userID)
+	if err != nil {
+		return commands.AssignQuestResult{}, err
+	}
+
 	cmd := commands.AssignQuestCommand{
 		ID:     questID,
-		UserID: userID,
+		UserID: userUUID,
 	}
 
 	return handler.Handle(ctx, cmd)
