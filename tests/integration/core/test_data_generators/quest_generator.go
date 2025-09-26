@@ -151,16 +151,6 @@ func NewQuest(opts ...Option) QuestTestData {
 	return data
 }
 
-// ---- Готовые опции (композиция, без дублирования):
-
-func WithRand(rng *rand.Rand) Option {
-	return func(q *QuestTestData, _ *rand.Rand) { // подменим RNG через замыкание
-		// Ничего не меняем в q — эта опция полезна как "обёртка" для других WithRandom* опций
-		// Используйте вместе: NewQuest(WithRand(myRng), WithRandom(...))
-		defaultRng = rng
-	}
-}
-
 func WithTitle(title string) Option {
 	return func(q *QuestTestData, _ *rand.Rand) { q.Title = title }
 }
@@ -181,23 +171,11 @@ func WithDuration(minutes int) Option {
 	return func(q *QuestTestData, _ *rand.Rand) { q.DurationMinutes = minutes }
 }
 
-func WithCreator(creator string) Option {
-	return func(q *QuestTestData, _ *rand.Rand) { q.Creator = creator }
-}
-
 func WithLocations(target, exec kernel.GeoCoordinate) Option {
 	return func(q *QuestTestData, _ *rand.Rand) {
 		q.TargetLocation = target
 		q.ExecutionLocation = exec
 	}
-}
-
-func WithEquipment(eq []string) Option {
-	return func(q *QuestTestData, _ *rand.Rand) { q.Equipment = eq }
-}
-
-func WithSkills(sk []string) Option {
-	return func(q *QuestTestData, _ *rand.Rand) { q.Skills = sk }
 }
 
 func WithEmptyArrays() Option {
@@ -276,11 +254,6 @@ func EmptyArraysQuestData() QuestTestData {
 // RandomQuestData возвращает случайные данные для квеста
 func RandomQuestData() QuestTestData {
 	return NewQuest(WithRandom())
-}
-
-// InvalidCoordinatesQuestData возвращает данные с некорректными координатами
-func InvalidCoordinatesQuestData() QuestTestData {
-	return NewQuest(WithInvalidCoordinates())
 }
 
 // QuestDataWithLocations возвращает данные с заданными локациями
