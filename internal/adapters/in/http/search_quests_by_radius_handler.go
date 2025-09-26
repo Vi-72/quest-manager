@@ -4,24 +4,18 @@ import (
 	"context"
 
 	v1 "quest-manager/api/http/quests/v1"
-	"quest-manager/internal/adapters/in/http/validations"
+	"quest-manager/internal/adapters/in/http/errors"
+	"quest-manager/internal/core/domain/model/kernel"
 )
 
 // SearchQuestsByRadius implements GET /api/v1/quests/search-radius from OpenAPI.
 func (a *ApiHandler) SearchQuestsByRadius(ctx context.Context, request v1.SearchQuestsByRadiusRequestObject) (v1.SearchQuestsByRadiusResponseObject, error) {
-	// Validate search parameters
-	validatedData, validationErr := validations.ValidateSearchByRadiusParams(
-		request.Params.Lat,
-		request.Params.Lon,
-		request.Params.RadiusKm,
-	)
-	if validationErr != nil {
-		// Return validation error, middleware will automatically handle it and return 400 response
-		return nil, validationErr
+	center, err := kernel.NewGeoCoordinate(float64(request.Params.Lat), float64(request.Params.Lon))
+	if err != nil {
+		return nil, errors.NewBadRequest("Request validation failed: coordinates invalid (" + err.Error() + ")")
 	}
 
-	// Get quest list directly
-	quests, err := a.searchQuestsByRadius.Handle(ctx, validatedData.Center, validatedData.RadiusKm)
+	quests, err := a.searchQuestsByRadius.Handle(ctx, center, float64(request.Params.RadiusKm))
 	if err != nil {
 		// Pass error to middleware for proper handling
 		return nil, err

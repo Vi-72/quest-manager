@@ -91,7 +91,7 @@ func (m *MockQuestRepository) FindByAssignee(ctx context.Context, userID string)
 
 	var result []quest.Quest
 	for _, q := range m.quests {
-		if q.Assignee != nil && *q.Assignee == userID {
+		if q.Assignee != nil && q.Assignee.String() == userID {
 			result = append(result, q)
 		}
 	}
