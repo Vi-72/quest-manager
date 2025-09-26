@@ -3,8 +3,6 @@ package http
 import (
 	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/core/domain/model/quest"
-
-	"github.com/google/uuid"
 )
 
 // QuestToAPI converts domain quest to API format
@@ -33,7 +31,7 @@ func QuestToAPI(q quest.Quest) v1.Quest {
 	}
 
 	return v1.Quest{
-		Id:                  q.ID().String(),
+		Id:                  q.ID(),
 		Title:               q.Title,
 		Description:         q.Description,
 		Difficulty:          v1.QuestDifficulty(q.Difficulty),
@@ -45,19 +43,10 @@ func QuestToAPI(q quest.Quest) v1.Quest {
 		Skills:              skills,
 		Status:              v1.QuestStatus(q.Status),
 		Creator:             q.Creator,
-		Assignee:            convertUUIDPtrToStringPtr(q.Assignee),
+		Assignee:            q.Assignee,
 		CreatedAt:           q.CreatedAt,
 		UpdatedAt:           q.UpdatedAt,
 		TargetLocationId:    targetLocationId,
 		ExecutionLocationId: executionLocationId,
 	}
-}
-
-// convertUUIDPtrToStringPtr converts *uuid.UUID to *string
-func convertUUIDPtrToStringPtr(uuidPtr *uuid.UUID) *string {
-	if uuidPtr == nil {
-		return nil
-	}
-	str := uuidPtr.String()
-	return &str
 }

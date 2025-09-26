@@ -66,7 +66,7 @@ type Quest struct {
 	Skills    []string
 	Status    Status
 	Creator   string
-	Assignee  *string
+	Assignee  *uuid.UUID
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -136,7 +136,7 @@ func NewQuest(
 
 // AssignTo sets the assignee for the quest and changes its status to "assigned".
 // Contains business logic for quest assignment.
-func (q *Quest) AssignTo(userID string) error {
+func (q *Quest) AssignTo(userID uuid.UUID) error {
 	// Business rules for assignment
 	if q.Status != StatusCreated && q.Status != StatusPosted {
 		return errors.New("quest can only be assigned if status is 'created' or 'posted'")

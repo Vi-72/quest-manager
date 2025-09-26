@@ -66,10 +66,10 @@ type AssignQuestRequest struct {
 // AssignQuestResult defines model for AssignQuestResult.
 type AssignQuestResult struct {
 	// Assignee User ID who was assigned to the quest
-	Assignee string `json:"assignee"`
+	Assignee openapi_types.UUID `json:"assignee"`
 
 	// Id Quest ID
-	Id string `json:"id"`
+	Id openapi_types.UUID `json:"id"`
 
 	// Status Quest status
 	Status QuestStatus `json:"status"`
@@ -78,10 +78,10 @@ type AssignQuestResult struct {
 // ChangeQuestStatusResult defines model for ChangeQuestStatusResult.
 type ChangeQuestStatusResult struct {
 	// Assignee User ID who is assigned to the quest (null if not assigned)
-	Assignee *string `json:"assignee"`
+	Assignee *openapi_types.UUID `json:"assignee"`
 
 	// Id Quest ID
-	Id string `json:"id"`
+	Id openapi_types.UUID `json:"id"`
 
 	// Status Quest status
 	Status QuestStatus `json:"status"`
@@ -134,11 +134,11 @@ type CreateQuestRequestDifficulty string
 
 // Quest defines model for Quest.
 type Quest struct {
-	Assignee    *string         `json:"assignee"`
-	CreatedAt   time.Time       `json:"created_at"`
-	Creator     string          `json:"creator"`
-	Description string          `json:"description"`
-	Difficulty  QuestDifficulty `json:"difficulty"`
+	Assignee    *openapi_types.UUID `json:"assignee"`
+	CreatedAt   time.Time           `json:"created_at"`
+	Creator     string              `json:"creator"`
+	Description string              `json:"description"`
+	Difficulty  QuestDifficulty     `json:"difficulty"`
 
 	// DurationMinutes Quest duration in minutes
 	DurationMinutes   int        `json:"duration_minutes"`
@@ -146,8 +146,8 @@ type Quest struct {
 	ExecutionLocation Coordinate `json:"execution_location"`
 
 	// ExecutionLocationId ID of the execution location in locations table (if any)
-	ExecutionLocationId *string `json:"execution_location_id"`
-	Id                  string  `json:"id"`
+	ExecutionLocationId *string            `json:"execution_location_id"`
+	Id                  openapi_types.UUID `json:"id"`
 
 	// Reward Reward level from 1 to 5
 	Reward int       `json:"reward"`
@@ -1136,33 +1136,33 @@ func (sh *strictHandler) ChangeQuestStatus(w http.ResponseWriter, r *http.Reques
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

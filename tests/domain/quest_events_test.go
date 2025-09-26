@@ -6,6 +6,7 @@ package domain
 import (
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
 	"quest-manager/internal/core/domain/model/kernel"
@@ -28,7 +29,7 @@ func TestQuest_NewQuest_DomainEvents(t *testing.T) {
 
 func TestQuest_AssignTo_DomainEvents(t *testing.T) {
 	q := createValidQuestForEvents(t)
-	userID := "event-test-user"
+	userID := uuid.New()
 
 	// Clear any existing events
 	q.ClearDomainEvents()

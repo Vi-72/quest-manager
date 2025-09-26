@@ -75,15 +75,9 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 	q.ClearDomainEvents()
 
 	// Form result from updated quest
-	var assignee *string
-	if q.Assignee != nil {
-		assigneeStr := q.Assignee.String()
-		assignee = &assigneeStr
-	}
-
 	return ChangeQuestStatusResult{
 		ID:       q.ID(),
-		Assignee: assignee,
+		Assignee: q.Assignee, // Now both are *uuid.UUID
 		Status:   string(q.Status),
 	}, nil
 }
