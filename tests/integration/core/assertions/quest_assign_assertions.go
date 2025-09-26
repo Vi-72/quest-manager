@@ -1,9 +1,9 @@
 package assertions
 
 import (
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/domain/model/quest"
-	"quest-manager/internal/generated/servers"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -36,11 +36,11 @@ func (a *QuestAssignAssertions) VerifyQuestAssignedSuccessfully(
 
 // VerifyQuestAssignmentResponse verifies HTTP assignment response
 func (a *QuestAssignAssertions) VerifyQuestAssignmentResponse(
-	response *servers.AssignQuestResult,
+	response *v1.AssignQuestResult,
 	originalQuestID uuid.UUID,
 	userID string,
 ) {
 	a.assert.Equal(originalQuestID.String(), response.Id, "HTTP response quest ID should match original")
 	a.assert.Equal(userID, response.Assignee, "HTTP response assignee should match user ID")
-	a.assert.Equal(servers.QuestStatusAssigned, response.Status, "HTTP response status should be assigned")
+	a.assert.Equal(v1.QuestStatusAssigned, response.Status, "HTTP response status should be assigned")
 }

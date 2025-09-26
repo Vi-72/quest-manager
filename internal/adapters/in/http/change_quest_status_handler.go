@@ -3,16 +3,16 @@ package http
 import (
 	"context"
 
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/adapters/in/http/validations"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/domain/model/quest"
-	"quest-manager/internal/generated/servers"
 )
 
 // ChangeQuestStatus implements PATCH /api/v1/quests/{quest_id}/status from OpenAPI.
-func (a *ApiHandler) ChangeQuestStatus(ctx context.Context, request servers.ChangeQuestStatusRequestObject) (servers.ChangeQuestStatusResponseObject, error) {
+func (a *ApiHandler) ChangeQuestStatus(ctx context.Context, request v1.ChangeQuestStatusRequestObject) (v1.ChangeQuestStatusResponseObject, error) {
 	// Validate request
-	validatedData, validationErr := validations.ValidateChangeQuestStatusRequest(request.Body, request.QuestId)
+	validatedData, validationErr := validations.ValidateChangeQuestStatusRequest(request.Body, request.QuestId.String())
 	if validationErr != nil {
 		// Return validation error, middleware will automatically handle it and return 400 response
 		return nil, validationErr
@@ -30,10 +30,10 @@ func (a *ApiHandler) ChangeQuestStatus(ctx context.Context, request servers.Chan
 	}
 
 	// Form response from operation result
-	apiResult := servers.ChangeQuestStatusResult{
+	apiResult := v1.ChangeQuestStatusResult{
 		Id:       result.ID.String(),
 		Assignee: result.Assignee,
-		Status:   servers.QuestStatus(result.Status),
+		Status:   v1.QuestStatus(result.Status),
 	}
-	return servers.ChangeQuestStatus200JSONResponse(apiResult), nil
+	return v1.ChangeQuestStatus200JSONResponse(apiResult), nil
 }

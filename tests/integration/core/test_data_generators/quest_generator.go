@@ -7,9 +7,9 @@ import (
 	"strconv"
 	"time"
 
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/domain/model/kernel"
-	"quest-manager/internal/generated/servers"
 )
 
 // ============================
@@ -104,18 +104,18 @@ func (data QuestTestData) ToHTTPRequest() map[string]interface{} {
 	}
 }
 
-func (data QuestTestData) ToCreateQuestRequest() servers.CreateQuestRequest {
-	return servers.CreateQuestRequest{
+func (data QuestTestData) ToCreateQuestRequest() v1.CreateQuestRequest {
+	return v1.CreateQuestRequest{
 		Title:           data.Title,
 		Description:     data.Description,
-		Difficulty:      servers.CreateQuestRequestDifficulty(data.Difficulty),
+		Difficulty:      v1.CreateQuestRequestDifficulty(data.Difficulty),
 		Reward:          data.Reward,
 		DurationMinutes: data.DurationMinutes,
-		TargetLocation: servers.Coordinate{
+		TargetLocation: v1.Coordinate{
 			Latitude:  float32(data.TargetLocation.Lat),
 			Longitude: float32(data.TargetLocation.Lon),
 		},
-		ExecutionLocation: servers.Coordinate{
+		ExecutionLocation: v1.Coordinate{
 			Latitude:  float32(data.ExecutionLocation.Lat),
 			Longitude: float32(data.ExecutionLocation.Lon),
 		},
@@ -301,17 +301,17 @@ func SimpleQuestData(title, description, difficulty string, reward, duration int
 }
 
 // ============================
-// Хелперы для *servers.CreateQuestRequest
+// Хелперы для *v1.CreateQuestRequest
 // ============================
 
 // RandomCreateQuestRequest возвращает случайный запрос
-func RandomCreateQuestRequest() *servers.CreateQuestRequest {
+func RandomCreateQuestRequest() *v1.CreateQuestRequest {
 	req := NewQuest(WithRandom()).ToCreateQuestRequest()
 	return &req
 }
 
 // InvalidCoordinatesCreateQuestRequest возвращает запрос с некорректными координатами
-func InvalidCoordinatesCreateQuestRequest() *servers.CreateQuestRequest {
+func InvalidCoordinatesCreateQuestRequest() *v1.CreateQuestRequest {
 	req := NewQuest(WithInvalidCoordinates()).ToCreateQuestRequest()
 	return &req
 }

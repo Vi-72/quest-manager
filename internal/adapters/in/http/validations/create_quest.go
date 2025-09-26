@@ -1,8 +1,8 @@
 package validations
 
 import (
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/core/domain/model/kernel"
-	"quest-manager/internal/generated/servers"
 )
 
 // ValidatedCreateQuestData contains validated and processed data
@@ -20,39 +20,20 @@ type ValidatedCreateQuestData struct {
 	Skills            []string
 }
 
-// ValidateCreateQuestRequest validates technical aspects of request (format, ranges, non-empty values)
-func ValidateCreateQuestRequest(req *servers.CreateQuestRequest) (*ValidatedCreateQuestData, *ValidationError) {
-	// Validate body
+// ValidateCreateQuestRequest validates and converts request data
+// Note: Basic validations (required fields, formats, ranges) are now handled by OpenAPI
+func ValidateCreateQuestRequest(req *v1.CreateQuestRequest) (*ValidatedCreateQuestData, *ValidationError) {
+	// Validate body (still needed for nil check)
 	if err := ValidateBody(req, "body"); err != nil {
 		return nil, err
 	}
 
-	// Technical validation of title
-	title, err := TrimAndValidateString(req.Title, "title")
-	if err != nil {
-		return nil, err
-	}
-
-	// Technical validation of description
-	description, err := TrimAndValidateString(req.Description, "description")
-	if err != nil {
-		return nil, err
-	}
-
-	// Technical validation of difficulty (only non-empty)
-	if err := ValidateNotEmpty(string(req.Difficulty), "difficulty"); err != nil {
-		return nil, err
-	}
-
-	// Basic technical validation of duration_minutes (only positive number)
-	if req.DurationMinutes <= 0 {
-		return nil, NewValidationError("duration_minutes", "must be a positive number")
-	}
-
-	// Basic technical validation of reward (only positive number)
-	if req.Reward <= 0 {
-		return nil, NewValidationError("reward", "must be a positive number")
-	}
+	// OpenAPI now handles:
+	// - title: minLength, maxLength, pattern (no whitespace-only)
+	// - description: minLength, maxLength, pattern (no whitespace-only)
+	// - difficulty: enum validation
+	// - reward: minimum 1, maximum 5
+	// - duration_minutes: minimum 1, maximum 10080
 
 	// Validate and convert target_location
 	targetLocation, err := ConvertAPICoordinateToKernel(req.TargetLocation)
@@ -78,11 +59,11 @@ func ValidateCreateQuestRequest(req *servers.CreateQuestRequest) (*ValidatedCrea
 	}
 
 	return &ValidatedCreateQuestData{
-		Title:             title,
-		Description:       description,
-		Difficulty:        string(req.Difficulty), // Pass as is, domain will validate
-		Reward:            req.Reward,
-		DurationMinutes:   req.DurationMinutes,
+		Title:             req.Title,              // OpenAPI validates minLength, maxLength, pattern
+		Description:       req.Description,        // OpenAPI validates minLength, maxLength, pattern
+		Difficulty:        string(req.Difficulty), // OpenAPI validates enum
+		Reward:            req.Reward,             // OpenAPI validates minimum 1, maximum 5
+		DurationMinutes:   req.DurationMinutes,    // OpenAPI validates minimum 1, maximum 10080
 		TargetLocation:    targetLocation,
 		TargetAddress:     req.TargetLocation.Address,
 		ExecutionLocation: executionLocation,

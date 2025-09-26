@@ -3,13 +3,13 @@ package cmd
 import (
 	"log"
 
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/adapters/in/http"
 	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/ports"
-	"quest-manager/internal/generated/servers"
 
 	"gorm.io/gorm"
 )
@@ -99,7 +99,7 @@ func (cr *CompositionRoot) NewListAssignedQuestsQueryHandler() queries.ListAssig
 }
 
 // NewApiHandler aggregates all HTTP handlers.
-func (cr *CompositionRoot) NewApiHandler() servers.StrictServerInterface {
+func (cr *CompositionRoot) NewApiHandler() v1.StrictServerInterface {
 	handlers, err := http.NewApiHandler(
 		cr.NewCreateQuestCommandHandler(),
 		cr.NewListQuestsQueryHandler(),

@@ -4,8 +4,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/core/domain/model/quest"
-	"quest-manager/internal/generated/servers"
 )
 
 type QuestSingleAssertions struct {
@@ -49,7 +49,7 @@ func (a *QuestSingleAssertions) QuestHasValidLocationData(q quest.Quest) {
 }
 
 // QuestHTTPMatchesDomain verifies that HTTP quest response matches domain quest
-func (a *QuestSingleAssertions) QuestHTTPMatchesDomain(httpQuest servers.Quest, domainQuest quest.Quest) {
+func (a *QuestSingleAssertions) QuestHTTPMatchesDomain(httpQuest v1.Quest, domainQuest quest.Quest) {
 	a.assert.Equal(domainQuest.ID().String(), httpQuest.Id, "Quest ID should match")
 	a.assert.Equal(domainQuest.Title, httpQuest.Title, "Quest title should match")
 	a.assert.Equal(domainQuest.Description, httpQuest.Description, "Quest description should match")
@@ -67,7 +67,7 @@ func (a *QuestSingleAssertions) QuestHTTPMatchesDomain(httpQuest servers.Quest, 
 }
 
 // QuestHTTPHasValidLocationData verifies that HTTP quest has valid location IDs and coordinates
-func (a *QuestSingleAssertions) QuestHTTPHasValidLocationData(q servers.Quest) {
+func (a *QuestSingleAssertions) QuestHTTPHasValidLocationData(q v1.Quest) {
 	a.assert.NotNil(q.TargetLocationId, "Quest should have target location ID")
 	a.assert.NotEmpty(*q.TargetLocationId, "Target location ID should not be empty")
 	a.assert.NotNil(q.ExecutionLocationId, "Quest should have execution location ID")
@@ -80,7 +80,7 @@ func (a *QuestSingleAssertions) QuestHTTPHasValidLocationData(q servers.Quest) {
 }
 
 // QuestHTTPHasDifferentLocations verifies that target and execution locations are different
-func (a *QuestSingleAssertions) QuestHTTPHasDifferentLocations(q servers.Quest) {
+func (a *QuestSingleAssertions) QuestHTTPHasDifferentLocations(q v1.Quest) {
 	a.assert.NotNil(q.TargetLocationId, "Quest should have target location ID")
 	a.assert.NotNil(q.ExecutionLocationId, "Quest should have execution location ID")
 	a.assert.NotEqual(*q.TargetLocationId, *q.ExecutionLocationId, "Target and execution location IDs should be different")
@@ -90,9 +90,9 @@ func (a *QuestSingleAssertions) QuestHTTPHasDifferentLocations(q servers.Quest) 
 }
 
 // QuestHTTPIsAssignedToUser verifies that HTTP quest is properly assigned to a specific user
-func (a *QuestSingleAssertions) QuestHTTPIsAssignedToUser(quest servers.Quest, expectedUserID, originalQuestID string) {
+func (a *QuestSingleAssertions) QuestHTTPIsAssignedToUser(quest v1.Quest, expectedUserID, originalQuestID string) {
 	a.assert.Equal(originalQuestID, quest.Id, "Quest ID should match original")
 	a.assert.NotNil(quest.Assignee, "Quest should have assignee")
 	a.assert.Equal(expectedUserID, *quest.Assignee, "Quest should be assigned to expected user")
-	a.assert.Equal(servers.QuestStatusAssigned, quest.Status, "Quest should have assigned status")
+	a.assert.Equal(v1.QuestStatusAssigned, quest.Status, "Quest should have assigned status")
 }

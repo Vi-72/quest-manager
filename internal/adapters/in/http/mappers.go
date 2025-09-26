@@ -1,13 +1,13 @@
 package http
 
 import (
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/adapters/in/http/validations"
 	"quest-manager/internal/core/domain/model/quest"
-	"quest-manager/internal/generated/servers"
 )
 
 // QuestToAPI converts domain quest to API format
-func QuestToAPI(q quest.Quest) servers.Quest {
+func QuestToAPI(q quest.Quest) v1.Quest {
 	// Convert target and execution locations
 	// Note: addresses are not denormalized in Quest, they're in separate Location entities
 	targetLocation := validations.ConvertKernelCoordinateToAPI(q.TargetLocation, nil)
@@ -31,18 +31,18 @@ func QuestToAPI(q quest.Quest) servers.Quest {
 		executionLocationId = &id
 	}
 
-	return servers.Quest{
+	return v1.Quest{
 		Id:                  q.ID().String(),
 		Title:               q.Title,
 		Description:         q.Description,
-		Difficulty:          servers.QuestDifficulty(q.Difficulty),
+		Difficulty:          v1.QuestDifficulty(q.Difficulty),
 		Reward:              q.Reward,
 		DurationMinutes:     q.DurationMinutes,
 		TargetLocation:      targetLocation,
 		ExecutionLocation:   executionLocation,
 		Equipment:           equipment,
 		Skills:              skills,
-		Status:              servers.QuestStatus(q.Status),
+		Status:              v1.QuestStatus(q.Status),
 		Creator:             q.Creator,
 		Assignee:            q.Assignee,
 		CreatedAt:           q.CreatedAt,

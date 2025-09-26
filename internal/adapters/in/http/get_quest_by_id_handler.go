@@ -3,18 +3,15 @@ package http
 import (
 	"context"
 
-	"quest-manager/internal/adapters/in/http/validations"
-	"quest-manager/internal/generated/servers"
+	v1 "quest-manager/api/http/quests/v1"
+
+	"github.com/google/uuid"
 )
 
 // GetQuestById implements GET /api/v1/quests/{quest_id} from OpenAPI.
-func (a *ApiHandler) GetQuestById(ctx context.Context, request servers.GetQuestByIdRequestObject) (servers.GetQuestByIdResponseObject, error) {
-	// Validate UUID
-	questID, validationErr := validations.ValidateUUID(request.QuestId, "quest_id")
-	if validationErr != nil {
-		// Return validation error, middleware will automatically handle it and return 400 response
-		return nil, validationErr
-	}
+func (a *ApiHandler) GetQuestById(ctx context.Context, request v1.GetQuestByIdRequestObject) (v1.GetQuestByIdResponseObject, error) {
+	// QuestId is already UUID type from OpenAPI, just convert to uuid.UUID
+	questID := uuid.UUID(request.QuestId)
 
 	// Get quest directly
 	quest, err := a.getQuestByIDHandler.Handle(ctx, questID)
@@ -25,5 +22,5 @@ func (a *ApiHandler) GetQuestById(ctx context.Context, request servers.GetQuestB
 
 	apiQuest := QuestToAPI(quest)
 
-	return servers.GetQuestById200JSONResponse(apiQuest), nil
+	return v1.GetQuestById200JSONResponse(apiQuest), nil
 }

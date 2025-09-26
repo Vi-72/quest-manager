@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"quest-manager/internal/generated/servers"
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
@@ -18,17 +18,17 @@ func (s *E2ESuite) TestCreateQuestThroughAPISuccess() {
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Prepare request data
-	questRequest := servers.CreateQuestRequest{
+	questRequest := v1.CreateQuestRequest{
 		Title:           "E2E Test Quest",
 		Description:     "End-to-end test quest creation",
-		Difficulty:      servers.CreateQuestRequestDifficultyMedium,
+		Difficulty:      v1.CreateQuestRequestDifficultyMedium,
 		Reward:          3,
 		DurationMinutes: 60,
-		TargetLocation: servers.Coordinate{
+		TargetLocation: v1.Coordinate{
 			Latitude:  55.7558,
 			Longitude: 37.6176,
 		},
-		ExecutionLocation: servers.Coordinate{
+		ExecutionLocation: v1.Coordinate{
 			Latitude:  55.7520,
 			Longitude: 37.6175,
 		},

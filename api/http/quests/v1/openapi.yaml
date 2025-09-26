@@ -63,21 +63,27 @@ paths:
           schema:
             type: number
             format: float
-          description: Center latitude
+            minimum: -90
+            maximum: 90
+          description: Center latitude (-90 to 90)
         - name: lon
           in: query
           required: true
           schema:
             type: number
             format: float
-          description: Center longitude
+            minimum: -180
+            maximum: 180
+          description: Center longitude (-180 to 180)
         - name: radius_km
           in: query
           required: true
           schema:
             type: number
             format: float
-          description: Search radius in kilometers
+            minimum: 0.1
+            maximum: 20000
+          description: Search radius in kilometers (0.1 to 20000 km)
       responses:
         '200':
           description: List of quests within the radius
@@ -102,7 +108,8 @@ paths:
           required: true
           schema:
             type: string
-          description: ID of the user
+            format: uuid
+          description: UUID of the user
       responses:
         '200':
           description: List of quests assigned to the user
@@ -127,7 +134,8 @@ paths:
           required: true
           schema:
             type: string
-          description: Unique quest ID
+            format: uuid
+          description: Unique quest UUID
       responses:
         '200':
           description: Quest details
@@ -150,7 +158,8 @@ paths:
           required: true
           schema:
             type: string
-          description: Quest ID
+            format: uuid
+          description: Quest UUID
       requestBody:
         required: true
         content:
@@ -181,7 +190,8 @@ paths:
           required: true
           schema:
             type: string
-          description: Quest ID
+            format: uuid
+          description: Quest UUID
       requestBody:
         required: true
         content:
@@ -226,7 +236,9 @@ components:
           description: Longitude coordinate
         address:
           type: string
-          description: Optional address for this location
+          minLength: 1
+          maxLength: 500
+          description: Optional address for this location (1-500 chars)
       required:
         - latitude
         - longitude
@@ -236,8 +248,16 @@ components:
       properties:
         title:
           type: string
+          minLength: 1
+          maxLength: 200
+          pattern: "^\\S.*\\S$|^\\S$"
+          description: Quest title (1-200 chars, cannot be only whitespace)
         description:
           type: string
+          minLength: 1
+          maxLength: 1000
+          pattern: "^\\S.*\\S$|^\\S$"
+          description: Quest description (1-1000 chars, cannot be only whitespace)
         difficulty:
           type: string
           enum: [easy, medium, hard]
@@ -249,7 +269,8 @@ components:
         duration_minutes:
           type: integer
           minimum: 1
-          description: Quest duration in minutes
+          maximum: 10080
+          description: Quest duration in minutes (1 minute to 1 week)
         target_location:
           $ref: '#/components/schemas/Coordinate'
         execution_location:
@@ -258,10 +279,18 @@ components:
           type: array
           items:
             type: string
+            minLength: 1
+            maxLength: 100
+          maxItems: 50
+          description: List of required equipment (max 50 items)
         skills:
           type: array
           items:
             type: string
+            minLength: 1
+            maxLength: 100
+          maxItems: 50
+          description: List of required skills (max 50 items)
       required:
         - title
         - description
@@ -284,7 +313,8 @@ components:
       properties:
         user_id:
           type: string
-          description: User ID to assign the quest to
+          format: uuid
+          description: User UUID to assign the quest to
       required:
         - user_id
 

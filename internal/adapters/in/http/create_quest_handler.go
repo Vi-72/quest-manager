@@ -3,13 +3,13 @@ package http
 import (
 	"context"
 
+	v1 "quest-manager/api/http/quests/v1"
 	httpValidations "quest-manager/internal/adapters/in/http/validations"
 	"quest-manager/internal/core/application/usecases/commands"
-	"quest-manager/internal/generated/servers"
 )
 
 // CreateQuest implements POST /api/v1/quests from OpenAPI.
-func (a *ApiHandler) CreateQuest(ctx context.Context, request servers.CreateQuestRequestObject) (servers.CreateQuestResponseObject, error) {
+func (a *ApiHandler) CreateQuest(ctx context.Context, request v1.CreateQuestRequestObject) (v1.CreateQuestResponseObject, error) {
 	// Validate request and get processed data
 	validatedData, validationErr := httpValidations.ValidateCreateQuestRequest(request.Body)
 	if validationErr != nil {
@@ -44,5 +44,5 @@ func (a *ApiHandler) CreateQuest(ctx context.Context, request servers.CreateQues
 	// Return full response using mapper
 	response := QuestToAPI(result)
 
-	return servers.CreateQuest201JSONResponse(response), nil
+	return v1.CreateQuest201JSONResponse(response), nil
 }

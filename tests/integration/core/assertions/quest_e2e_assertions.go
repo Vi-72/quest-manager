@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/core/domain/model/location"
 	"quest-manager/internal/core/domain/model/quest"
-	"quest-manager/internal/generated/servers"
 	teststorage "quest-manager/tests/integration/core/storage"
 )
 
@@ -106,7 +106,7 @@ func (a *QuestE2EAssertions) VerifyNoEventsCreated(ctx context.Context) {
 }
 
 // VerifyLocationsInDatabase checks that quest locations are properly stored in database
-func (a *QuestE2EAssertions) VerifyLocationsInDatabase(ctx context.Context, questRequest servers.CreateQuestRequest, locationRepo interface {
+func (a *QuestE2EAssertions) VerifyLocationsInDatabase(ctx context.Context, questRequest v1.CreateQuestRequest, locationRepo interface {
 	FindAll(ctx context.Context) ([]*location.Location, error)
 }) {
 	allLocations, err := locationRepo.FindAll(ctx)

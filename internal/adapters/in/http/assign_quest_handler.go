@@ -3,15 +3,15 @@ package http
 import (
 	"context"
 
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/adapters/in/http/validations"
 	"quest-manager/internal/core/application/usecases/commands"
-	"quest-manager/internal/generated/servers"
 )
 
 // AssignQuest implements POST /api/v1/quests/{quest_id}/assign from OpenAPI.
-func (a *ApiHandler) AssignQuest(ctx context.Context, request servers.AssignQuestRequestObject) (servers.AssignQuestResponseObject, error) {
+func (a *ApiHandler) AssignQuest(ctx context.Context, request v1.AssignQuestRequestObject) (v1.AssignQuestResponseObject, error) {
 	// Validate request
-	validatedData, validationErr := validations.ValidateAssignQuestRequest(request.Body, request.QuestId)
+	validatedData, validationErr := validations.ValidateAssignQuestRequest(request.Body, request.QuestId.String())
 	if validationErr != nil {
 		// Return validation error, middleware will automatically handle it and return 400 response
 		return nil, validationErr
@@ -30,10 +30,10 @@ func (a *ApiHandler) AssignQuest(ctx context.Context, request servers.AssignQues
 	}
 
 	// Form response from operation result
-	apiResult := servers.AssignQuestResult{
+	apiResult := v1.AssignQuestResult{
 		Id:       result.ID.String(),
 		Assignee: result.Assignee,
-		Status:   servers.QuestStatus(result.Status),
+		Status:   v1.QuestStatus(result.Status),
 	}
-	return servers.AssignQuest200JSONResponse(apiResult), nil
+	return v1.AssignQuest200JSONResponse(apiResult), nil
 }

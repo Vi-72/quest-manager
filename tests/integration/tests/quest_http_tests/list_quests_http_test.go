@@ -8,8 +8,8 @@ import (
 	"encoding/json"
 	"net/http"
 
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/core/domain/model/quest"
-	"quest-manager/internal/generated/servers"
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 )
@@ -57,7 +57,7 @@ func (s *Suite) TestListQuestsHTTPEmpty() {
 	s.Require().Equal(http.StatusOK, listResp.StatusCode)
 
 	// Parse response
-	var quests []servers.Quest
+	var quests []v1.Quest
 	err = json.Unmarshal([]byte(listResp.Body), &quests)
 	s.Require().NoError(err)
 
@@ -89,7 +89,7 @@ func (s *Suite) TestListQuestsHTTPWithValidStatus() {
 	s.Require().Equal(http.StatusOK, listResp.StatusCode)
 
 	// Parse response
-	var quests []servers.Quest
+	var quests []v1.Quest
 	err = json.Unmarshal([]byte(listResp.Body), &quests)
 	s.Require().NoError(err)
 
@@ -129,7 +129,7 @@ func (s *Suite) TestListQuestsHTTPWithEmptyStatus() {
 	s.Require().Equal(http.StatusOK, listResp.StatusCode)
 
 	// Parse response
-	var quests []servers.Quest
+	var quests []v1.Quest
 	err = json.Unmarshal([]byte(listResp.Body), &quests)
 	s.Require().NoError(err)
 

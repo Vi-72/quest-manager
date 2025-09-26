@@ -6,7 +6,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"quest-manager/internal/generated/servers"
+	v1 "quest-manager/api/http/quests/v1"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 )
 
@@ -20,11 +20,11 @@ func NewQuestHTTPAssertions(a *assert.Assertions) *QuestHTTPAssertions {
 
 // QuestHTTPCreatedSuccessfully verifies HTTP quest creation success and parses response
 // This is the most useful helper as it eliminates HTTP boilerplate code
-func (a *QuestHTTPAssertions) QuestHTTPCreatedSuccessfully(createResp *casesteps.HTTPResponse, err error) servers.Quest {
+func (a *QuestHTTPAssertions) QuestHTTPCreatedSuccessfully(createResp *casesteps.HTTPResponse, err error) v1.Quest {
 	a.assert.NoError(err, "HTTP request should not fail")
 	a.assert.Equal(http.StatusCreated, createResp.StatusCode, "Should return 201 Created")
 
-	var createdQuest servers.Quest
+	var createdQuest v1.Quest
 	parseErr := json.Unmarshal([]byte(createResp.Body), &createdQuest)
 	a.assert.NoError(parseErr, "Response should be valid JSON")
 	a.assert.NotEmpty(createdQuest.Id, "Quest should have ID")
@@ -47,18 +47,18 @@ func (a *QuestHTTPAssertions) QuestHTTPValidationError(createResp *casesteps.HTT
 
 // QuestArraysNotNull verifies equipment and skills arrays are not null (HTTP level)
 // Ensures [] instead of null serialization
-func (a *QuestHTTPAssertions) QuestArraysNotNull(httpQuest servers.Quest) {
+func (a *QuestHTTPAssertions) QuestArraysNotNull(httpQuest v1.Quest) {
 	a.assert.NotNil(httpQuest.Equipment, "Equipment should not be null")
 	a.assert.NotNil(httpQuest.Skills, "Skills should not be null")
 }
 
 // QuestHTTPGetSuccessfully verifies HTTP GET quest success and parses response
 // Eliminates boilerplate for single quest retrieval
-func (a *QuestHTTPAssertions) QuestHTTPGetSuccessfully(getResp *casesteps.HTTPResponse, err error) servers.Quest {
+func (a *QuestHTTPAssertions) QuestHTTPGetSuccessfully(getResp *casesteps.HTTPResponse, err error) v1.Quest {
 	a.assert.NoError(err, "HTTP request should not fail")
 	a.assert.Equal(http.StatusOK, getResp.StatusCode, "Should return 200 OK")
 
-	var foundQuest servers.Quest
+	var foundQuest v1.Quest
 	parseErr := json.Unmarshal([]byte(getResp.Body), &foundQuest)
 	a.assert.NoError(parseErr, "Response should be valid JSON")
 
@@ -67,11 +67,11 @@ func (a *QuestHTTPAssertions) QuestHTTPGetSuccessfully(getResp *casesteps.HTTPRe
 
 // QuestHTTPListSuccessfully verifies HTTP LIST quests success and parses response
 // Eliminates boilerplate for quest list retrieval
-func (a *QuestHTTPAssertions) QuestHTTPListSuccessfully(listResp *casesteps.HTTPResponse, err error) []servers.Quest {
+func (a *QuestHTTPAssertions) QuestHTTPListSuccessfully(listResp *casesteps.HTTPResponse, err error) []v1.Quest {
 	a.assert.NoError(err, "HTTP request should not fail")
 	a.assert.Equal(http.StatusOK, listResp.StatusCode, "Should return 200 OK")
 
-	var quests []servers.Quest
+	var quests []v1.Quest
 	parseErr := json.Unmarshal([]byte(listResp.Body), &quests)
 	a.assert.NoError(parseErr, "Response should be valid JSON")
 
@@ -90,16 +90,16 @@ func (a *QuestHTTPAssertions) QuestHTTPErrorResponse(resp *casesteps.HTTPRespons
 
 // QuestHTTPAssignedSuccessfully verifies HTTP assign quest success and parses response
 // Eliminates boilerplate for assign HTTP tests
-func (a *QuestHTTPAssertions) QuestHTTPAssignedSuccessfully(assignResp *casesteps.HTTPResponse, err error) servers.AssignQuestResult {
+func (a *QuestHTTPAssertions) QuestHTTPAssignedSuccessfully(assignResp *casesteps.HTTPResponse, err error) v1.AssignQuestResult {
 	a.assert.NoError(err, "HTTP request should not fail")
 	a.assert.Equal(http.StatusOK, assignResp.StatusCode, "Should return 200 OK for assign")
 
-	var assignResult servers.AssignQuestResult
+	var assignResult v1.AssignQuestResult
 	parseErr := json.Unmarshal([]byte(assignResp.Body), &assignResult)
 	a.assert.NoError(parseErr, "Response should be valid JSON")
 	a.assert.NotEmpty(assignResult.Id, "Assign result should have quest ID")
 	a.assert.NotEmpty(assignResult.Assignee, "Assign result should have assignee")
-	a.assert.Equal(servers.QuestStatusAssigned, assignResult.Status, "Assign result should have assigned status")
+	a.assert.Equal(v1.QuestStatusAssigned, assignResult.Status, "Assign result should have assigned status")
 
 	return assignResult
 }

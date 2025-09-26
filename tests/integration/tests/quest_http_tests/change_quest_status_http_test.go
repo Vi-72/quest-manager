@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"quest-manager/internal/generated/servers"
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 )
@@ -21,8 +21,8 @@ func (s *Suite) TestChangeQuestStatusHTTPValidation() {
 	s.Require().NoError(err)
 
 	// Act - valid status change
-	statusRequest := &servers.ChangeStatusRequest{
-		Status: servers.QuestStatusPosted,
+	statusRequest := &v1.ChangeStatusRequest{
+		Status: v1.QuestStatusPosted,
 	}
 	changeReq := casesteps.ChangeQuestStatusHTTPRequest(createdQuest.ID().String(), statusRequest)
 	changeResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, changeReq)
@@ -32,12 +32,12 @@ func (s *Suite) TestChangeQuestStatusHTTPValidation() {
 	s.Require().Equal(http.StatusOK, changeResp.StatusCode)
 
 	// Parse response manually since we don't have a generic 200 OK assertion yet
-	var result servers.ChangeQuestStatusResult
+	var result v1.ChangeQuestStatusResult
 	parseErr := json.Unmarshal([]byte(changeResp.Body), &result)
 	s.Require().NoError(parseErr)
 
 	s.Assert().Equal(createdQuest.ID().String(), result.Id)
-	s.Assert().Equal(string(servers.QuestStatusPosted), string(result.Status))
+	s.Assert().Equal(string(v1.QuestStatusPosted), string(result.Status))
 }
 
 func (s *Suite) TestChangeQuestStatusHTTPMissingBody() {
@@ -62,8 +62,8 @@ func (s *Suite) TestChangeQuestStatusHTTPInvalidUUID() {
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Act - send request with invalid UUID format
-	statusRequest := &servers.ChangeStatusRequest{
-		Status: servers.QuestStatusPosted,
+	statusRequest := &v1.ChangeStatusRequest{
+		Status: v1.QuestStatusPosted,
 	}
 	changeReq := casesteps.ChangeQuestStatusHTTPRequest("invalid-uuid-format", statusRequest)
 	changeResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, changeReq)

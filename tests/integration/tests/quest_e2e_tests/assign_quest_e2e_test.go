@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/core/domain/model/quest"
-	"quest-manager/internal/generated/servers"
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
@@ -45,7 +45,7 @@ func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 	s.Require().NoError(err, "HTTP request should not fail")
 	s.Assert().Equal(http.StatusOK, assignResp.StatusCode, "Quest assignment should succeed")
 
-	var assignResult servers.AssignQuestResult
+	var assignResult v1.AssignQuestResult
 	err = json.Unmarshal([]byte(assignResp.Body), &assignResult)
 	s.Require().NoError(err, "Should unmarshal assign response")
 

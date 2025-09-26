@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 
-	"quest-manager/internal/generated/servers"
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
@@ -50,17 +50,17 @@ func (s *Suite) TestCreateQuestHTTPWithEmptyArrays() {
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Pre-condition - prepare quest data with empty arrays
-	questRequest := &servers.CreateQuestRequest{
+	questRequest := &v1.CreateQuestRequest{
 		Title:           "Empty Arrays Quest",
 		Description:     "Quest with empty equipment and skills",
-		Difficulty:      servers.CreateQuestRequestDifficultyEasy,
+		Difficulty:      v1.CreateQuestRequestDifficultyEasy,
 		Reward:          2,
 		DurationMinutes: 30,
-		TargetLocation: servers.Coordinate{
+		TargetLocation: v1.Coordinate{
 			Latitude:  55.7558,
 			Longitude: 37.6176,
 		},
-		ExecutionLocation: servers.Coordinate{
+		ExecutionLocation: v1.Coordinate{
 			Latitude:  55.7560,
 			Longitude: 37.6178,
 		},
@@ -240,7 +240,7 @@ func (s *Suite) TestCreateQuestHTTPPersistence() {
 	s.Require().Equal(http.StatusOK, getResp.StatusCode)
 
 	// Parse retrieved quest
-	var retrievedQuest servers.Quest
+	var retrievedQuest v1.Quest
 	err = json.Unmarshal([]byte(getResp.Body), &retrievedQuest)
 	s.Require().NoError(err)
 
@@ -259,18 +259,18 @@ func (s *Suite) TestCreateQuestHTTPWithLocationAddresses() {
 	targetAddress := "Moscow, Red Square"
 	executionAddress := "Moscow, Gorky Park"
 
-	questRequest := &servers.CreateQuestRequest{
+	questRequest := &v1.CreateQuestRequest{
 		Title:           "Quest with Addresses",
 		Description:     "Quest that has location addresses",
-		Difficulty:      servers.CreateQuestRequestDifficultyMedium,
+		Difficulty:      v1.CreateQuestRequestDifficultyMedium,
 		Reward:          3,
 		DurationMinutes: 60,
-		TargetLocation: servers.Coordinate{
+		TargetLocation: v1.Coordinate{
 			Address:   &targetAddress,
 			Latitude:  55.7558,
 			Longitude: 37.6176,
 		},
-		ExecutionLocation: servers.Coordinate{
+		ExecutionLocation: v1.Coordinate{
 			Address:   &executionAddress,
 			Latitude:  55.7560,
 			Longitude: 37.6178,
@@ -303,18 +303,18 @@ func (s *Suite) TestCreateQuestHTTPWithoutAddresses() {
 	ctx := context.Background()
 
 	// Pre-condition - prepare quest data without addresses (only coordinates)
-	questRequest := &servers.CreateQuestRequest{
+	questRequest := &v1.CreateQuestRequest{
 		Title:           "Quest Without Address",
 		Description:     "Quest with coordinates but no addresses",
-		Difficulty:      servers.CreateQuestRequestDifficultyEasy,
+		Difficulty:      v1.CreateQuestRequestDifficultyEasy,
 		Reward:          2,
 		DurationMinutes: 45,
-		TargetLocation: servers.Coordinate{
+		TargetLocation: v1.Coordinate{
 			Latitude:  55.7558,
 			Longitude: 37.6176,
 			// No Address field
 		},
-		ExecutionLocation: servers.Coordinate{
+		ExecutionLocation: v1.Coordinate{
 			Latitude:  55.7560,
 			Longitude: 37.6178,
 			// No Address field
@@ -350,18 +350,18 @@ func (s *Suite) TestCreateQuestHTTPWithSameLocations() {
 
 	// Pre-condition - prepare quest data with identical target and execution locations
 	sameAddress := "Moscow, Red Square"
-	questRequest := &servers.CreateQuestRequest{
+	questRequest := &v1.CreateQuestRequest{
 		Title:           "Quest with Same Locations",
 		Description:     "Quest where target and execution are the same place",
-		Difficulty:      servers.CreateQuestRequestDifficultyMedium,
+		Difficulty:      v1.CreateQuestRequestDifficultyMedium,
 		Reward:          3,
 		DurationMinutes: 60,
-		TargetLocation: servers.Coordinate{
+		TargetLocation: v1.Coordinate{
 			Address:   &sameAddress,
 			Latitude:  55.7558,
 			Longitude: 37.6176,
 		},
-		ExecutionLocation: servers.Coordinate{
+		ExecutionLocation: v1.Coordinate{
 			Address:   &sameAddress, // Same address
 			Latitude:  55.7558,      // Same coordinates
 			Longitude: 37.6176,
@@ -392,18 +392,18 @@ func (s *Suite) TestCreateQuestHTTPWithExistingLocationSameAddress() {
 
 	// Pre-condition - create first quest to establish location in database
 	sharedAddress := "Moscow, Kremlin"
-	firstQuestRequest := &servers.CreateQuestRequest{
+	firstQuestRequest := &v1.CreateQuestRequest{
 		Title:           "First Quest",
 		Description:     "First quest at this location",
-		Difficulty:      servers.CreateQuestRequestDifficultyEasy,
+		Difficulty:      v1.CreateQuestRequestDifficultyEasy,
 		Reward:          2,
 		DurationMinutes: 30,
-		TargetLocation: servers.Coordinate{
+		TargetLocation: v1.Coordinate{
 			Address:   &sharedAddress,
 			Latitude:  55.7520,
 			Longitude: 37.6175,
 		},
-		ExecutionLocation: servers.Coordinate{
+		ExecutionLocation: v1.Coordinate{
 			Address:   &sharedAddress,
 			Latitude:  55.7520,
 			Longitude: 37.6175,
@@ -419,23 +419,23 @@ func (s *Suite) TestCreateQuestHTTPWithExistingLocationSameAddress() {
 	s.Require().Equal(http.StatusCreated, createResp1.StatusCode)
 
 	// Parse first quest
-	var firstQuest servers.Quest
+	var firstQuest v1.Quest
 	err = json.Unmarshal([]byte(createResp1.Body), &firstQuest)
 	s.Require().NoError(err)
 
 	// Act - create second quest with exact same location and address (should reuse location)
-	secondQuestRequest := &servers.CreateQuestRequest{
+	secondQuestRequest := &v1.CreateQuestRequest{
 		Title:           "Second Quest",
 		Description:     "Second quest at the same location",
-		Difficulty:      servers.CreateQuestRequestDifficultyMedium,
+		Difficulty:      v1.CreateQuestRequestDifficultyMedium,
 		Reward:          3,
 		DurationMinutes: 45,
-		TargetLocation: servers.Coordinate{
+		TargetLocation: v1.Coordinate{
 			Address:   &sharedAddress, // Same address
 			Latitude:  55.7520,        // Same coordinates
 			Longitude: 37.6175,
 		},
-		ExecutionLocation: servers.Coordinate{
+		ExecutionLocation: v1.Coordinate{
 			Address:   &sharedAddress, // Same address
 			Latitude:  55.7520,        // Same coordinates
 			Longitude: 37.6175,
@@ -452,7 +452,7 @@ func (s *Suite) TestCreateQuestHTTPWithExistingLocationSameAddress() {
 	s.Require().Equal(http.StatusCreated, createResp2.StatusCode)
 
 	// Parse second quest
-	var secondQuest servers.Quest
+	var secondQuest v1.Quest
 	err = json.Unmarshal([]byte(createResp2.Body), &secondQuest)
 	s.Require().NoError(err)
 
@@ -474,18 +474,18 @@ func (s *Suite) TestCreateQuestHTTPWithExistingLocationDifferentAddress() {
 
 	// Pre-condition - create first quest with one address
 	firstAddress := "Moscow, Red Square"
-	firstQuestRequest := &servers.CreateQuestRequest{
+	firstQuestRequest := &v1.CreateQuestRequest{
 		Title:           "Red Square Quest",
 		Description:     "Quest at Red Square",
-		Difficulty:      servers.CreateQuestRequestDifficultyEasy,
+		Difficulty:      v1.CreateQuestRequestDifficultyEasy,
 		Reward:          2,
 		DurationMinutes: 30,
-		TargetLocation: servers.Coordinate{
+		TargetLocation: v1.Coordinate{
 			Address:   &firstAddress,
 			Latitude:  55.7558, // Same coordinates
 			Longitude: 37.6176,
 		},
-		ExecutionLocation: servers.Coordinate{
+		ExecutionLocation: v1.Coordinate{
 			Address:   &firstAddress,
 			Latitude:  55.7558,
 			Longitude: 37.6176,
@@ -501,24 +501,24 @@ func (s *Suite) TestCreateQuestHTTPWithExistingLocationDifferentAddress() {
 	s.Require().Equal(http.StatusCreated, createResp1.StatusCode)
 
 	// Parse first quest
-	var firstQuest servers.Quest
+	var firstQuest v1.Quest
 	err = json.Unmarshal([]byte(createResp1.Body), &firstQuest)
 	s.Require().NoError(err)
 
 	// Act - create second quest with same coordinates but different address
 	secondAddress := "Moscow, Historical Museum"
-	secondQuestRequest := &servers.CreateQuestRequest{
+	secondQuestRequest := &v1.CreateQuestRequest{
 		Title:           "Historical Museum Quest",
 		Description:     "Quest at Historical Museum (same coordinates, different address)",
-		Difficulty:      servers.CreateQuestRequestDifficultyMedium,
+		Difficulty:      v1.CreateQuestRequestDifficultyMedium,
 		Reward:          3,
 		DurationMinutes: 45,
-		TargetLocation: servers.Coordinate{
+		TargetLocation: v1.Coordinate{
 			Address:   &secondAddress, // Different address
 			Latitude:  55.7558,        // Same coordinates
 			Longitude: 37.6176,
 		},
-		ExecutionLocation: servers.Coordinate{
+		ExecutionLocation: v1.Coordinate{
 			Address:   &secondAddress, // Different address
 			Latitude:  55.7558,        // Same coordinates
 			Longitude: 37.6176,
@@ -535,7 +535,7 @@ func (s *Suite) TestCreateQuestHTTPWithExistingLocationDifferentAddress() {
 	s.Require().Equal(http.StatusCreated, createResp2.StatusCode)
 
 	// Parse second quest
-	var secondQuest servers.Quest
+	var secondQuest v1.Quest
 	err = json.Unmarshal([]byte(createResp2.Body), &secondQuest)
 	s.Require().NoError(err)
 

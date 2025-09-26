@@ -1,7 +1,7 @@
 package assertions
 
 import (
-	"quest-manager/internal/generated/servers"
+	v1 "quest-manager/api/http/quests/v1"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -19,7 +19,7 @@ func NewQuestFieldAssertions(assert *assert.Assertions) *QuestFieldAssertions {
 }
 
 // VerifyHTTPResponseMatchesRequest verifies that an HTTP response matches the original request
-func (a *QuestFieldAssertions) VerifyHTTPResponseMatchesRequest(response *servers.Quest, request *servers.CreateQuestRequest) {
+func (a *QuestFieldAssertions) VerifyHTTPResponseMatchesRequest(response *v1.Quest, request *v1.CreateQuestRequest) {
 	a.assert.Equal(request.Title, response.Title, "HTTP response title should match request")
 	a.assert.Equal(request.Description, response.Description, "HTTP response description should match request")
 	a.assert.Equal(string(request.Difficulty), string(response.Difficulty), "HTTP response difficulty should match request")

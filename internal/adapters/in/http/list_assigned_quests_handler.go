@@ -3,30 +3,25 @@ package http
 import (
 	"context"
 
-	"quest-manager/internal/adapters/in/http/validations"
-	"quest-manager/internal/generated/servers"
+	v1 "quest-manager/api/http/quests/v1"
 )
 
 // ListAssignedQuests implements GET /api/v1/quests/assigned from OpenAPI.
-func (a *ApiHandler) ListAssignedQuests(ctx context.Context, request servers.ListAssignedQuestsRequestObject) (servers.ListAssignedQuestsResponseObject, error) {
-	// Validate UUID for user_id
-	_, validationErr := validations.ValidateUUID(request.Params.UserId, "user_id")
-	if validationErr != nil {
-		// Return validation error, middleware will automatically handle it and return 400 response
-		return nil, validationErr
-	}
+func (a *ApiHandler) ListAssignedQuests(ctx context.Context, request v1.ListAssignedQuestsRequestObject) (v1.ListAssignedQuestsResponseObject, error) {
+	// UserId is already UUID type from OpenAPI, convert to string for handler
+	userIdString := request.Params.UserId.String()
 
 	// Get quest list directly
-	quests, err := a.listAssignedQuestsHandler.Handle(ctx, request.Params.UserId)
+	quests, err := a.listAssignedQuestsHandler.Handle(ctx, userIdString)
 	if err != nil {
 		// Pass error to middleware for proper handling
 		return nil, err
 	}
 
-	apiQuests := make([]servers.Quest, 0)
+	apiQuests := make([]v1.Quest, 0)
 	for _, q := range quests {
 		apiQuests = append(apiQuests, QuestToAPI(q))
 	}
 
-	return servers.ListAssignedQuests200JSONResponse(apiQuests), nil
+	return v1.ListAssignedQuests200JSONResponse(apiQuests), nil
 }

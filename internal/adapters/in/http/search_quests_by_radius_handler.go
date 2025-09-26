@@ -3,12 +3,12 @@ package http
 import (
 	"context"
 
+	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/adapters/in/http/validations"
-	"quest-manager/internal/generated/servers"
 )
 
 // SearchQuestsByRadius implements GET /api/v1/quests/search-radius from OpenAPI.
-func (a *ApiHandler) SearchQuestsByRadius(ctx context.Context, request servers.SearchQuestsByRadiusRequestObject) (servers.SearchQuestsByRadiusResponseObject, error) {
+func (a *ApiHandler) SearchQuestsByRadius(ctx context.Context, request v1.SearchQuestsByRadiusRequestObject) (v1.SearchQuestsByRadiusResponseObject, error) {
 	// Validate search parameters
 	validatedData, validationErr := validations.ValidateSearchByRadiusParams(
 		request.Params.Lat,
@@ -27,10 +27,10 @@ func (a *ApiHandler) SearchQuestsByRadius(ctx context.Context, request servers.S
 		return nil, err
 	}
 
-	var apiQuests []servers.Quest
+	var apiQuests []v1.Quest
 	for _, q := range quests {
 		apiQuests = append(apiQuests, QuestToAPI(q))
 	}
 
-	return servers.SearchQuestsByRadius200JSONResponse(apiQuests), nil
+	return v1.SearchQuestsByRadius200JSONResponse(apiQuests), nil
 }
