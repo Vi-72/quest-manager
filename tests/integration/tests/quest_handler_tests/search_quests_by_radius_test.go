@@ -42,7 +42,7 @@ func (s *Suite) TestSearchQuestsByRadius() {
 	// Act - search for quests within 5km radius
 	radiusKm := 5.0
 	foundQuests, err := casesteps.SearchQuestsByRadiusStep(ctx, s.TestDIContainer.SearchQuestsByRadiusHandler,
-		centerLocation, radiusKm)
+		centerLocation, float32(radiusKm))
 
 	// Assert
 	s.Require().NoError(err)
@@ -64,7 +64,7 @@ func (s *Suite) TestSearchQuestsByRadiusEmpty() {
 	// Act - search for quests in remote location
 	radiusKm := 10.0
 	foundQuests, err := casesteps.SearchQuestsByRadiusStep(ctx, s.TestDIContainer.SearchQuestsByRadiusHandler,
-		remoteLocation, radiusKm)
+		remoteLocation, float32(radiusKm))
 
 	// Assert
 	s.Require().NoError(err)
@@ -111,7 +111,7 @@ func (s *Suite) TestSearchQuestsByRadiusMultipleQuests() {
 	// Act - search within 5km radius
 	radiusKm := 5.0
 	foundQuests, err := casesteps.SearchQuestsByRadiusStep(ctx, s.TestDIContainer.SearchQuestsByRadiusHandler,
-		centerLocation, radiusKm)
+		centerLocation, float32(radiusKm))
 
 	// Assert
 	s.Require().NoError(err)
@@ -148,7 +148,7 @@ func (s *Suite) TestSearchQuestsByRadiusWithTargetAndExecutionLocations() {
 	// Act - search within 5km radius (should find quest because target is within radius)
 	radiusKm := 5.0
 	foundQuests, err := casesteps.SearchQuestsByRadiusStep(ctx, s.TestDIContainer.SearchQuestsByRadiusHandler,
-		centerLocation, radiusKm)
+		centerLocation, float32(radiusKm))
 
 	// Assert
 	s.Require().NoError(err)
