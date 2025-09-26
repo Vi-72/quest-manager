@@ -25,7 +25,7 @@ func (s *Suite) TestGetQuestByIDHTTP() {
 	s.Require().NoError(err)
 
 	// Act - get quest by ID via HTTP API
-	getReq := casesteps.GetQuestHTTPRequest(createdQuest.ID().String())
+	getReq := casesteps.GetQuestHTTPRequest(createdQuest.ID())
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert
@@ -44,7 +44,7 @@ func (s *Suite) TestGetQuestByIDHTTPNotFound() {
 	nonExistentID := uuid.New().String()
 
 	// Act - try to get quest by non-existent ID via HTTP API
-	getReq := casesteps.GetQuestHTTPRequest(nonExistentID)
+	getReq := casesteps.GetQuestHTTPRequestWithStringID(nonExistentID)
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert - should return 404 error
@@ -55,7 +55,7 @@ func (s *Suite) TestGetQuestByIDHTTPInvalidID() {
 	ctx := context.Background()
 
 	// Act - try to get quest with invalid UUID format via HTTP API
-	getReq := casesteps.GetQuestHTTPRequest("invalid-uuid-format")
+	getReq := casesteps.GetQuestHTTPRequestWithStringID("invalid-uuid-format")
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert - should return 400 error for invalid UUID
@@ -86,7 +86,7 @@ func (s *Suite) TestGetQuestByIDHTTPHasAddresses() {
 	s.Require().NoError(err)
 
 	// Act - get quest by ID via HTTP API
-	getReq := casesteps.GetQuestHTTPRequest(createdQuest.ID().String())
+	getReq := casesteps.GetQuestHTTPRequest(createdQuest.ID())
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert
@@ -110,7 +110,7 @@ func (s *Suite) TestGetQuestByIDHTTPEmptyArrays() {
 	s.Require().NoError(err)
 
 	// Act - get quest by ID via HTTP API
-	getReq := casesteps.GetQuestHTTPRequest(createdQuest.ID().String())
+	getReq := casesteps.GetQuestHTTPRequest(createdQuest.ID())
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert

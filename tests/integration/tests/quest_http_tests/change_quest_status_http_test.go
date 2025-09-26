@@ -24,7 +24,7 @@ func (s *Suite) TestChangeQuestStatusHTTPValidation() {
 	statusRequest := &v1.ChangeStatusRequest{
 		Status: v1.QuestStatusPosted,
 	}
-	changeReq := casesteps.ChangeQuestStatusHTTPRequest(createdQuest.ID().String(), statusRequest)
+	changeReq := casesteps.ChangeQuestStatusHTTPRequest(createdQuest.ID(), statusRequest)
 	changeResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, changeReq)
 
 	// Assert - successful change (200 OK for status change, not 201)
@@ -36,7 +36,7 @@ func (s *Suite) TestChangeQuestStatusHTTPValidation() {
 	parseErr := json.Unmarshal([]byte(changeResp.Body), &result)
 	s.Require().NoError(parseErr)
 
-	s.Assert().Equal(createdQuest.ID().String(), result.Id)
+	s.Assert().Equal(createdQuest.ID(), result.Id)
 	s.Assert().Equal(string(v1.QuestStatusPosted), string(result.Status))
 }
 
@@ -50,7 +50,7 @@ func (s *Suite) TestChangeQuestStatusHTTPMissingBody() {
 
 	// Act - send request with empty object to test OpenAPI required-field validation
 	emptyBodyRequest := map[string]interface{}{} // Empty object (missing required fields)
-	changeReq := casesteps.ChangeQuestStatusHTTPRequest(createdQuest.ID().String(), emptyBodyRequest)
+	changeReq := casesteps.ChangeQuestStatusHTTPRequest(createdQuest.ID(), emptyBodyRequest)
 	changeResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, changeReq)
 
 	// Assert - API layer should reject incomplete body
@@ -65,7 +65,7 @@ func (s *Suite) TestChangeQuestStatusHTTPInvalidUUID() {
 	statusRequest := &v1.ChangeStatusRequest{
 		Status: v1.QuestStatusPosted,
 	}
-	changeReq := casesteps.ChangeQuestStatusHTTPRequest("invalid-uuid-format", statusRequest)
+	changeReq := casesteps.ChangeQuestStatusHTTPRequestWithStringID("invalid-uuid-format", statusRequest)
 	changeResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, changeReq)
 
 	// Assert - API layer should reject invalid UUID
@@ -84,7 +84,7 @@ func (s *Suite) TestChangeQuestStatusHTTPEmptyStatus() {
 	emptyStatusRequest := map[string]interface{}{
 		"status": "",
 	}
-	changeReq := casesteps.ChangeQuestStatusHTTPRequest(createdQuest.ID().String(), emptyStatusRequest)
+	changeReq := casesteps.ChangeQuestStatusHTTPRequest(createdQuest.ID(), emptyStatusRequest)
 	changeResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, changeReq)
 
 	// Assert - API layer should reject empty status

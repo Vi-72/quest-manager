@@ -8,6 +8,8 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+
+	"github.com/google/uuid"
 )
 
 // HTTPRequest представляет HTTP запрос для тестирования
@@ -89,7 +91,17 @@ func CreateQuestHTTPRequest(questData interface{}) HTTPRequest {
 }
 
 // AssignQuestHTTPRequestWithBody создает HTTP запрос для назначения квеста с кастомным телом запроса
-func AssignQuestHTTPRequestWithBody(questID string, requestBody interface{}) HTTPRequest {
+func AssignQuestHTTPRequestWithBody(questID uuid.UUID, requestBody interface{}) HTTPRequest {
+	return HTTPRequest{
+		Method:      "POST",
+		URL:         "/api/v1/quests/" + questID.String() + "/assign",
+		Body:        requestBody,
+		ContentType: "application/json",
+	}
+}
+
+// AssignQuestHTTPRequestWithStringID создает HTTP запрос с строковым ID (для тестирования невалидных UUID)
+func AssignQuestHTTPRequestWithStringID(questID string, requestBody interface{}) HTTPRequest {
 	return HTTPRequest{
 		Method:      "POST",
 		URL:         "/api/v1/quests/" + questID + "/assign",
@@ -99,12 +111,20 @@ func AssignQuestHTTPRequestWithBody(questID string, requestBody interface{}) HTT
 }
 
 // AssignQuestHTTPRequest создает HTTP запрос для назначения квеста
-func AssignQuestHTTPRequest(questID string, userID string) HTTPRequest {
-	return AssignQuestHTTPRequestWithBody(questID, map[string]string{"user_id": userID})
+func AssignQuestHTTPRequest(questID uuid.UUID, userID uuid.UUID) HTTPRequest {
+	return AssignQuestHTTPRequestWithBody(questID, map[string]string{"user_id": userID.String()})
 }
 
 // GetQuestHTTPRequest создает HTTP запрос для получения квеста
-func GetQuestHTTPRequest(questID string) HTTPRequest {
+func GetQuestHTTPRequest(questID uuid.UUID) HTTPRequest {
+	return HTTPRequest{
+		Method: "GET",
+		URL:    "/api/v1/quests/" + questID.String(),
+	}
+}
+
+// GetQuestHTTPRequestWithStringID создает HTTP запрос с строковым ID (для тестирования невалидных UUID)
+func GetQuestHTTPRequestWithStringID(questID string) HTTPRequest {
 	return HTTPRequest{
 		Method: "GET",
 		URL:    "/api/v1/quests/" + questID,
@@ -125,7 +145,15 @@ func ListQuestsHTTPRequest(status string) HTTPRequest {
 }
 
 // ListAssignedQuestsHTTPRequest создает HTTP запрос для получения квестов назначенных пользователю
-func ListAssignedQuestsHTTPRequest(userID string) HTTPRequest {
+func ListAssignedQuestsHTTPRequest(userID uuid.UUID) HTTPRequest {
+	return HTTPRequest{
+		Method: "GET",
+		URL:    "/api/v1/quests/assigned?user_id=" + userID.String(),
+	}
+}
+
+// ListAssignedQuestsHTTPRequestWithStringID создает HTTP запрос с строковым ID (для тестирования невалидных UUID)
+func ListAssignedQuestsHTTPRequestWithStringID(userID string) HTTPRequest {
 	return HTTPRequest{
 		Method: "GET",
 		URL:    "/api/v1/quests/assigned?user_id=" + userID,
@@ -142,7 +170,17 @@ func SearchQuestsByRadiusHTTPRequest(lat, lon, radiusKm float32) HTTPRequest {
 }
 
 // ChangeQuestStatusHTTPRequest создает HTTP запрос для изменения статуса квеста
-func ChangeQuestStatusHTTPRequest(questID string, statusRequest interface{}) HTTPRequest {
+func ChangeQuestStatusHTTPRequest(questID uuid.UUID, statusRequest interface{}) HTTPRequest {
+	return HTTPRequest{
+		Method:      "PATCH",
+		URL:         "/api/v1/quests/" + questID.String() + "/status",
+		Body:        statusRequest,
+		ContentType: "application/json",
+	}
+}
+
+// ChangeQuestStatusHTTPRequestWithStringID создает HTTP запрос с строковым ID (для тестирования невалидных UUID)
+func ChangeQuestStatusHTTPRequestWithStringID(questID string, statusRequest interface{}) HTTPRequest {
 	return HTTPRequest{
 		Method:      "PATCH",
 		URL:         "/api/v1/quests/" + questID + "/status",

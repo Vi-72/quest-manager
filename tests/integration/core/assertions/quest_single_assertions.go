@@ -50,7 +50,7 @@ func (a *QuestSingleAssertions) QuestHasValidLocationData(q quest.Quest) {
 
 // QuestHTTPMatchesDomain verifies that HTTP quest response matches domain quest
 func (a *QuestSingleAssertions) QuestHTTPMatchesDomain(httpQuest v1.Quest, domainQuest quest.Quest) {
-	a.assert.Equal(domainQuest.ID().String(), httpQuest.Id, "Quest ID should match")
+	a.assert.Equal(domainQuest.ID(), httpQuest.Id, "Quest ID should match")
 	a.assert.Equal(domainQuest.Title, httpQuest.Title, "Quest title should match")
 	a.assert.Equal(domainQuest.Description, httpQuest.Description, "Quest description should match")
 	a.assert.Equal(string(domainQuest.Difficulty), string(httpQuest.Difficulty), "Quest difficulty should match")
@@ -90,7 +90,7 @@ func (a *QuestSingleAssertions) QuestHTTPHasDifferentLocations(q v1.Quest) {
 }
 
 // QuestHTTPIsAssignedToUser verifies that HTTP quest is properly assigned to a specific user
-func (a *QuestSingleAssertions) QuestHTTPIsAssignedToUser(quest v1.Quest, expectedUserID, originalQuestID string) {
+func (a *QuestSingleAssertions) QuestHTTPIsAssignedToUser(quest v1.Quest, expectedUserID uuid.UUID, originalQuestID uuid.UUID) {
 	a.assert.Equal(originalQuestID, quest.Id, "Quest ID should match original")
 	a.assert.NotNil(quest.Assignee, "Quest should have assignee")
 	a.assert.Equal(expectedUserID, *quest.Assignee, "Quest should be assigned to expected user")

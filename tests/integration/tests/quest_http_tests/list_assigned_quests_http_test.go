@@ -19,7 +19,7 @@ func (s *Suite) TestListAssignedQuestsHTTP() {
 	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 
 	// Pre-condition - create quests via handler and assign them to a specific user
-	testUserID := uuid.New().String() // Generate new UUID
+	testUserUUID := uuid.New() // Generate new UUID
 	expectedCount := 2
 
 	// Create quests via handler
@@ -28,17 +28,17 @@ func (s *Suite) TestListAssignedQuestsHTTP() {
 
 	// Assign all created quests to the test user
 	for _, quest := range createdQuests {
-		_, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, quest.ID(), testUserID)
+		_, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, quest.ID(), testUserUUID.String())
 		s.Require().NoError(err)
 	}
 
 	// Act - get list of assigned quests via HTTP API
-	listReq := casesteps.ListAssignedQuestsHTTPRequest(testUserID)
+	listReq := casesteps.ListAssignedQuestsHTTPRequest(testUserUUID)
 	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
 
 	// Assert using helpers to eliminate boilerplate
 	assignedQuests := httpAssertions.QuestHTTPListSuccessfully(listResp, err)
-	listAssertions.QuestListHTTPAllAssignedToUser(assignedQuests, testUserID, expectedCount)
+	listAssertions.QuestListHTTPAllAssignedToUser(assignedQuests, testUserUUID, expectedCount)
 	listAssertions.QuestListHTTPContainsAllCreated(assignedQuests, createdQuests)
 }
 
@@ -50,7 +50,7 @@ func (s *Suite) TestListAssignedQuestsHTTPEmpty() {
 	nonExistentUserID := uuid.New().String() // Generate new UUID with no quests
 
 	// Act - get list of assigned quests for user with no assignments via HTTP API
-	listReq := casesteps.ListAssignedQuestsHTTPRequest(nonExistentUserID)
+	listReq := casesteps.ListAssignedQuestsHTTPRequestWithStringID(nonExistentUserID)
 	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
 
 	// Assert using helper
@@ -63,7 +63,7 @@ func (s *Suite) TestListAssignedQuestsHTTPInvalidUserID() {
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
 	// Act - try to get assigned quests with invalid user ID via HTTP API
-	listReq := casesteps.ListAssignedQuestsHTTPRequest("InvalidUserID")
+	listReq := casesteps.ListAssignedQuestsHTTPRequestWithStringID("InvalidUserID")
 	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
 
 	// Assert using helper

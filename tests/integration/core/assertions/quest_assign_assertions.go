@@ -38,9 +38,9 @@ func (a *QuestAssignAssertions) VerifyQuestAssignedSuccessfully(
 func (a *QuestAssignAssertions) VerifyQuestAssignmentResponse(
 	response *v1.AssignQuestResult,
 	originalQuestID uuid.UUID,
-	userID string,
+	userID uuid.UUID,
 ) {
-	a.assert.Equal(originalQuestID.String(), response.Id, "HTTP response quest ID should match original")
+	a.assert.Equal(originalQuestID, response.Id, "HTTP response quest ID should match original")
 	a.assert.Equal(userID, response.Assignee, "HTTP response assignee should match user ID")
 	a.assert.Equal(v1.QuestStatusAssigned, response.Status, "HTTP response status should be assigned")
 }

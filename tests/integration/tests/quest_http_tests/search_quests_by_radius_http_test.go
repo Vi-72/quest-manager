@@ -1,7 +1,7 @@
 package quest_http_tests
 
 // API LAYER VALIDATION TESTS
-// Only tests that correspond to ValidateSearchByRadiusParams function
+// Focused on OpenAPI-driven request validation behavior
 
 import (
 	"context"
@@ -42,7 +42,7 @@ func (s *Suite) TestSearchQuestsByRadiusHTTP() {
 	// Act - search for quests within 5km radius via HTTP API
 	radiusKm := 5.0
 	searchReq := casesteps.SearchQuestsByRadiusHTTPRequest(
-		centerLocation.Latitude(), centerLocation.Longitude(), radiusKm)
+		float32(centerLocation.Latitude()), float32(centerLocation.Longitude()), float32(radiusKm))
 	searchResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, searchReq)
 
 	// Assert
@@ -56,10 +56,10 @@ func (s *Suite) TestSearchQuestsByRadiusHTTP() {
 	farQuestID := farQuest.ID().String()
 
 	for _, q := range foundQuests {
-		if q.Id == nearQuestID {
+		if q.Id.String() == nearQuestID {
 			nearQuestFound = true
 		}
-		if q.Id == farQuestID {
+		if q.Id.String() == farQuestID {
 			farQuestFound = true
 		}
 	}
@@ -80,7 +80,7 @@ func (s *Suite) TestSearchQuestsByRadiusHTTPEmpty() {
 	// Act - search for quests in remote location via HTTP API
 	radiusKm := 10.0
 	searchReq := casesteps.SearchQuestsByRadiusHTTPRequest(
-		remoteLocation.Latitude(), remoteLocation.Longitude(), radiusKm)
+		float32(remoteLocation.Latitude()), float32(remoteLocation.Longitude()), float32(radiusKm))
 	searchResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, searchReq)
 
 	// Assert
@@ -93,13 +93,13 @@ func (s *Suite) TestSearchQuestsByRadiusHTTPEmpty() {
 func (s *Suite) TestSearchQuestsByRadiusHTTPWithInvalidParams() {
 	ctx := context.Background()
 
-	// Test cases with invalid parameters (API layer validation only)
+	// Test cases with invalid parameters (OpenAPI range validation)
 	// Note: Coordinate validation is tested in domain layer (tests/domain/kernel_coordinates_test.go)
 	testCases := []struct {
 		name     string
-		lat      float64
-		lon      float64
-		radiusKm float64
+		lat      float32
+		lon      float32
+		radiusKm float32
 	}{
 		{"Invalid radius zero", 50.0, 10.0, 0.0},          // API validation
 		{"Invalid radius negative", 50.0, 10.0, -5.0},     // API validation

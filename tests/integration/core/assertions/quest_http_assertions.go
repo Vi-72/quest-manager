@@ -3,6 +3,8 @@ package assertions
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
+	"unicode"
 
 	"github.com/stretchr/testify/assert"
 
@@ -41,8 +43,30 @@ func (a *QuestHTTPAssertions) QuestHTTPValidationError(createResp *casesteps.HTT
 	a.assert.Equal(http.StatusBadRequest, createResp.StatusCode, "Should return 400 for validation error")
 	a.assert.Contains(createResp.Body, "validation failed", "Error should mention validation failure")
 	if expectedField != "" {
-		a.assert.Contains(createResp.Body, expectedField, "Error should mention the specific field")
+		fieldVariants := []string{expectedField, camelToSnake(expectedField)}
+		found := false
+		for _, variant := range fieldVariants {
+			if strings.Contains(createResp.Body, variant) {
+				found = true
+				break
+			}
+		}
+		a.assert.True(found, "Error should mention the specific field")
 	}
+}
+
+func camelToSnake(value string) string {
+	var builder strings.Builder
+	for i, r := range value {
+		if unicode.IsUpper(r) {
+			if i > 0 {
+				builder.WriteRune('_')
+			}
+			r = unicode.ToLower(r)
+		}
+		builder.WriteRune(r)
+	}
+	return builder.String()
 }
 
 // QuestArraysNotNull verifies equipment and skills arrays are not null (HTTP level)

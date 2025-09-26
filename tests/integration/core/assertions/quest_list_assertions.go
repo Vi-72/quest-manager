@@ -1,10 +1,11 @@
 package assertions
 
 import (
+	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
+
 	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/core/domain/model/quest"
-
-	"github.com/stretchr/testify/assert"
 )
 
 // QuestListAssertions provides methods for asserting quest lists in tests
@@ -73,7 +74,7 @@ func (a *QuestListAssertions) QuestWithIDNotExists(quests []quest.Quest, questID
 }
 
 // QuestListHTTPAllAssignedToUser verifies that all HTTP quests in the list are assigned to specified user
-func (a *QuestListAssertions) QuestListHTTPAllAssignedToUser(httpQuests []v1.Quest, expectedUserID string, expectedCount int) {
+func (a *QuestListAssertions) QuestListHTTPAllAssignedToUser(httpQuests []v1.Quest, expectedUserID uuid.UUID, expectedCount int) {
 	a.assert.Len(httpQuests, expectedCount, "Should return %d assigned quests", expectedCount)
 
 	for i, httpQuest := range httpQuests {

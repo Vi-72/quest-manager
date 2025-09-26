@@ -3,6 +3,8 @@ package quest_http_tests
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 )
@@ -19,15 +21,15 @@ func (s *Suite) TestAssignQuestHTTP() {
 	s.Require().NoError(err)
 
 	// Act - assign quest via HTTP API (this is what we're testing)
-	userID := "123e4567-e89b-12d3-a456-426614174000" // Valid UUID
-	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID().String(), userID)
+	userUUID := uuid.MustParse("123e4567-e89b-12d3-a456-426614174000") // Valid UUID
+	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID(), userUUID)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert - use helper to eliminate boilerplate
 	assignResult := httpAssertions.QuestHTTPAssignedSuccessfully(assignResp, err)
 
 	// Verify assignment result with existing assertion
-	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, createdQuest.ID(), userID)
+	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, createdQuest.ID(), userUUID)
 }
 
 func (s *Suite) TestAssignQuestHTTPMissingRequiredFields() {
@@ -41,7 +43,7 @@ func (s *Suite) TestAssignQuestHTTPMissingRequiredFields() {
 	// Act - send request with empty JSON body to test OpenAPI required-body validation
 	emptyBodyRequest := map[string]interface{}{} // Empty object
 
-	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID().String(), emptyBodyRequest)
+	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID(), emptyBodyRequest)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert - API layer should reject incomplete body
@@ -61,7 +63,7 @@ func (s *Suite) TestAssignQuestHTTPMissingUserID() {
 		// user_id is missing
 	}
 
-	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID().String(), requestBody)
+	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID(), requestBody)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert - API layer should reject missing user_id
@@ -81,7 +83,7 @@ func (s *Suite) TestAssignQuestHTTPEmptyUserID() {
 		"user_id": "", // Empty user_id - OpenAPI format validation should catch this
 	}
 
-	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID().String(), requestBody)
+	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID(), requestBody)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert - API layer should reject empty user_id
@@ -126,7 +128,7 @@ func (s *Suite) TestAssignQuestHTTPInvalidUserIDFormat() {
 				"user_id": tc.userID,
 			}
 
-			assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID().String(), requestBody)
+			assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID(), requestBody)
 			assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 			// Assert - API layer should reject invalid UUID format
@@ -169,7 +171,7 @@ func (s *Suite) TestAssignQuestHTTPInvalidQuestIDFormat() {
 				"user_id": "123e4567-e89b-12d3-a456-426614174000", // Valid UUID
 			}
 
-			assignReq := casesteps.AssignQuestHTTPRequestWithBody(tc.questID, requestBody)
+			assignReq := casesteps.AssignQuestHTTPRequestWithStringID(tc.questID, requestBody)
 			assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 			// Assert - API layer should reject invalid quest ID format
@@ -191,18 +193,18 @@ func (s *Suite) TestAssignQuestHTTPPersistence() {
 	s.Require().NoError(err)
 
 	// Act - assign quest via HTTP API
-	userID := "123e4567-e89b-12d3-a456-426614174000"
-	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID().String(), userID)
+	userUUID := uuid.MustParse("123e4567-e89b-12d3-a456-426614174000")
+	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID(), userUUID)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert assignment using helper
 	httpAssertions.QuestHTTPAssignedSuccessfully(assignResp, err)
 
 	// Verify quest is persisted with assignment by retrieving it via HTTP API
-	getReq := casesteps.GetQuestHTTPRequest(createdQuest.ID().String())
+	getReq := casesteps.GetQuestHTTPRequest(createdQuest.ID())
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert retrieval and assignment state using helper
 	retrievedQuest := httpAssertions.QuestHTTPGetSuccessfully(getResp, err)
-	singleAssertions.QuestHTTPIsAssignedToUser(retrievedQuest, userID, createdQuest.ID().String())
+	singleAssertions.QuestHTTPIsAssignedToUser(retrievedQuest, userUUID, createdQuest.ID())
 }
