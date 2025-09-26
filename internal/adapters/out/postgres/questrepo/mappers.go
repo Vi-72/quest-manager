@@ -27,7 +27,7 @@ func DomainToDTO(q quest.Quest) QuestDTO {
 		Skills:             strings.Join(q.Skills, ","),
 		Status:             string(q.Status),
 		Creator:            q.Creator,
-		Assignee:           q.Assignee,
+		Assignee:           convertUUIDPtrToStringPtr(q.Assignee),
 		CreatedAt:          q.CreatedAt,
 		UpdatedAt:          q.UpdatedAt,
 	}
@@ -123,7 +123,7 @@ func dtoToDomainCommon(dto QuestDTO, id uuid.UUID, targetCoord, execCoord kernel
 		Skills:            skills,
 		Status:            quest.Status(dto.Status),
 		Creator:           dto.Creator,
-		Assignee:          dto.Assignee,
+		Assignee:          convertStringPtrToUUIDPtr(dto.Assignee),
 		CreatedAt:         dto.CreatedAt,
 		UpdatedAt:         dto.UpdatedAt,
 	}
@@ -145,4 +145,25 @@ func dtoToDomainCommon(dto QuestDTO, id uuid.UUID, targetCoord, execCoord kernel
 	}
 
 	return q, nil
+}
+
+// convertUUIDPtrToStringPtr converts *uuid.UUID to *string
+func convertUUIDPtrToStringPtr(uuidPtr *uuid.UUID) *string {
+	if uuidPtr == nil {
+		return nil
+	}
+	str := uuidPtr.String()
+	return &str
+}
+
+// convertStringPtrToUUIDPtr converts *string to *uuid.UUID
+func convertStringPtrToUUIDPtr(strPtr *string) *uuid.UUID {
+	if strPtr == nil {
+		return nil
+	}
+	uuidVal, err := uuid.Parse(*strPtr)
+	if err != nil {
+		return nil // In production, you might want to handle this error differently
+	}
+	return &uuidVal
 }
