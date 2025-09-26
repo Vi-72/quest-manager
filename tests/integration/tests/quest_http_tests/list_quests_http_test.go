@@ -36,7 +36,7 @@ func (s *Suite) TestListQuestsHTTP() {
 	// Verify all created quests are in the response
 	returnedQuestIDs := make(map[string]bool)
 	for _, q := range quests {
-		returnedQuestIDs[q.Id] = true
+		returnedQuestIDs[q.Id.String()] = true
 	}
 
 	for _, createdQuest := range createdQuests {
@@ -104,7 +104,7 @@ func (s *Suite) TestListQuestsHTTPWithValidStatus() {
 	foundTargetQuest := false
 	targetQuestID := createdQuests[0].ID().String()
 	for _, q := range quests {
-		if q.Id == targetQuestID {
+		if q.Id.String() == targetQuestID {
 			foundTargetQuest = true
 			break
 		}
@@ -139,7 +139,7 @@ func (s *Suite) TestListQuestsHTTPWithEmptyStatus() {
 	// Verify all created quests are in the response
 	returnedQuestIDs := make(map[string]bool)
 	for _, q := range quests {
-		returnedQuestIDs[q.Id] = true
+		returnedQuestIDs[q.Id.String()] = true
 	}
 
 	for _, createdQuest := range createdQuests {

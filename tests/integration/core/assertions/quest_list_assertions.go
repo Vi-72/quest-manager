@@ -88,7 +88,7 @@ func (a *QuestListAssertions) QuestListHTTPContainsAllCreated(httpQuests []v1.Qu
 	// Create map from HTTP quest IDs for fast lookup
 	httpQuestIDs := make(map[string]bool)
 	for _, q := range httpQuests {
-		httpQuestIDs[q.Id] = true
+		httpQuestIDs[q.Id.String()] = true
 	}
 
 	// Verify that each created quest is present in the HTTP response
