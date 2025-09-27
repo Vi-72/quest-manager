@@ -9,11 +9,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/google/uuid"
+
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/pkg/ddd"
 	teststorage "quest-manager/tests/integration/core/storage"
-
-	"github.com/google/uuid"
 )
 
 func (s *Suite) TestEventRepository_Publish_SingleEvent() {
@@ -155,7 +155,7 @@ func (s *Suite) TestEventRepository_Publish_ComplexDomainScenario() {
 	q.ClearDomainEvents()
 
 	// 3. Assign quest (triggers quest.assigned event)
-	err = q.AssignTo("test-user")
+	err = q.AssignTo(uuid.New())
 	s.Require().NoError(err)
 	err = s.TestDIContainer.QuestRepository.Save(ctx, q)
 	s.Require().NoError(err)

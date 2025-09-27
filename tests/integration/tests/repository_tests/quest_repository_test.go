@@ -227,11 +227,13 @@ func (s *Suite) TestQuestRepository_FindByAssignee_Success() {
 	quest3.ChangeStatus(quest.StatusPosted)
 
 	// Assign quests
-	err := quest1.AssignTo("user1")
+	user1 := uuid.New()
+	user2 := uuid.New()
+	err := quest1.AssignTo(user1)
 	s.Require().NoError(err)
-	err = quest2.AssignTo("user1")
+	err = quest2.AssignTo(user1)
 	s.Require().NoError(err)
-	err = quest3.AssignTo("user2")
+	err = quest3.AssignTo(user2)
 	s.Require().NoError(err)
 
 	// Save assigned quests
@@ -243,10 +245,10 @@ func (s *Suite) TestQuestRepository_FindByAssignee_Success() {
 	s.Require().NoError(err)
 
 	// Act - find quests assigned to user1
-	user1Quests, err := s.TestDIContainer.QuestRepository.FindByAssignee(ctx, "user1")
+	user1Quests, err := s.TestDIContainer.QuestRepository.FindByAssignee(ctx, user1)
 	s.Require().NoError(err)
 
-	user2Quests, err := s.TestDIContainer.QuestRepository.FindByAssignee(ctx, "user2")
+	user2Quests, err := s.TestDIContainer.QuestRepository.FindByAssignee(ctx, user2)
 	s.Require().NoError(err)
 
 	// Assert
@@ -254,11 +256,11 @@ func (s *Suite) TestQuestRepository_FindByAssignee_Success() {
 	s.Len(user2Quests, 1) // quest3
 
 	for _, q := range user1Quests {
-		s.Equal("user1", *q.Assignee)
+		s.Equal(user1, *q.Assignee)
 		s.Equal(quest.StatusAssigned, q.Status)
 	}
 
-	s.Equal("user2", *user2Quests[0].Assignee)
+	s.Equal(user2, *user2Quests[0].Assignee)
 }
 
 // ==========================================
