@@ -165,5 +165,5 @@ func (s *Suite) TestListQuestsHTTPWithInvalidStatus() {
 
 	// Verify error message contains validation details
 	s.Assert().Contains(listResp.Body, "validation failed", "Error message should contain validation failure details")
-	s.Assert().Contains(listResp.Body, "must be one of", "Error message should mention valid status values")
+	s.Assert().Contains(listResp.Body, "value is not one of the allowed values", "Error message should mention valid status values")
 }
