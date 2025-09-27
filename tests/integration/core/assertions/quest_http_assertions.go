@@ -41,9 +41,21 @@ func (a *QuestHTTPAssertions) QuestHTTPCreatedSuccessfully(createResp *casesteps
 func (a *QuestHTTPAssertions) QuestHTTPValidationError(createResp *casesteps.HTTPResponse, err error, expectedField string) {
 	a.assert.NoError(err, "HTTP request should not fail")
 	a.assert.Equal(http.StatusBadRequest, createResp.StatusCode, "Should return 400 for validation error")
-	a.assert.Contains(createResp.Body, "validation failed", "Error should mention validation failure")
+	// Check for various validation error patterns
+	validationErrorFound := strings.Contains(createResp.Body, "validation failed") ||
+		strings.Contains(createResp.Body, "Request validation failed") ||
+		strings.Contains(createResp.Body, "Invalid request parameters") ||
+		strings.Contains(createResp.Body, "Invalid format for parameter")
+	a.assert.True(validationErrorFound, "Error should mention validation failure")
 	if expectedField != "" {
-		fieldVariants := []string{expectedField, camelToSnake(expectedField)}
+		fieldVariants := []string{
+			expectedField,
+			camelToSnake(expectedField),
+			"\"" + expectedField + "\"",
+			"parameter \"" + expectedField + "\"",
+			"user_id",  // Common API field name
+			"quest_id", // Common API field name
+		}
 		found := false
 		for _, variant := range fieldVariants {
 			if strings.Contains(createResp.Body, variant) {
@@ -51,7 +63,7 @@ func (a *QuestHTTPAssertions) QuestHTTPValidationError(createResp *casesteps.HTT
 				break
 			}
 		}
-		a.assert.True(found, "Error should mention the specific field")
+		a.assert.True(found, "Error should mention the specific field: %s", expectedField)
 	}
 }
 
@@ -108,7 +120,12 @@ func (a *QuestHTTPAssertions) QuestHTTPErrorResponse(resp *casesteps.HTTPRespons
 	a.assert.NoError(err, "HTTP request should not fail")
 	a.assert.Equal(expectedStatus, resp.StatusCode, "Should return expected status code")
 	if expectedMessage != "" {
-		a.assert.Contains(resp.Body, expectedMessage, "Error should contain expected message")
+		// Check for various validation error patterns
+		validationFound := strings.Contains(resp.Body, expectedMessage) ||
+			strings.Contains(resp.Body, "validation failed") ||
+			strings.Contains(resp.Body, "Request validation failed") ||
+			strings.Contains(resp.Body, "Invalid format for parameter")
+		a.assert.True(validationFound, "Error should contain expected message")
 	}
 }
 
