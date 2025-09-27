@@ -35,7 +35,7 @@ func (a *ApiHandler) CreateQuest(ctx context.Context, request v1.CreateQuestRequ
 	}
 
 	// Extract creator from context or set default (in real app this should be taken from auth token)
-	creator := "system" // TODO: get from user token
+	creator := "00000000-0000-0000-0000-000000000000" // TODO: get from user token
 
 	cmd := commands.CreateQuestCommand{
 		Title:             request.Body.Title,

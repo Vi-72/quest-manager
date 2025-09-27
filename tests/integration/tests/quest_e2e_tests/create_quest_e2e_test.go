@@ -8,8 +8,6 @@ import (
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
-
-	"github.com/google/uuid"
 )
 
 // Test 1: Create quest via API with locations, verify database and events
@@ -45,7 +43,7 @@ func (s *E2ESuite) TestCreateQuestThroughAPISuccess() {
 	httpAssertions.QuestArraysNotNull(createdQuest)
 
 	// 2. Verify quest exists in database
-	dbQuest, err := s.TestDIContainer.QuestRepository.GetByID(ctx, uuid.MustParse(createdQuest.Id))
+	dbQuest, err := s.TestDIContainer.QuestRepository.GetByID(ctx, createdQuest.Id)
 	s.Require().NoError(err, "Quest should exist in database")
 	s.Assert().Equal(questRequest.Title, dbQuest.Title, "Quest title should match")
 	s.Assert().Equal(questRequest.Description, dbQuest.Description, "Quest description should match")
