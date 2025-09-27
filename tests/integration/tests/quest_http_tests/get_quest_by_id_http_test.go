@@ -63,7 +63,7 @@ func (s *Suite) TestGetQuestByIDHTTPInvalidID() {
 	s.Require().Equal(http.StatusBadRequest, getResp.StatusCode, "Should return 400 for invalid UUID format")
 
 	// Verify error message contains validation details
-	s.Assert().Contains(getResp.Body, "validation failed", "Error message should contain validation failure details")
+	s.Assert().Contains(getResp.Body, "Invalid format for parameter", "Error message should contain validation failure details")
 	s.Assert().Contains(getResp.Body, "UUID", "Error message should mention UUID format requirement")
 }
 
