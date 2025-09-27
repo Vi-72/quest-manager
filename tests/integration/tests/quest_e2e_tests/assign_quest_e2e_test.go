@@ -37,8 +37,8 @@ func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 	time.Sleep(100 * time.Millisecond)
 
 	// 2. Assign quest through API using helper
-	userID := uuid.New().String()
-	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID().String(), userID)
+	userID := uuid.New()
+	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID(), userID)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Check HTTP response
