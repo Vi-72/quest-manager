@@ -84,14 +84,14 @@ func (m *MockQuestRepository) FindByBoundingBox(ctx context.Context, bbox kernel
 	return result, nil
 }
 
-func (m *MockQuestRepository) FindByAssignee(ctx context.Context, userID string) ([]quest.Quest, error) {
+func (m *MockQuestRepository) FindByAssignee(ctx context.Context, userID uuid.UUID) ([]quest.Quest, error) {
 	_ = ctx // unused in mock
 	m.mu.RLock()
 	defer m.mu.RUnlock()
 
 	var result []quest.Quest
 	for _, q := range m.quests {
-		if q.Assignee != nil && q.Assignee.String() == userID {
+		if q.Assignee != nil && *q.Assignee == userID {
 			result = append(result, q)
 		}
 	}

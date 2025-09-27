@@ -101,12 +101,12 @@ func (r *Repository) FindByBoundingBox(ctx context.Context, bbox kernel.Bounding
 }
 
 // FindByAssignee retrieves all quests assigned to a specific user.
-func (r *Repository) FindByAssignee(ctx context.Context, userID string) ([]quest.Quest, error) {
+func (r *Repository) FindByAssignee(ctx context.Context, userID uuid.UUID) ([]quest.Quest, error) {
 	var dtos []QuestDTO
 
 	db := r.tracker.Db()
 	if err := db.WithContext(ctx).
-		Where("assignee = ?", userID).
+		Where("assignee = ?", userID.String()).
 		Find(&dtos).Error; err != nil {
 		return nil, errs.WrapInfrastructureError("failed to get quests by assignee", err)
 	}

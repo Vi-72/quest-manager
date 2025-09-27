@@ -25,5 +25,5 @@ type QuestRepository interface {
 	FindByBoundingBox(ctx context.Context, bbox kernel.BoundingBox) ([]quest.Quest, error)
 
 	// FindByAssignee returns all quests assigned to a specific user.
-	FindByAssignee(ctx context.Context, userID string) ([]quest.Quest, error)
+	FindByAssignee(ctx context.Context, userID uuid.UUID) ([]quest.Quest, error)
 }
