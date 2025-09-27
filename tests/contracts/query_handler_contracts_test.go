@@ -286,7 +286,7 @@ func (s *ListAssignedQuestsQueryHandlerContractSuite) TestHandleValidQuery() {
 	s.Require().NoError(err)
 
 	// Contract: Handler should return assigned quests for the user
-	result, err := s.handler.Handle(s.ctx, userID.String())
+	result, err := s.handler.Handle(s.ctx, userID)
 	s.Require().NoError(err, "Handle should succeed with valid query")
 
 	// Contract: Result should include the assigned quest

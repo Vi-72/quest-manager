@@ -28,7 +28,7 @@ func (s *Suite) TestListAssignedQuestsHTTP() {
 
 	// Assign all created quests to the test user
 	for _, quest := range createdQuests {
-		_, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, quest.ID(), testUserUUID.String())
+		_, err := casesteps.AssignQuestStep(ctx, s.TestDIContainer.AssignQuestHandler, quest.ID(), testUserUUID)
 		s.Require().NoError(err)
 	}
 

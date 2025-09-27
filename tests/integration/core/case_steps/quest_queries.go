@@ -33,7 +33,7 @@ func ListQuestsStep(
 func ListAssignedQuestsStep(
 	ctx context.Context,
 	handler queries.ListAssignedQuestsQueryHandler,
-	userID string,
+	userID uuid.UUID,
 ) ([]quest.Quest, error) {
 	return handler.Handle(ctx, userID)
 }

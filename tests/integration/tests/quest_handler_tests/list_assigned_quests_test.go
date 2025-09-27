@@ -6,6 +6,8 @@ package quest_handler_tests
 import (
 	"context"
 
+	"github.com/google/uuid"
+
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
@@ -16,7 +18,7 @@ func (s *Suite) TestListAssignedQuests() {
 	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 
 	// Pre-condition - create multiple quests and assign them to a specific user
-	testUserID := "550e8400-e29b-41d4-a716-446655440010" // Valid UUID
+	testUserID := uuid.MustParse("550e8400-e29b-41d4-a716-446655440010") // Valid UUID
 	expectedCount := 2
 	createdQuests, err := casesteps.CreateMultipleRandomQuests(ctx, s.TestDIContainer.CreateQuestHandler, expectedCount)
 	s.Require().NoError(err)
@@ -37,7 +39,7 @@ func (s *Suite) TestListAssignedQuests() {
 
 	// Verify all returned quests are assigned to the correct user
 	for _, q := range quests {
-		s.Assert().Equal(testUserID, q.Assignee.String(), "Quest should be assigned to the test user")
+		s.Assert().Equal(testUserID, *q.Assignee, "Quest should be assigned to the test user")
 		s.Assert().Equal(quest.StatusAssigned, q.Status, "Quest should have 'assigned' status")
 	}
 }
@@ -46,7 +48,7 @@ func (s *Suite) TestListAssignedQuestsEmpty() {
 	ctx := context.Background()
 
 	// Pre-condition - use a user ID that has no assigned quests
-	nonExistentUserID := "user-with-no-quests"
+	nonExistentUserID := uuid.New()
 
 	// Act - get list of assigned quests for user with no assignments
 	quests, err := casesteps.ListAssignedQuestsStep(ctx, s.TestDIContainer.ListAssignedQuestsHandler, nonExistentUserID)
