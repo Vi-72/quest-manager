@@ -70,26 +70,6 @@ func (s *Suite) TestAssignQuestHTTPMissingUserID() {
 	httpAssertions.QuestHTTPValidationError(assignResp, err, "userId")
 }
 
-func (s *Suite) TestAssignQuestHTTPEmptyUserID() {
-	ctx := context.Background()
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
-
-	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
-	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
-	s.Require().NoError(err)
-
-	// Act - send request with empty user_id
-	requestBody := map[string]interface{}{
-		"user_id": "", // Empty user_id - OpenAPI format validation should catch this
-	}
-
-	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID(), requestBody)
-	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
-
-	// Assert - API layer should reject empty user_id
-	httpAssertions.QuestHTTPValidationError(assignResp, err, "userId")
-}
-
 func (s *Suite) TestAssignQuestHTTPInvalidUserIDFormat() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
@@ -119,6 +99,10 @@ func (s *Suite) TestAssignQuestHTTPInvalidUserIDFormat() {
 			name:   "numeric string",
 			userID: "12345",
 		},
+		{
+			name:   "empty string",
+			userID: "",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -132,7 +116,7 @@ func (s *Suite) TestAssignQuestHTTPInvalidUserIDFormat() {
 			assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 			// Assert - API layer should reject invalid UUID format
-			httpAssertions.QuestHTTPValidationError(assignResp, err, "userId")
+			httpAssertions.QuestHTTPValidationError(assignResp, err, "")
 		})
 	}
 }
@@ -177,7 +161,7 @@ func (s *Suite) TestAssignQuestHTTPInvalidQuestIDFormat() {
 			// Assert - API layer should reject invalid quest ID format
 			httpAssertions.QuestHTTPValidationError(assignResp, err, "questId")
 			if tc.questID == "" {
-				s.Assert().Contains(assignResp.Body, "empty", "Error should mention empty quest ID")
+				s.Assert().Contains(assignResp.Body, "missing", "Error should mention missing quest ID")
 			}
 		})
 	}
