@@ -8,11 +8,8 @@ import (
 
 // ListAssignedQuests implements GET /api/v1/quests/assigned from OpenAPI.
 func (a *ApiHandler) ListAssignedQuests(ctx context.Context, request v1.ListAssignedQuestsRequestObject) (v1.ListAssignedQuestsResponseObject, error) {
-	// UserId is already UUID type from OpenAPI, convert to string for handler
-	userIdString := request.Params.UserId.String()
-
-	// Get quest list directly
-	quests, err := a.listAssignedQuestsHandler.Handle(ctx, userIdString)
+	// UserId is already UUID type from OpenAPI, pass directly to handler
+	quests, err := a.listAssignedQuestsHandler.Handle(ctx, request.Params.UserId)
 	if err != nil {
 		// Pass error to middleware for proper handling
 		return nil, err
