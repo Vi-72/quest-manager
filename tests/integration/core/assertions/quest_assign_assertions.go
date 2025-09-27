@@ -26,11 +26,11 @@ func (a *QuestAssignAssertions) VerifyQuestAssignedSuccessfully(
 	err error,
 	originalQuest quest.Quest,
 	assignResult commands.AssignQuestResult,
-	userID string,
+	userID uuid.UUID,
 ) {
 	a.assert.NoError(err, "Quest assignment should succeed")
 	a.assert.Equal(originalQuest.ID(), assignResult.ID, "Assigned quest ID should match original quest")
-	a.assert.Equal(userID, assignResult.Assignee.String(), "Quest assignee should match provided user ID")
+	a.assert.Equal(userID, assignResult.Assignee, "Quest assignee should match provided user ID")
 	a.assert.Equal(string(quest.StatusAssigned), assignResult.Status, "Quest status should be assigned")
 }
 
