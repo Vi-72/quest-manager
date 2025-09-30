@@ -1,17 +1,24 @@
 package cmd
 
 import (
+	"context"
 	"log"
+	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
+	"gorm.io/gorm"
+
+	authv1 "github.com/Vi-72/quest-auth/api/grpc/sdk/go/auth/v1"
 
 	v1 "quest-manager/api/http/quests/v1"
-	"quest-manager/internal/adapters/in/http"
+	httphandlers "quest-manager/internal/adapters/in/http"
+	authclient "quest-manager/internal/adapters/out/client/auth"
 	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/ports"
-
-	"gorm.io/gorm"
 )
 
 type CompositionRoot struct {
@@ -20,6 +27,11 @@ type CompositionRoot struct {
 	unitOfWork     ports.UnitOfWork
 	eventPublisher ports.EventPublisher
 	closers        []Closer
+
+	// auth
+	authConn      *grpc.ClientConn
+	authSDKClient authv1.AuthServiceClient
+	authClient    ports.AuthClient
 }
 
 func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
@@ -35,13 +47,42 @@ func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
 		log.Fatalf("cannot create EventPublisher: %v", err)
 	}
 
-	return &CompositionRoot{
+	cr := &CompositionRoot{
 		configs:        configs,
 		db:             db,
 		unitOfWork:     unitOfWork,
 		eventPublisher: eventPublisher,
 	}
+
+	// ---- wire Auth gRPC client (optional: if AUTH_GRPC provided)
+	if addr := configs.AuthGRPC; addr != "" {
+		dialCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		// Можно заменить на mTLS/creds при необходимости
+		conn, err := grpc.DialContext(
+			dialCtx,
+			addr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithBlock(),
+		)
+		if err != nil {
+			log.Fatalf("failed to dial auth gRPC at %s: %v", addr, err)
+		}
+		cr.authConn = conn
+		cr.RegisterCloser(connCloser{conn}) // закроем при shutdown
+
+		cr.authSDKClient = authv1.NewAuthServiceClient(conn)
+		cr.authClient = authclient.NewUserAuthClient(cr.authSDKClient)
+	}
+
+	return cr
 }
+
+// helper to close grpc.Conn via our Closer stack
+type connCloser struct{ *grpc.ClientConn }
+
+func (c connCloser) Close() error { return c.ClientConn.Close() }
 
 // GetUnitOfWork returns the single UnitOfWork instance
 func (cr *CompositionRoot) GetUnitOfWork() ports.UnitOfWork {
@@ -100,7 +141,7 @@ func (cr *CompositionRoot) NewListAssignedQuestsQueryHandler() queries.ListAssig
 
 // NewApiHandler aggregates all HTTP handlers.
 func (cr *CompositionRoot) NewApiHandler() v1.StrictServerInterface {
-	handlers, err := http.NewApiHandler(
+	handlers, err := httphandlers.NewApiHandler(
 		cr.NewCreateQuestCommandHandler(),
 		cr.NewListQuestsQueryHandler(),
 		cr.NewGetQuestByIDQueryHandler(),
