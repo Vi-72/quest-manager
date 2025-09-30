@@ -13,7 +13,7 @@ import (
 	authv1 "github.com/Vi-72/quest-auth/api/grpc/sdk/go/auth/v1"
 )
 
-var _ Client = (*client)(nil)
+var _ Client = &client{}
 
 var (
 	// ErrTokenExpired is returned when the auth service reports an expired JWT.

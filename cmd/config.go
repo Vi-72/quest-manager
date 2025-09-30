@@ -9,4 +9,5 @@ type Config struct {
 	DbName              string
 	DbSslMode           string
 	EventGoroutineLimit int
+	AuthGRPC            string
 }
