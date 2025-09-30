@@ -6,17 +6,16 @@ import (
 	"os"
 	"time"
 
+	"gorm.io/gorm"
+
 	"quest-manager/cmd"
 	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
-
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/ports"
 	teststorage "quest-manager/tests/integration/core/storage"
 	integrationmock "quest-manager/tests/integration/mock"
-
-	"gorm.io/gorm"
 )
 
 // getTestConfig возвращает конфигурацию для тестов, используя те же env переменные что и приложение
