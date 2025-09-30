@@ -1,9 +1,7 @@
 package cmd
 
 import (
-	"context"
 	"log"
-	"time"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -63,19 +61,16 @@ func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
 
 	// Otherwise, wire Auth gRPC client (optional: if AUTH_GRPC provided)
 	if addr := configs.AuthGRPC; addr != "" {
-		dialCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		// Можно заменить на mTLS/creds при необходимости
-		conn, err := grpc.DialContext(
-			dialCtx,
+		// Use grpc.NewClient instead of deprecated DialContext
+		// NewClient is lazy - it connects on first RPC call
+		conn, err := grpc.NewClient(
 			addr,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithBlock(),
 		)
 		if err != nil {
-			log.Fatalf("failed to dial auth gRPC at %s: %v", addr, err)
+			log.Fatalf("failed to create auth gRPC client at %s: %v", addr, err)
 		}
+
 		cr.authConn = conn
 		cr.RegisterCloser(connCloser{conn}) // закроем при shutdown
 
