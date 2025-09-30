@@ -120,6 +120,10 @@ func NewRouter(root *CompositionRoot) http.Handler {
 	apiRouter := chi.NewRouter()
 	apiRouter.Use(requestValidator)
 
+	for _, mw := range root.Middlewares() {
+		apiRouter.Use(mw)
+	}
+
 	v1.HandlerFromMux(apiHandler, apiRouter)
 
 	router.Mount(apiV1Prefix, apiRouter)

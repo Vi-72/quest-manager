@@ -26,3 +26,13 @@ func (p *ProblemDetails) WriteResponse(w http.ResponseWriter) {
 		return
 	}
 }
+
+// NewProblem creates a generic ProblemDetails with custom title and detail
+func NewProblem(status int, title, detail string) *ProblemDetails {
+	return &ProblemDetails{
+		Type:   "about:blank",
+		Title:  title,
+		Status: status,
+		Detail: detail,
+	}
+}
