@@ -54,7 +54,14 @@ func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
 		eventPublisher: eventPublisher,
 	}
 
-	// ---- wire Auth gRPC client (optional: if AUTH_GRPC provided)
+	// ---- wire Auth client ----
+	// If AuthClient is provided in config (e.g., mock for tests), use it
+	if configs.AuthClient != nil {
+		cr.authClient = configs.AuthClient
+		return cr
+	}
+
+	// Otherwise, wire Auth gRPC client (optional: if AUTH_GRPC provided)
 	if addr := configs.AuthGRPC; addr != "" {
 		dialCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()

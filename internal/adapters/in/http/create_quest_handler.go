@@ -2,9 +2,11 @@ package http
 
 import (
 	"context"
+	"net/http"
 
 	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/adapters/in/http/errors"
+	"quest-manager/internal/adapters/in/http/middleware"
 	"quest-manager/internal/core/application/usecases/commands"
 )
 
@@ -34,8 +36,11 @@ func (a *ApiHandler) CreateQuest(ctx context.Context, request v1.CreateQuestRequ
 		skills = *request.Body.Skills
 	}
 
-	// Extract creator from context or set default (in real app this should be taken from auth token)
-	creator := "00000000-0000-0000-0000-000000000000" // TODO: get from user token
+	userID, ok := middleware.UserIDFromContext(ctx)
+	if !ok {
+		return nil, errors.NewProblem(http.StatusUnauthorized, "Unauthorized", "authentication context is missing user information")
+	}
+	creator := userID.String()
 
 	cmd := commands.CreateQuestCommand{
 		Title:             request.Body.Title,

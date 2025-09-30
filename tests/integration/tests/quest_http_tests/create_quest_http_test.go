@@ -41,6 +41,12 @@ func (s *Suite) TestCreateQuestHTTP() {
 	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
 	httpAssertions.QuestArraysNotNull(createdQuest)
 
+	s.Assert().Equal(
+		s.TestDIContainer.MockAuthClient.DefaultUserID.String(),
+		createdQuest.Creator,
+		"Creator should match authenticated user",
+	)
+
 	// Verify quest data matches request using field assertions pattern
 	fieldAssertions.VerifyHTTPResponseMatchesRequest(&createdQuest, questRequest)
 }
@@ -207,6 +213,7 @@ func (s *Suite) TestCreateQuestHTTPMalformedJSON() {
 	req, err := http.NewRequestWithContext(ctx, malformedRequest.Method, malformedRequest.URL, strings.NewReader(malformedRequest.Body.(string)))
 	s.Require().NoError(err)
 	req.Header.Set("Content-Type", malformedRequest.ContentType)
+	req.Header.Set("Authorization", "Bearer test-token")
 
 	s.TestDIContainer.HTTPRouter.ServeHTTP(recorder, req)
 
