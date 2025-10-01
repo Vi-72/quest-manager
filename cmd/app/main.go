@@ -60,6 +60,7 @@ func getConfigs() cmd.Config {
 		DbName:              getEnv("DB_NAME"),
 		DbSslMode:           getEnv("DB_SSLMODE"),
 		EventGoroutineLimit: getEnvInt("EVENT_GOROUTINE_LIMIT"),
+		AuthGRPC:            getEnv("AUTH_GRPC"),
 	}
 }
 

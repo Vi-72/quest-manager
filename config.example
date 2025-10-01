@@ -12,7 +12,13 @@ DB_SSLMODE=disable
 # Event Processing Configuration
 EVENT_GOROUTINE_LIMIT=5
 
+# Authentication Configuration (gRPC)
+# AUTH_GRPC is the address of the Quest Auth service
+# If not set, authentication will be disabled (for local development)
+AUTH_GRPC=localhost:50051
+
 # Instructions:
 # 1. Copy this file to .env: cp config.example .env
 # 2. Update the values according to your environment
-# 3. Run the application: go run cmd/app/main.go 
+# 3. Make sure Quest Auth service is running on AUTH_GRPC
+# 4. Run the application: go run cmd/app/main.go 

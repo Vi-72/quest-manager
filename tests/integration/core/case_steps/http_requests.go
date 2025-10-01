@@ -30,6 +30,7 @@ type HTTPResponse struct {
 
 // ExecuteHTTPRequest выполняет HTTP запрос через тестовый сервер
 func ExecuteHTTPRequest(ctx context.Context, handler http.Handler, req HTTPRequest) (*HTTPResponse, error) {
+	req.Headers = withAuthHeader(req.Headers)
 	var body io.Reader
 
 	// Подготавливаем тело запроса
@@ -86,6 +87,7 @@ func CreateQuestHTTPRequest(questData interface{}) HTTPRequest {
 		Method:      "POST",
 		URL:         "/api/v1/quests",
 		Body:        questData,
+		Headers:     withAuthHeader(nil),
 		ContentType: "application/json",
 	}
 }
@@ -96,6 +98,7 @@ func AssignQuestHTTPRequestWithBody(questID uuid.UUID, requestBody interface{}) 
 		Method:      "POST",
 		URL:         "/api/v1/quests/" + questID.String() + "/assign",
 		Body:        requestBody,
+		Headers:     withAuthHeader(nil),
 		ContentType: "application/json",
 	}
 }
@@ -106,6 +109,7 @@ func AssignQuestHTTPRequestWithStringID(questID string, requestBody interface{})
 		Method:      "POST",
 		URL:         "/api/v1/quests/" + questID + "/assign",
 		Body:        requestBody,
+		Headers:     withAuthHeader(nil),
 		ContentType: "application/json",
 	}
 }
@@ -118,16 +122,18 @@ func AssignQuestHTTPRequest(questID uuid.UUID, userID uuid.UUID) HTTPRequest {
 // GetQuestHTTPRequest создает HTTP запрос для получения квеста
 func GetQuestHTTPRequest(questID uuid.UUID) HTTPRequest {
 	return HTTPRequest{
-		Method: "GET",
-		URL:    "/api/v1/quests/" + questID.String(),
+		Method:  "GET",
+		URL:     "/api/v1/quests/" + questID.String(),
+		Headers: withAuthHeader(nil),
 	}
 }
 
 // GetQuestHTTPRequestWithStringID создает HTTP запрос с строковым ID (для тестирования невалидных UUID)
 func GetQuestHTTPRequestWithStringID(questID string) HTTPRequest {
 	return HTTPRequest{
-		Method: "GET",
-		URL:    "/api/v1/quests/" + questID,
+		Method:  "GET",
+		URL:     "/api/v1/quests/" + questID,
+		Headers: withAuthHeader(nil),
 	}
 }
 
@@ -139,24 +145,27 @@ func ListQuestsHTTPRequest(status string) HTTPRequest {
 	}
 
 	return HTTPRequest{
-		Method: "GET",
-		URL:    url,
+		Method:  "GET",
+		URL:     url,
+		Headers: withAuthHeader(nil),
 	}
 }
 
 // ListAssignedQuestsHTTPRequest создает HTTP запрос для получения квестов назначенных пользователю
 func ListAssignedQuestsHTTPRequest(userID uuid.UUID) HTTPRequest {
 	return HTTPRequest{
-		Method: "GET",
-		URL:    "/api/v1/quests/assigned?user_id=" + userID.String(),
+		Method:  "GET",
+		URL:     "/api/v1/quests/assigned?user_id=" + userID.String(),
+		Headers: withAuthHeader(nil),
 	}
 }
 
 // ListAssignedQuestsHTTPRequestWithStringID создает HTTP запрос с строковым ID (для тестирования невалидных UUID)
 func ListAssignedQuestsHTTPRequestWithStringID(userID string) HTTPRequest {
 	return HTTPRequest{
-		Method: "GET",
-		URL:    "/api/v1/quests/assigned?user_id=" + userID,
+		Method:  "GET",
+		URL:     "/api/v1/quests/assigned?user_id=" + userID,
+		Headers: withAuthHeader(nil),
 	}
 }
 
@@ -164,8 +173,9 @@ func ListAssignedQuestsHTTPRequestWithStringID(userID string) HTTPRequest {
 func SearchQuestsByRadiusHTTPRequest(lat, lon, radiusKm float32) HTTPRequest {
 	url := fmt.Sprintf("/api/v1/quests/search-radius?lat=%f&lon=%f&radius_km=%f", lat, lon, radiusKm)
 	return HTTPRequest{
-		Method: "GET",
-		URL:    url,
+		Method:  "GET",
+		URL:     url,
+		Headers: withAuthHeader(nil),
 	}
 }
 
@@ -175,6 +185,7 @@ func ChangeQuestStatusHTTPRequest(questID uuid.UUID, statusRequest interface{}) 
 		Method:      "PATCH",
 		URL:         "/api/v1/quests/" + questID.String() + "/status",
 		Body:        statusRequest,
+		Headers:     withAuthHeader(nil),
 		ContentType: "application/json",
 	}
 }
@@ -185,6 +196,7 @@ func ChangeQuestStatusHTTPRequestWithStringID(questID string, statusRequest inte
 		Method:      "PATCH",
 		URL:         "/api/v1/quests/" + questID + "/status",
 		Body:        statusRequest,
+		Headers:     withAuthHeader(nil),
 		ContentType: "application/json",
 	}
 }
@@ -195,6 +207,18 @@ func CreateMalformedJSONRequest(method, url string) HTTPRequest {
 		Method:      method,
 		URL:         url,
 		Body:        `{"status": invalid-json}`, // Malformed JSON
+		Headers:     withAuthHeader(nil),
 		ContentType: "application/json",
 	}
+}
+
+func withAuthHeader(headers map[string]string) map[string]string {
+	result := make(map[string]string, len(headers)+1)
+	for k, v := range headers {
+		result[k] = v
+	}
+	if _, ok := result["Authorization"]; !ok {
+		result["Authorization"] = "Bearer test-token"
+	}
+	return result
 }
