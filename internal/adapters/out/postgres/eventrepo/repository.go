@@ -29,21 +29,34 @@ func NewRepository(tracker ports.Tracker, goroutineLimit int) (*Repository, erro
 	if tracker == nil {
 		return nil, errs.NewValueIsRequiredError("tracker")
 	}
+
+	db := tracker.Db()
+
+	return NewRepositoryWithFactory(tracker, goroutineLimit, func() (ports.Tracker, error) {
+		uow, err := postgres.NewUnitOfWork(db)
+		if err != nil {
+			return nil, err
+		}
+		return uow.(ports.Tracker), nil
+	})
+}
+
+// NewRepositoryWithFactory creates an event repository using the provided tracker and factory
+// for creating additional trackers (used for async publishing).
+func NewRepositoryWithFactory(tracker ports.Tracker, goroutineLimit int, trackerFactory func() (ports.Tracker, error)) (*Repository, error) {
+	if tracker == nil {
+		return nil, errs.NewValueIsRequiredError("tracker")
+	}
+	if trackerFactory == nil {
+		return nil, errs.NewValueIsRequiredError("trackerFactory")
+	}
 	if goroutineLimit <= 0 {
 		goroutineLimit = 5 // default value
 	}
 
-	db := tracker.Db()
-
 	return &Repository{
-		tracker: tracker,
-		trackerFactory: func() (ports.Tracker, error) {
-			uow, err := postgres.NewUnitOfWork(db)
-			if err != nil {
-				return nil, err
-			}
-			return uow.(ports.Tracker), nil
-		},
+		tracker:            tracker,
+		trackerFactory:     trackerFactory,
 		goroutineSemaphore: make(chan struct{}, goroutineLimit),
 	}, nil
 }

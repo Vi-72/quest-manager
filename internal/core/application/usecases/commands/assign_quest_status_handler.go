@@ -16,57 +16,67 @@ var _ AssignQuestCommandHandler = &assignQuestHandler{}
 
 // assignQuestHandler implements AssignQuestCommandHandler.
 type assignQuestHandler struct {
-	unitOfWork     ports.UnitOfWork
-	eventPublisher ports.EventPublisher
+	unitOfWorkFactory ports.UnitOfWorkFactory
 }
 
 // NewAssignQuestCommandHandler creates a new instance of AssignQuestCommandHandler.
-func NewAssignQuestCommandHandler(unitOfWork ports.UnitOfWork, eventPublisher ports.EventPublisher) AssignQuestCommandHandler {
+func NewAssignQuestCommandHandler(factory ports.UnitOfWorkFactory) AssignQuestCommandHandler {
 	return &assignQuestHandler{
-		unitOfWork:     unitOfWork,
-		eventPublisher: eventPublisher,
+		unitOfWorkFactory: factory,
 	}
 }
 
 // Handle assigns a quest to a user using domain business rules.
 func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand) (AssignQuestResult, error) {
-	// Begin transaction
-	if err := h.unitOfWork.Begin(ctx); err != nil {
-		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to begin quest assignment transaction", err)
+	unitOfWork, eventPublisher, err := h.unitOfWorkFactory()
+	if err != nil {
+		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to create quest assignment unit of work", err)
 	}
 
+	var (
+		txStarted bool
+		committed bool
+	)
+	defer func() {
+		if txStarted && !committed {
+			_ = unitOfWork.Rollback()
+		}
+	}()
+
+	// Begin transaction
+	if err := unitOfWork.Begin(ctx); err != nil {
+		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to begin quest assignment transaction", err)
+	}
+	txStarted = true
+
 	// Get quest - if not found → 404
-	q, err := h.unitOfWork.QuestRepository().GetByID(ctx, cmd.ID)
+	q, err := unitOfWork.QuestRepository().GetByID(ctx, cmd.ID)
 	if err != nil {
-		_ = h.unitOfWork.Rollback()
 		return AssignQuestResult{}, errs.NewNotFoundErrorWithCause("quest", cmd.ID.String(), err)
 	}
 
 	// Use domain logic - business rules errors → 400
 	if err := q.AssignTo(cmd.UserID); err != nil {
-		_ = h.unitOfWork.Rollback()
 		return AssignQuestResult{}, errs.NewDomainValidationErrorWithCause("assignment", "failed to assign quest", err)
 	}
 
 	// Save quest - infrastructure error → 500
-	if err := h.unitOfWork.QuestRepository().Save(ctx, q); err != nil {
-		_ = h.unitOfWork.Rollback()
+	if err := unitOfWork.QuestRepository().Save(ctx, q); err != nil {
 		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
 	// Publish domain events within the same transaction
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.Publish(ctx, q.GetDomainEvents()...); err != nil {
-			_ = h.unitOfWork.Rollback()
+	if eventPublisher != nil {
+		if err := eventPublisher.Publish(ctx, q.GetDomainEvents()...); err != nil {
 			return AssignQuestResult{}, errs.WrapInfrastructureError("failed to publish events", err)
 		}
 	}
 
 	// Commit transaction
-	err = h.unitOfWork.Commit(ctx)
-	if err != nil {
+	if err := unitOfWork.Commit(ctx); err != nil {
 		return AssignQuestResult{}, errs.WrapInfrastructureError("failed to commit quest assignment transaction", err)
 	}
+	committed = true
 
 	// Clear events after successful commit
 	q.ClearDomainEvents()

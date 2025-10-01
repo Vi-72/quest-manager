@@ -16,6 +16,7 @@ type ContractDIContainer struct {
 	LocationRepository ports.LocationRepository
 	EventPublisher     ports.EventPublisher
 	UnitOfWork         ports.UnitOfWork
+	UnitOfWorkFactory  ports.UnitOfWorkFactory
 
 	// Command Handlers
 	CreateQuestHandler       commands.CreateQuestCommandHandler
@@ -37,22 +38,27 @@ func NewContractDIContainer() *ContractDIContainer {
 	eventPublisher := &MockEventPublisher{}
 	unitOfWork := NewMockUnitOfWork()
 
+	factory := func() (ports.UnitOfWork, ports.EventPublisher, error) {
+		return unitOfWork, eventPublisher, nil
+	}
+
 	// Create command handlers with mocked dependencies
-	createQuestHandler := commands.NewCreateQuestCommandHandler(unitOfWork, eventPublisher)
-	assignQuestHandler := commands.NewAssignQuestCommandHandler(unitOfWork, eventPublisher)
-	changeQuestStatusHandler := commands.NewChangeQuestStatusCommandHandler(unitOfWork, eventPublisher)
+	createQuestHandler := commands.NewCreateQuestCommandHandler(factory)
+	assignQuestHandler := commands.NewAssignQuestCommandHandler(factory)
+	changeQuestStatusHandler := commands.NewChangeQuestStatusCommandHandler(factory)
 
 	// Create query handlers with mocked dependencies
-	listQuestsHandler := queries.NewListQuestsQueryHandler(questRepo)
-	getQuestByIDHandler := queries.NewGetQuestByIDQueryHandler(questRepo)
-	searchQuestsByRadiusHandler := queries.NewSearchQuestsByRadiusQueryHandler(questRepo)
-	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(questRepo)
+	listQuestsHandler := queries.NewListQuestsQueryHandler(factory)
+	getQuestByIDHandler := queries.NewGetQuestByIDQueryHandler(factory)
+	searchQuestsByRadiusHandler := queries.NewSearchQuestsByRadiusQueryHandler(factory)
+	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(factory)
 
 	return &ContractDIContainer{
 		QuestRepository:    questRepo,
 		LocationRepository: locationRepo,
 		EventPublisher:     eventPublisher,
 		UnitOfWork:         unitOfWork,
+		UnitOfWorkFactory:  factory,
 
 		CreateQuestHandler:       createQuestHandler,
 		AssignQuestHandler:       assignQuestHandler,

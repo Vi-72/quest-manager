@@ -19,26 +19,39 @@ type CreateQuestCommandHandler interface {
 var _ CreateQuestCommandHandler = &createQuestHandler{}
 
 type createQuestHandler struct {
-	unitOfWork     ports.UnitOfWork
-	eventPublisher ports.EventPublisher
+	unitOfWorkFactory ports.UnitOfWorkFactory
 }
 
 // NewCreateQuestCommandHandler creates a new instance of CreateQuestCommandHandler.
-func NewCreateQuestCommandHandler(unitOfWork ports.UnitOfWork, eventPublisher ports.EventPublisher) CreateQuestCommandHandler {
+func NewCreateQuestCommandHandler(factory ports.UnitOfWorkFactory) CreateQuestCommandHandler {
 	return &createQuestHandler{
-		unitOfWork:     unitOfWork,
-		eventPublisher: eventPublisher,
+		unitOfWorkFactory: factory,
 	}
 }
 
 func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand) (quest.Quest, error) {
-	var targetLocationID *uuid.UUID
-	var executionLocationID *uuid.UUID
+	unitOfWork, eventPublisher, err := h.unitOfWorkFactory()
+	if err != nil {
+		return quest.Quest{}, errs.WrapInfrastructureError("failed to create quest unit of work", err)
+	}
 
-	// Begin transaction
-	if err := h.unitOfWork.Begin(ctx); err != nil {
+	var (
+		txStarted bool
+		committed bool
+	)
+	defer func() {
+		if txStarted && !committed {
+			_ = unitOfWork.Rollback()
+		}
+	}()
+
+	if err := unitOfWork.Begin(ctx); err != nil {
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to begin quest creation transaction", err)
 	}
+	txStarted = true
+
+	var targetLocationID *uuid.UUID
+	var executionLocationID *uuid.UUID
 
 	// Create or find target location
 	targetLoc, err := location.NewLocation(
@@ -46,14 +59,12 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 		cmd.TargetAddress,
 	)
 	if err != nil {
-		_ = h.unitOfWork.Rollback()
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to create target location", err)
 	}
 
 	// Save target location
-	err = h.unitOfWork.LocationRepository().Save(ctx, targetLoc)
+	err = unitOfWork.LocationRepository().Save(ctx, targetLoc)
 	if err != nil {
-		_ = h.unitOfWork.Rollback()
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to save target location", err)
 	}
 	targetLocID := targetLoc.ID()
@@ -70,14 +81,12 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 			cmd.ExecutionAddress,
 		)
 		if err != nil {
-			_ = h.unitOfWork.Rollback()
 			return quest.Quest{}, errs.WrapInfrastructureError("failed to create execution location", err)
 		}
 
 		// Save execution location
-		err = h.unitOfWork.LocationRepository().Save(ctx, executionLoc)
+		err = unitOfWork.LocationRepository().Save(ctx, executionLoc)
 		if err != nil {
-			_ = h.unitOfWork.Rollback()
 			return quest.Quest{}, errs.WrapInfrastructureError("failed to save execution location", err)
 		}
 		executionLocID := executionLoc.ID()
@@ -98,7 +107,6 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 		cmd.Skills,
 	)
 	if err != nil {
-		_ = h.unitOfWork.Rollback()
 		return quest.Quest{}, errs.NewDomainValidationErrorWithCause("quest", "invalid quest data", err)
 	}
 
@@ -107,23 +115,22 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 	q.ExecutionLocationID = executionLocationID
 
 	// Save quest
-	err = h.unitOfWork.QuestRepository().Save(ctx, q)
+	err = unitOfWork.QuestRepository().Save(ctx, q)
 	if err != nil {
-		_ = h.unitOfWork.Rollback()
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
 	// Commit transaction
-	err = h.unitOfWork.Commit(ctx)
-	if err != nil {
+	if err := unitOfWork.Commit(ctx); err != nil {
 		return quest.Quest{}, errs.WrapInfrastructureError("failed to commit quest creation transaction", err)
 	}
+	committed = true
 
 	// Publish all domain events asynchronously after successful commit
 	if executionLoc != targetLoc {
-		PublishDomainEventsAsync(context.Background(), h.eventPublisher, q, targetLoc, executionLoc)
+		PublishDomainEventsAsync(context.Background(), eventPublisher, q, targetLoc, executionLoc)
 	} else {
-		PublishDomainEventsAsync(context.Background(), h.eventPublisher, q, targetLoc)
+		PublishDomainEventsAsync(context.Background(), eventPublisher, q, targetLoc)
 	}
 
 	return q, nil

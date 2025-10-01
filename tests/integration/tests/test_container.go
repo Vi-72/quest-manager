@@ -13,6 +13,7 @@ import (
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/ports"
+	"quest-manager/internal/pkg/errs"
 	teststorage "quest-manager/tests/integration/core/storage"
 
 	"gorm.io/gorm"
@@ -41,9 +42,10 @@ func getTestEnv(key, defaultValue string) string {
 // TestDIContainer содержит все зависимости для интеграционных тестов
 type TestDIContainer struct {
 	SuiteDIContainer
-	DB         *gorm.DB
-	CloseDB    func()
-	UnitOfWork ports.UnitOfWork
+	DB                *gorm.DB
+	CloseDB           func()
+	UnitOfWork        ports.UnitOfWork
+	UnitOfWorkFactory ports.UnitOfWorkFactory
 
 	// Repositories
 	QuestRepository    ports.QuestRepository
@@ -95,6 +97,25 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	db, sqlDB, err := cmd.MustConnectDB(databaseURL)
 	suiteContainer.Require().NoError(err, "Failed to connect to test database")
 
+	unitOfWorkFactory := func() (ports.UnitOfWork, ports.EventPublisher, error) {
+		uow, err := postgres.NewUnitOfWork(db)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		tracker, ok := uow.(ports.Tracker)
+		if !ok {
+			return nil, nil, errs.WrapInfrastructureError("unit of work does not implement tracker", nil)
+		}
+
+		eventRepo, err := eventrepo.NewRepository(tracker, 5)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return uow, eventRepo, nil
+	}
+
 	// Создание Unit of Work (он сам создает внутри себя quest и location репозитории)
 	unitOfWork, err := postgres.NewUnitOfWork(db)
 	suiteContainer.Require().NoError(err, "Failed to create unit of work")
@@ -111,24 +132,15 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	eventStorage := teststorage.NewEventStorage(db)
 
 	// Создание обработчиков команд
-	createQuestHandler := commands.NewCreateQuestCommandHandler(
-		unitOfWork,
-		eventRepo,
-	)
-	assignQuestHandler := commands.NewAssignQuestCommandHandler(
-		unitOfWork,
-		eventRepo,
-	)
-	changeQuestStatusHandler := commands.NewChangeQuestStatusCommandHandler(
-		unitOfWork,
-		eventRepo,
-	)
+	createQuestHandler := commands.NewCreateQuestCommandHandler(unitOfWorkFactory)
+	assignQuestHandler := commands.NewAssignQuestCommandHandler(unitOfWorkFactory)
+	changeQuestStatusHandler := commands.NewChangeQuestStatusCommandHandler(unitOfWorkFactory)
 
 	// Создание обработчиков запросов
-	listQuestsHandler := queries.NewListQuestsQueryHandler(questRepo)
-	getQuestByIDHandler := queries.NewGetQuestByIDQueryHandler(questRepo)
-	searchQuestsByRadiusHandler := queries.NewSearchQuestsByRadiusQueryHandler(questRepo)
-	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(questRepo)
+	listQuestsHandler := queries.NewListQuestsQueryHandler(unitOfWorkFactory)
+	getQuestByIDHandler := queries.NewGetQuestByIDQueryHandler(unitOfWorkFactory)
+	searchQuestsByRadiusHandler := queries.NewSearchQuestsByRadiusQueryHandler(unitOfWorkFactory)
+	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(unitOfWorkFactory)
 
 	// Create HTTP Router for API testing
 	appConfig := cmd.Config{
@@ -146,7 +158,8 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 				return
 			}
 		},
-		UnitOfWork: unitOfWork,
+		UnitOfWork:        unitOfWork,
+		UnitOfWorkFactory: unitOfWorkFactory,
 
 		QuestRepository:    questRepo,
 		LocationRepository: locationRepo,

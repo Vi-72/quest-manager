@@ -10,92 +10,88 @@ import (
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/ports"
+	"quest-manager/internal/pkg/errs"
 
 	"gorm.io/gorm"
 )
 
 type CompositionRoot struct {
-	configs        Config
-	db             *gorm.DB
-	unitOfWork     ports.UnitOfWork
-	eventPublisher ports.EventPublisher
-	closers        []Closer
+	configs           Config
+	db                *gorm.DB
+	unitOfWorkFactory ports.UnitOfWorkFactory
+	closers           []Closer
 }
 
 func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
-	// Create Unit of Work once during initialization
-	unitOfWork, err := postgres.NewUnitOfWork(db)
-	if err != nil {
-		log.Fatalf("cannot create UnitOfWork: %v", err)
+	factory := func() (ports.UnitOfWork, ports.EventPublisher, error) {
+		unitOfWork, err := postgres.NewUnitOfWork(db)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		tracker, ok := unitOfWork.(ports.Tracker)
+		if !ok {
+			return nil, nil, errs.WrapInfrastructureError("unit of work does not implement tracker", nil)
+		}
+
+		eventPublisher, err := eventrepo.NewRepository(tracker, configs.EventGoroutineLimit)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		return unitOfWork, eventPublisher, nil
 	}
 
-	// Create EventPublisher with same Tracker as UoW for transactionality
-	eventPublisher, err := eventrepo.NewRepository(unitOfWork.(ports.Tracker), configs.EventGoroutineLimit)
-	if err != nil {
-		log.Fatalf("cannot create EventPublisher: %v", err)
+	if _, _, err := factory(); err != nil {
+		log.Fatalf("cannot initialize application dependencies: %v", err)
 	}
 
 	return &CompositionRoot{
-		configs:        configs,
-		db:             db,
-		unitOfWork:     unitOfWork,
-		eventPublisher: eventPublisher,
+		configs:           configs,
+		db:                db,
+		unitOfWorkFactory: factory,
 	}
 }
 
-// GetUnitOfWork returns the single UnitOfWork instance
-func (cr *CompositionRoot) GetUnitOfWork() ports.UnitOfWork {
-	return cr.unitOfWork
-}
-
-// EventPublisher returns EventPublisher
-func (cr *CompositionRoot) EventPublisher() ports.EventPublisher {
-	return cr.eventPublisher
-}
-
-// QuestRepository returns repository from the single UoW
-func (cr *CompositionRoot) QuestRepository() ports.QuestRepository {
-	return cr.unitOfWork.QuestRepository()
-}
-
-// LocationRepository returns repository from the single UoW
-func (cr *CompositionRoot) LocationRepository() ports.LocationRepository {
-	return cr.unitOfWork.LocationRepository()
+// UnitOfWorkFactory returns a factory that produces fresh UnitOfWork instances
+// together with their request-scoped event publishers.
+func (cr *CompositionRoot) UnitOfWorkFactory() ports.UnitOfWorkFactory {
+	return cr.unitOfWorkFactory
 }
 
 // NewCreateQuestCommandHandler creates a handler for creating quests.
 func (cr *CompositionRoot) NewCreateQuestCommandHandler() commands.CreateQuestCommandHandler {
-	return commands.NewCreateQuestCommandHandler(cr.GetUnitOfWork(), cr.EventPublisher())
+	return commands.NewCreateQuestCommandHandler(cr.UnitOfWorkFactory())
 }
 
 // NewListQuestsQueryHandler creates a handler for listing quests.
 func (cr *CompositionRoot) NewListQuestsQueryHandler() queries.ListQuestsQueryHandler {
-	return queries.NewListQuestsQueryHandler(cr.QuestRepository())
+	return queries.NewListQuestsQueryHandler(cr.UnitOfWorkFactory())
 }
 
 // NewGetQuestByIDQueryHandler creates a handler for fetching a quest by its ID.
 func (cr *CompositionRoot) NewGetQuestByIDQueryHandler() queries.GetQuestByIDQueryHandler {
-	return queries.NewGetQuestByIDQueryHandler(cr.QuestRepository())
+	return queries.NewGetQuestByIDQueryHandler(cr.UnitOfWorkFactory())
 }
 
 // NewChangeQuestStatusHandler creates a handler for changing quest status.
 func (cr *CompositionRoot) NewChangeQuestStatusHandler() commands.ChangeQuestStatusCommandHandler {
-	return commands.NewChangeQuestStatusCommandHandler(cr.GetUnitOfWork(), cr.EventPublisher())
+	return commands.NewChangeQuestStatusCommandHandler(cr.UnitOfWorkFactory())
 }
 
 // NewAssignQuestCommandHandler creates a handler for assigning a quest.
 func (cr *CompositionRoot) NewAssignQuestCommandHandler() commands.AssignQuestCommandHandler {
-	return commands.NewAssignQuestCommandHandler(cr.GetUnitOfWork(), cr.EventPublisher())
+	return commands.NewAssignQuestCommandHandler(cr.UnitOfWorkFactory())
 }
 
 // NewSearchQuestsByRadiusQueryHandler creates a handler for searching quests in a radius.
 func (cr *CompositionRoot) NewSearchQuestsByRadiusQueryHandler() queries.SearchQuestsByRadiusQueryHandler {
-	return queries.NewSearchQuestsByRadiusQueryHandler(cr.QuestRepository())
+	return queries.NewSearchQuestsByRadiusQueryHandler(cr.UnitOfWorkFactory())
 }
 
 // NewListAssignedQuestsQueryHandler creates a handler for listing quests assigned to a user.
 func (cr *CompositionRoot) NewListAssignedQuestsQueryHandler() queries.ListAssignedQuestsQueryHandler {
-	return queries.NewListAssignedQuestsQueryHandler(cr.QuestRepository())
+	return queries.NewListAssignedQuestsQueryHandler(cr.UnitOfWorkFactory())
 }
 
 // NewApiHandler aggregates all HTTP handlers.

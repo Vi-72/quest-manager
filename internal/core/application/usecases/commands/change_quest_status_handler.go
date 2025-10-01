@@ -14,15 +14,13 @@ type ChangeQuestStatusCommandHandler interface {
 }
 
 type changeQuestStatusHandler struct {
-	unitOfWork     ports.UnitOfWork
-	eventPublisher ports.EventPublisher
+	unitOfWorkFactory ports.UnitOfWorkFactory
 }
 
 // NewChangeQuestStatusCommandHandler creates a new ChangeQuestStatusCommandHandler instance.
-func NewChangeQuestStatusCommandHandler(unitOfWork ports.UnitOfWork, eventPublisher ports.EventPublisher) ChangeQuestStatusCommandHandler {
+func NewChangeQuestStatusCommandHandler(factory ports.UnitOfWorkFactory) ChangeQuestStatusCommandHandler {
 	return &changeQuestStatusHandler{
-		unitOfWork:     unitOfWork,
-		eventPublisher: eventPublisher,
+		unitOfWorkFactory: factory,
 	}
 }
 
@@ -33,43 +31,55 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 		return ChangeQuestStatusResult{}, errs.NewDomainValidationError("status", "must be one of 'created', 'posted', 'assigned', 'in_progress', 'declined', 'completed'")
 	}
 
-	// Begin transaction
-	if err := h.unitOfWork.Begin(ctx); err != nil {
-		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to begin quest status change transaction", err)
+	unitOfWork, eventPublisher, err := h.unitOfWorkFactory()
+	if err != nil {
+		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to create quest status unit of work", err)
 	}
 
+	var (
+		txStarted bool
+		committed bool
+	)
+	defer func() {
+		if txStarted && !committed {
+			_ = unitOfWork.Rollback()
+		}
+	}()
+
+	// Begin transaction
+	if err := unitOfWork.Begin(ctx); err != nil {
+		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to begin quest status change transaction", err)
+	}
+	txStarted = true
+
 	// Get quest - if not found → 404
-	q, err := h.unitOfWork.QuestRepository().GetByID(ctx, cmd.QuestID)
+	q, err := unitOfWork.QuestRepository().GetByID(ctx, cmd.QuestID)
 	if err != nil {
-		_ = h.unitOfWork.Rollback()
 		return ChangeQuestStatusResult{}, errs.NewNotFoundErrorWithCause("quest", cmd.QuestID.String(), err)
 	}
 
 	// Use domain logic for status change - domain validation error → 400
 	if err := q.ChangeStatus(cmd.Status); err != nil {
-		_ = h.unitOfWork.Rollback()
 		return ChangeQuestStatusResult{}, errs.NewDomainValidationErrorWithCause("status", "invalid status transition", err)
 	}
 
 	// Save quest - infrastructure error → 500
-	if err := h.unitOfWork.QuestRepository().Save(ctx, q); err != nil {
-		_ = h.unitOfWork.Rollback()
+	if err := unitOfWork.QuestRepository().Save(ctx, q); err != nil {
 		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to save quest", err)
 	}
 
 	// Publish domain events within the same transaction
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.Publish(ctx, q.GetDomainEvents()...); err != nil {
-			_ = h.unitOfWork.Rollback()
+	if eventPublisher != nil {
+		if err := eventPublisher.Publish(ctx, q.GetDomainEvents()...); err != nil {
 			return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to publish events", err)
 		}
 	}
 
 	// Commit transaction
-	err = h.unitOfWork.Commit(ctx)
-	if err != nil {
+	if err := unitOfWork.Commit(ctx); err != nil {
 		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to commit quest status change transaction", err)
 	}
+	committed = true
 
 	// Clear events after successful commit
 	q.ClearDomainEvents()

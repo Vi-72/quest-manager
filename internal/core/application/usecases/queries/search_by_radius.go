@@ -6,6 +6,7 @@ import (
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
+	"quest-manager/internal/pkg/errs"
 )
 
 // SearchQuestsByRadiusQueryHandler defines the interface for handling quest search by radius.
@@ -14,12 +15,12 @@ type SearchQuestsByRadiusQueryHandler interface {
 }
 
 type searchQuestsByRadiusHandler struct {
-	repo ports.QuestRepository
+	unitOfWorkFactory ports.UnitOfWorkFactory
 }
 
 // NewSearchQuestsByRadiusQueryHandler creates a new SearchQuestsByRadiusQueryHandler instance.
-func NewSearchQuestsByRadiusQueryHandler(repo ports.QuestRepository) SearchQuestsByRadiusQueryHandler {
-	return &searchQuestsByRadiusHandler{repo: repo}
+func NewSearchQuestsByRadiusQueryHandler(factory ports.UnitOfWorkFactory) SearchQuestsByRadiusQueryHandler {
+	return &searchQuestsByRadiusHandler{unitOfWorkFactory: factory}
 }
 
 // Handle retrieves quests within the specified radius from the center coordinate.
@@ -31,7 +32,12 @@ func (h *searchQuestsByRadiusHandler) Handle(ctx context.Context, center kernel.
 	bbox := center.BoundingBoxForRadius(radiusKm)
 
 	// Step 2: Get candidates from repository using simple bounding box query
-	candidates, err := h.repo.FindByBoundingBox(ctx, bbox)
+	unitOfWork, _, err := h.unitOfWorkFactory()
+	if err != nil {
+		return nil, errs.WrapInfrastructureError("failed to create unit of work for radius search", err)
+	}
+
+	candidates, err := unitOfWork.QuestRepository().FindByBoundingBox(ctx, bbox)
 	if err != nil {
 		return nil, err
 	}
