@@ -3,15 +3,10 @@ package cmd
 import (
 	"log"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"gorm.io/gorm"
-
-	authv1 "github.com/Vi-72/quest-auth/api/grpc/sdk/go/auth/v1"
 
 	v1 "quest-manager/api/http/quests/v1"
 	httphandlers "quest-manager/internal/adapters/in/http"
-	authclient "quest-manager/internal/adapters/out/client/auth"
 	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
 	"quest-manager/internal/core/application/usecases/commands"
@@ -27,9 +22,7 @@ type CompositionRoot struct {
 	closers        []Closer
 
 	// auth
-	authConn      *grpc.ClientConn
-	authSDKClient authv1.AuthServiceClient
-	authClient    ports.AuthClient
+	authClient ports.AuthClient
 }
 
 func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
@@ -53,38 +46,17 @@ func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
 	}
 
 	// ---- wire Auth client ----
-	// If AuthClient is provided in config (e.g., mock for tests), use it
-	if configs.AuthClient != nil {
-		cr.authClient = configs.AuthClient
-		return cr
-	}
+	authFactory := NewAuthClientFactory(configs)
+	authClient, authCloser := authFactory.CreateAuthClient()
+	cr.authClient = authClient
 
-	// Otherwise, wire Auth gRPC client (optional: if AUTH_GRPC provided)
-	if addr := configs.AuthGRPC; addr != "" {
-		// Use grpc.NewClient instead of deprecated DialContext
-		// NewClient is lazy - it connects on first RPC call
-		conn, err := grpc.NewClient(
-			addr,
-			grpc.WithTransportCredentials(insecure.NewCredentials()),
-		)
-		if err != nil {
-			log.Fatalf("failed to create auth gRPC client at %s: %v", addr, err)
-		}
-
-		cr.authConn = conn
-		cr.RegisterCloser(connCloser{conn}) // закроем при shutdown
-
-		cr.authSDKClient = authv1.NewAuthServiceClient(conn)
-		cr.authClient = authclient.NewUserAuthClient(cr.authSDKClient)
+	// Register closer if auth client was created
+	if authCloser != nil {
+		cr.RegisterCloser(authCloser)
 	}
 
 	return cr
 }
-
-// helper to close grpc.Conn via our Closer stack
-type connCloser struct{ *grpc.ClientConn }
-
-func (c connCloser) Close() error { return c.ClientConn.Close() }
 
 // GetUnitOfWork returns the single UnitOfWork instance
 func (cr *CompositionRoot) GetUnitOfWork() ports.UnitOfWork {
