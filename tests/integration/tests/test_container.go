@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"quest-manager/cmd"
+	authclient "quest-manager/internal/adapters/out/client/auth"
 	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
 	"quest-manager/internal/core/application/usecases/commands"
@@ -139,9 +140,14 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	// Create HTTP Router for API testing with mock auth client
 	appConfig := cmd.Config{
 		EventGoroutineLimit: 5,
-		AuthClient:          mockAuthClient, // Inject mock for tests
+		AuthFactory: &authclient.Factory{
+			Client: mockAuthClient, // Inject mock for tests
+		},
+		Middleware: cmd.MiddlewareConfig{
+			EnableAuth: true,
+		},
 	}
-	compositionRoot := cmd.NewCompositionRoot(appConfig, db)
+	compositionRoot, _ := cmd.NewContainer(appConfig, db)
 	httpRouter := cmd.NewRouter(compositionRoot)
 
 	return TestDIContainer{

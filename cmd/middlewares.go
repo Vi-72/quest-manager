@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"context"
+	"log"
 	"net/http"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -10,16 +12,23 @@ import (
 
 // Middlewares returns the list of global HTTP middlewares configured for the API router.
 // Order matters: authentication first, then validation
-func (cr *CompositionRoot) Middlewares(swagger *openapi3.T) []func(http.Handler) http.Handler {
-	middlewares := make([]func(http.Handler) http.Handler, 0, 4)
+func (c *Container) Middlewares(swagger *openapi3.T) []func(http.Handler) http.Handler {
+	middlewares := make([]func(http.Handler) http.Handler, 0, 6)
 
-	// 1. Authentication middleware (first)
-	if cr.authClient != nil {
-		authMW := httpmiddleware.NewAuthMiddleware(cr.authClient)
-		middlewares = append(middlewares, authMW.Auth)
+	ctx := context.Background()
+
+	// 1. Authentication middleware (first) - configurable
+	if c.configs.Middleware.EnableAuth {
+		if authClient := c.GetAuthClient(ctx); authClient != nil {
+			authMW := httpmiddleware.NewAuthMiddleware(authClient)
+			middlewares = append(middlewares, authMW.Auth)
+			log.Printf("✅ Authentication middleware enabled")
+		}
+	} else {
+		log.Printf("ℹ️  Authentication middleware disabled by configuration")
 	}
 
-	// 2. OpenAPIs validation middleware (second)
+	// 2. OpenAPI validation middleware (second) - always enabled
 	if swagger != nil {
 		validationMW, err := httpmiddleware.NewOpenAPIValidationMiddleware(swagger)
 		if err == nil {

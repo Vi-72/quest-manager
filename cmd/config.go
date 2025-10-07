@@ -1,6 +1,6 @@
 package cmd
 
-import "quest-manager/internal/core/ports"
+import "quest-manager/internal/adapters/out/client/auth"
 
 type Config struct {
 	HttpPort            string
@@ -13,7 +13,15 @@ type Config struct {
 	EventGoroutineLimit int
 	AuthGRPC            string
 
-	// AuthClient is optional and used for testing to inject a mock auth client.
-	// If provided, it will be used instead of creating a real gRPC auth client.
-	AuthClient ports.AuthClient
+	// AuthFactory is used to create auth clients
+	AuthFactory *auth.Factory
+
+	// Middleware configuration
+	Middleware MiddlewareConfig
+}
+
+// MiddlewareConfig contains configuration for HTTP middlewares
+type MiddlewareConfig struct {
+	// EnableAuth enables authentication middleware
+	EnableAuth bool
 }

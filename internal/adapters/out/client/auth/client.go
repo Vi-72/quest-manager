@@ -38,7 +38,8 @@ func (c *client) Authenticate(ctx context.Context, jwtToken string) (uuid.UUID, 
 	if strings.TrimSpace(jwtToken) == "" {
 		return uuid.Nil, errors.New("jwt token is empty")
 	}
-
+	// нормально мокать аут сервис если его не поднято локально? что делать?
+	// todo не завязываться на текст ошибки, написать автотесты на токены, сделать мок для авторизации, переделать фабрику
 	resp, err := c.authClient.Authenticate(ctx, &authv1.AuthenticateRequest{JwtToken: jwtToken})
 	if err != nil {
 		if s, ok := status.FromError(err); ok {

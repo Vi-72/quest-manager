@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -9,12 +10,14 @@ import (
 	"github.com/joho/godotenv"
 
 	"quest-manager/cmd"
+	authclient "quest-manager/internal/adapters/out/client/auth"
 )
 
 func main() {
 	_ = godotenv.Load(".env")
 	configs := getConfigs()
 
+	// Database setup
 	connectionString, err := cmd.MakeConnectionString(
 		configs.DbHost,
 		configs.DbPort,
@@ -35,15 +38,26 @@ func main() {
 	gormDb := cmd.MustGormOpen(connectionString)
 	cmd.MustAutoMigrate(gormDb)
 
-	compositionRoot := cmd.NewCompositionRoot(
-		configs,
-		gormDb,
-	)
-	defer compositionRoot.CloseAll()
+	// Create container
+	container, err := cmd.NewContainer(configs, gormDb)
+	if err != nil {
+		log.Fatalf("failed to create container: %v", err)
+	}
 
-	router := cmd.NewRouter(compositionRoot)
+	// Build and validate container
+	ctx := context.Background()
+	if err := container.Build(ctx); err != nil {
+		log.Fatalf("failed to build container: %v", err)
+	}
 
-	log.Printf("Server running on :%s", configs.HttpPort)
+	defer container.CloseAll()
+
+	// Create router
+	router := cmd.NewRouter(container)
+
+	// Start server
+	log.Printf("🚀 Server starting on :%s", configs.HttpPort)
+
 	err = http.ListenAndServe(":"+configs.HttpPort, router)
 	if err != nil {
 		log.Fatalf("failed to start server: %v", err)
@@ -60,7 +74,16 @@ func getConfigs() cmd.Config {
 		DbName:              getEnv("DB_NAME"),
 		DbSslMode:           getEnv("DB_SSLMODE"),
 		EventGoroutineLimit: getEnvInt("EVENT_GOROUTINE_LIMIT"),
-		AuthGRPC:            getEnv("AUTH_GRPC"),
+
+		// Auth factory
+		AuthFactory: &authclient.Factory{
+			Addr: getEnv("AUTH_GRPC"),
+		},
+
+		// Middleware configuration
+		Middleware: cmd.MiddlewareConfig{
+			EnableAuth: getEnvBool("ENABLE_AUTH_MIDDLEWARE", true),
+		},
 	}
 }
 
@@ -82,4 +105,17 @@ func getEnvInt(key string) int {
 		log.Fatalf("Invalid integer value for env var %s: %s", key, val)
 	}
 	return intVal
+}
+
+func getEnvBool(key string, defaultValue bool) bool {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultValue
+	}
+	boolVal, err := strconv.ParseBool(val)
+	if err != nil {
+		log.Printf("Invalid boolean value for env var %s: %s, using default: %v", key, val, defaultValue)
+		return defaultValue
+	}
+	return boolVal
 }

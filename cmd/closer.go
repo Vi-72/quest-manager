@@ -6,12 +6,12 @@ type Closer interface {
 	Close() error
 }
 
-func (cr *CompositionRoot) RegisterCloser(c Closer) {
-	cr.closers = append(cr.closers, c)
+func (c *Container) RegisterCloser(closer Closer) {
+	c.closers = append(c.closers, closer)
 }
 
-func (cr *CompositionRoot) CloseAll() {
-	for _, closer := range cr.closers {
+func (c *Container) CloseAll() {
+	for _, closer := range c.closers {
 		if err := closer.Close(); err != nil {
 			log.Printf("error closing resource: %v", err)
 		}
