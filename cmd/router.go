@@ -10,7 +10,6 @@ import (
 
 	v1 "quest-manager/api/http/quests/v1"
 	httperrors "quest-manager/internal/adapters/in/http/errors"
-	validationmiddleware "quest-manager/internal/adapters/in/http/middleware"
 	"quest-manager/internal/pkg/errs"
 )
 
@@ -30,11 +29,6 @@ func NewRouter(root *CompositionRoot) http.Handler {
 	}
 
 	swagger.Servers = []*openapi3.Server{{URL: apiV1Prefix}}
-
-	requestValidator, err := validationmiddleware.NewOpenAPIValidationMiddleware(swagger)
-	if err != nil {
-		panic("failed to init OpenAPI validation middleware: " + err.Error())
-	}
 
 	// --- Health check ---
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +112,11 @@ func NewRouter(root *CompositionRoot) http.Handler {
 	})
 
 	apiRouter := chi.NewRouter()
-	apiRouter.Use(requestValidator)
+
+	// Apply middlewares in order: authentication first, then validation
+	for _, mw := range root.Middlewares(swagger) {
+		apiRouter.Use(mw)
+	}
 
 	v1.HandlerFromMux(apiHandler, apiRouter)
 

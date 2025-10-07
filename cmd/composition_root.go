@@ -3,15 +3,15 @@ package cmd
 import (
 	"log"
 
+	"gorm.io/gorm"
+
 	v1 "quest-manager/api/http/quests/v1"
-	"quest-manager/internal/adapters/in/http"
+	httphandlers "quest-manager/internal/adapters/in/http"
 	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/ports"
-
-	"gorm.io/gorm"
 )
 
 type CompositionRoot struct {
@@ -20,6 +20,9 @@ type CompositionRoot struct {
 	unitOfWork     ports.UnitOfWork
 	eventPublisher ports.EventPublisher
 	closers        []Closer
+
+	// auth
+	authClient ports.AuthClient
 }
 
 func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
@@ -35,12 +38,24 @@ func NewCompositionRoot(configs Config, db *gorm.DB) *CompositionRoot {
 		log.Fatalf("cannot create EventPublisher: %v", err)
 	}
 
-	return &CompositionRoot{
+	cr := &CompositionRoot{
 		configs:        configs,
 		db:             db,
 		unitOfWork:     unitOfWork,
 		eventPublisher: eventPublisher,
 	}
+
+	// ---- wire Auth client ----
+	authFactory := NewAuthClientFactory(configs)
+	authClient, authCloser := authFactory.CreateAuthClient()
+	cr.authClient = authClient
+
+	// Register closer if auth client was created
+	if authCloser != nil {
+		cr.RegisterCloser(authCloser)
+	}
+
+	return cr
 }
 
 // GetUnitOfWork returns the single UnitOfWork instance
@@ -100,7 +115,7 @@ func (cr *CompositionRoot) NewListAssignedQuestsQueryHandler() queries.ListAssig
 
 // NewApiHandler aggregates all HTTP handlers.
 func (cr *CompositionRoot) NewApiHandler() v1.StrictServerInterface {
-	handlers, err := http.NewApiHandler(
+	handlers, err := httphandlers.NewApiHandler(
 		cr.NewCreateQuestCommandHandler(),
 		cr.NewListQuestsQueryHandler(),
 		cr.NewGetQuestByIDQueryHandler(),

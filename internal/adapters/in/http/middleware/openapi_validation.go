@@ -10,35 +10,41 @@ import (
 	"github.com/getkin/kin-openapi/routers"
 	"github.com/getkin/kin-openapi/routers/legacy"
 
-	"quest-manager/internal/adapters/in/http/errors"
+	httperrors "quest-manager/internal/adapters/in/http/errors"
 )
 
-type openAPIRequestValidator struct {
+// OpenAPIValidationMiddleware validates HTTP requests against OpenAPI specification
+type OpenAPIValidationMiddleware struct {
 	router routers.Router
 }
 
-func NewOpenAPIValidationMiddleware(doc *openapi3.T) (func(http.Handler) http.Handler, error) {
+// NewOpenAPIValidationMiddleware creates a new OpenAPI validation middleware
+func NewOpenAPIValidationMiddleware(doc *openapi3.T) (*OpenAPIValidationMiddleware, error) {
 	router, err := legacy.NewRouter(doc)
 	if err != nil {
 		return nil, err
 	}
 
-	validator := &openAPIRequestValidator{router: router}
-
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if err := validator.validate(r); err != nil {
-				problem := errors.NewBadRequest("Request validation failed: " + err.Error())
-				problem.WriteResponse(w)
-				return
-			}
-
-			next.ServeHTTP(w, r)
-		})
+	return &OpenAPIValidationMiddleware{
+		router: router,
 	}, nil
 }
 
-func (v *openAPIRequestValidator) validate(r *http.Request) error {
+// Validate validates HTTP requests against OpenAPI specification
+func (mw *OpenAPIValidationMiddleware) Validate(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := mw.validateRequest(r); err != nil {
+			problem := httperrors.NewBadRequest("Request validation failed: " + err.Error())
+			problem.WriteResponse(w)
+			return
+		}
+
+		h.ServeHTTP(w, r)
+	})
+}
+
+// validateRequest validates the HTTP request against OpenAPI specification
+func (mw *OpenAPIValidationMiddleware) validateRequest(r *http.Request) error {
 	var (
 		bodyBytes []byte
 		err       error
@@ -66,7 +72,7 @@ func (v *openAPIRequestValidator) validate(r *http.Request) error {
 	}
 	requestForValidation.Body = io.NopCloser(bytes.NewReader(bodyBytes))
 
-	route, pathParams, err := v.router.FindRoute(requestForValidation)
+	route, pathParams, err := mw.router.FindRoute(requestForValidation)
 	if err != nil {
 		return err
 	}

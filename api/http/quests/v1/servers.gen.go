@@ -23,6 +23,10 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+const (
+	BearerAuthScopes = "bearerAuth.Scopes"
+)
+
 // Defines values for CreateQuestRequestDifficulty.
 const (
 	CreateQuestRequestDifficultyEasy   CreateQuestRequestDifficulty = "easy"
@@ -290,6 +294,12 @@ func (siw *ServerInterfaceWrapper) ListQuests(w http.ResponseWriter, r *http.Req
 
 	var err error
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListQuestsParams
 
@@ -315,6 +325,12 @@ func (siw *ServerInterfaceWrapper) ListQuests(w http.ResponseWriter, r *http.Req
 // CreateQuest operation middleware
 func (siw *ServerInterfaceWrapper) CreateQuest(w http.ResponseWriter, r *http.Request) {
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.CreateQuest(w, r)
 	}))
@@ -330,6 +346,12 @@ func (siw *ServerInterfaceWrapper) CreateQuest(w http.ResponseWriter, r *http.Re
 func (siw *ServerInterfaceWrapper) ListAssignedQuests(w http.ResponseWriter, r *http.Request) {
 
 	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params ListAssignedQuestsParams
@@ -364,6 +386,12 @@ func (siw *ServerInterfaceWrapper) ListAssignedQuests(w http.ResponseWriter, r *
 func (siw *ServerInterfaceWrapper) SearchQuestsByRadius(w http.ResponseWriter, r *http.Request) {
 
 	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params SearchQuestsByRadiusParams
@@ -438,6 +466,12 @@ func (siw *ServerInterfaceWrapper) GetQuestById(w http.ResponseWriter, r *http.R
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetQuestById(w, r, questId)
 	}))
@@ -463,6 +497,12 @@ func (siw *ServerInterfaceWrapper) AssignQuest(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
+
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.AssignQuest(w, r, questId)
 	}))
@@ -487,6 +527,12 @@ func (siw *ServerInterfaceWrapper) ChangeQuestStatus(w http.ResponseWriter, r *h
 		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "quest_id", Err: err})
 		return
 	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
+
+	r = r.WithContext(ctx)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ChangeQuestStatus(w, r, questId)
@@ -654,6 +700,14 @@ func (response ListQuests200JSONResponse) VisitListQuestsResponse(w http.Respons
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListQuests401Response struct {
+}
+
+func (response ListQuests401Response) VisitListQuestsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type ListQuests500Response struct {
 }
 
@@ -684,6 +738,14 @@ type CreateQuest400Response struct {
 
 func (response CreateQuest400Response) VisitCreateQuestResponse(w http.ResponseWriter) error {
 	w.WriteHeader(400)
+	return nil
+}
+
+type CreateQuest401Response struct {
+}
+
+func (response CreateQuest401Response) VisitCreateQuestResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
 	return nil
 }
 
@@ -720,6 +782,14 @@ func (response ListAssignedQuests400Response) VisitListAssignedQuestsResponse(w 
 	return nil
 }
 
+type ListAssignedQuests401Response struct {
+}
+
+func (response ListAssignedQuests401Response) VisitListAssignedQuestsResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type ListAssignedQuests500Response struct {
 }
 
@@ -753,6 +823,14 @@ func (response SearchQuestsByRadius400Response) VisitSearchQuestsByRadiusRespons
 	return nil
 }
 
+type SearchQuestsByRadius401Response struct {
+}
+
+func (response SearchQuestsByRadius401Response) VisitSearchQuestsByRadiusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type SearchQuestsByRadius500Response struct {
 }
 
@@ -776,6 +854,14 @@ func (response GetQuestById200JSONResponse) VisitGetQuestByIdResponse(w http.Res
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
+}
+
+type GetQuestById401Response struct {
+}
+
+func (response GetQuestById401Response) VisitGetQuestByIdResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
 }
 
 type GetQuestById404Response struct {
@@ -820,6 +906,14 @@ func (response AssignQuest400Response) VisitAssignQuestResponse(w http.ResponseW
 	return nil
 }
 
+type AssignQuest401Response struct {
+}
+
+func (response AssignQuest401Response) VisitAssignQuestResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
+	return nil
+}
+
 type AssignQuest404Response struct {
 }
 
@@ -859,6 +953,14 @@ type ChangeQuestStatus400Response struct {
 
 func (response ChangeQuestStatus400Response) VisitChangeQuestStatusResponse(w http.ResponseWriter) error {
 	w.WriteHeader(400)
+	return nil
+}
+
+type ChangeQuestStatus401Response struct {
+}
+
+func (response ChangeQuestStatus401Response) VisitChangeQuestStatusResponse(w http.ResponseWriter) error {
+	w.WriteHeader(401)
 	return nil
 }
 
@@ -1136,33 +1238,36 @@ func (sh *strictHandler) ChangeQuestStatus(w http.ResponseWriter, r *http.Reques
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"IjK/mP8ZAAD//5ICE6I7IwAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

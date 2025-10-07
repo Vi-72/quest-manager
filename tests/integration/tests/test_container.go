@@ -6,16 +6,16 @@ import (
 	"os"
 	"time"
 
+	"gorm.io/gorm"
+
 	"quest-manager/cmd"
 	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
-
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/ports"
 	teststorage "quest-manager/tests/integration/core/storage"
-
-	"gorm.io/gorm"
+	integrationmock "quest-manager/tests/integration/mock"
 )
 
 // getTestConfig возвращает конфигурацию для тестов, используя те же env переменные что и приложение
@@ -44,6 +44,9 @@ type TestDIContainer struct {
 	DB         *gorm.DB
 	CloseDB    func()
 	UnitOfWork ports.UnitOfWork
+
+	// Auth (mock for tests)
+	MockAuthClient *integrationmock.AlwaysSuccessAuthClient
 
 	// Repositories
 	QuestRepository    ports.QuestRepository
@@ -130,9 +133,13 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	searchQuestsByRadiusHandler := queries.NewSearchQuestsByRadiusQueryHandler(questRepo)
 	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(questRepo)
 
-	// Create HTTP Router for API testing
+	// Create Mock Auth Client for tests (always returns successful authentication)
+	mockAuthClient := integrationmock.NewAlwaysSuccessAuthClient()
+
+	// Create HTTP Router for API testing with mock auth client
 	appConfig := cmd.Config{
 		EventGoroutineLimit: 5,
+		AuthClient:          mockAuthClient, // Inject mock for tests
 	}
 	compositionRoot := cmd.NewCompositionRoot(appConfig, db)
 	httpRouter := cmd.NewRouter(compositionRoot)
@@ -147,6 +154,8 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 			}
 		},
 		UnitOfWork: unitOfWork,
+
+		MockAuthClient: mockAuthClient,
 
 		QuestRepository:    questRepo,
 		LocationRepository: locationRepo,

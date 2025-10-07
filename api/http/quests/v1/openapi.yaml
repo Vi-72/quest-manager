@@ -1,11 +1,14 @@
 openapi: 3.0.3
 info:
   title: Quest Management Service
-  version: 1.3.4
-  description: API for creating, retrieving, and managing quests.
+  version: 1.4.0
+  description: API for creating, retrieving, and managing quests. All endpoints require JWT authentication.
 
 servers:
   - url: http://localhost:8080
+
+security:
+  - bearerAuth: []
 
 paths:
   /quests:
@@ -27,6 +30,8 @@ paths:
                 $ref: '#/components/schemas/Quest'
         '400':
           description: Invalid input data
+        '401':
+          description: Unauthorized - invalid or missing JWT token
         '500':
           description: Internal server error
 
@@ -49,6 +54,8 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Quest'
+        '401':
+          description: Unauthorized - invalid or missing JWT token
         '500':
           description: Internal server error
 
@@ -95,6 +102,8 @@ paths:
                   $ref: '#/components/schemas/Quest'
         '400':
           description: Invalid parameters
+        '401':
+          description: Unauthorized - invalid or missing JWT token
         '500':
           description: Internal server error
 
@@ -121,6 +130,8 @@ paths:
                   $ref: '#/components/schemas/Quest'
         '400':
           description: Invalid user ID
+        '401':
+          description: Unauthorized - invalid or missing JWT token
         '500':
           description: Internal server error
 
@@ -143,6 +154,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Quest'
+        '401':
+          description: Unauthorized - invalid or missing JWT token
         '404':
           description: Quest not found
         '500':
@@ -175,6 +188,8 @@ paths:
                 $ref: '#/components/schemas/ChangeQuestStatusResult'
         '400':
           description: Invalid status
+        '401':
+          description: Unauthorized - invalid or missing JWT token
         '404':
           description: Quest not found
         '500':
@@ -207,6 +222,8 @@ paths:
                 $ref: '#/components/schemas/AssignQuestResult'
         '400':
           description: Invalid user or status
+        '401':
+          description: Unauthorized - invalid or missing JWT token
         '404':
           description: Quest not found
         '500':
@@ -423,3 +440,10 @@ components:
         - creator
         - created_at
         - updated_at
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT authentication token. Format - "Bearer <token>"
