@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+
 	"gorm.io/gorm"
 
 	v1 "quest-manager/api/http/quests/v1"
