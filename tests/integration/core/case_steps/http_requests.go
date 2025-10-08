@@ -19,6 +19,7 @@ type HTTPRequest struct {
 	Body        interface{}
 	Headers     map[string]string
 	ContentType string
+	SkipAuth    bool // If true, don't add default Bearer token
 }
 
 // HTTPResponse представляет HTTP ответ
@@ -30,7 +31,10 @@ type HTTPResponse struct {
 
 // ExecuteHTTPRequest выполняет HTTP запрос через тестовый сервер
 func ExecuteHTTPRequest(ctx context.Context, handler http.Handler, req HTTPRequest) (*HTTPResponse, error) {
-	req.Headers = withAuthHeader(req.Headers)
+	// Add default auth token unless explicitly skipped
+	if !req.SkipAuth {
+		req.Headers = withAuthHeader(req.Headers)
+	}
 	var body io.Reader
 
 	// Подготавливаем тело запроса
