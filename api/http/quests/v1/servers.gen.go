@@ -61,12 +61,6 @@ const (
 	ListQuestsParamsStatusPosted     ListQuestsParamsStatus = "posted"
 )
 
-// AssignQuestRequest defines model for AssignQuestRequest.
-type AssignQuestRequest struct {
-	// UserId User UUID to assign the quest to
-	UserId openapi_types.UUID `json:"user_id"`
-}
-
 // AssignQuestResult defines model for AssignQuestResult.
 type AssignQuestResult struct {
 	// Assignee User ID who was assigned to the quest
@@ -182,12 +176,6 @@ type ListQuestsParams struct {
 // ListQuestsParamsStatus defines parameters for ListQuests.
 type ListQuestsParamsStatus string
 
-// ListAssignedQuestsParams defines parameters for ListAssignedQuests.
-type ListAssignedQuestsParams struct {
-	// UserId UUID of the user
-	UserId openapi_types.UUID `form:"user_id" json:"user_id"`
-}
-
 // SearchQuestsByRadiusParams defines parameters for SearchQuestsByRadius.
 type SearchQuestsByRadiusParams struct {
 	// Lat Center latitude (-90 to 90)
@@ -203,9 +191,6 @@ type SearchQuestsByRadiusParams struct {
 // CreateQuestJSONRequestBody defines body for CreateQuest for application/json ContentType.
 type CreateQuestJSONRequestBody = CreateQuestRequest
 
-// AssignQuestJSONRequestBody defines body for AssignQuest for application/json ContentType.
-type AssignQuestJSONRequestBody = AssignQuestRequest
-
 // ChangeQuestStatusJSONRequestBody defines body for ChangeQuestStatus for application/json ContentType.
 type ChangeQuestStatusJSONRequestBody = ChangeStatusRequest
 
@@ -217,16 +202,16 @@ type ServerInterface interface {
 	// Create a new quest
 	// (POST /quests)
 	CreateQuest(w http.ResponseWriter, r *http.Request)
-	// Get quests assigned to a user
+	// Get quests assigned to the authenticated user
 	// (GET /quests/assigned)
-	ListAssignedQuests(w http.ResponseWriter, r *http.Request, params ListAssignedQuestsParams)
+	ListAssignedQuests(w http.ResponseWriter, r *http.Request)
 	// Search quests within a radius
 	// (GET /quests/search-radius)
 	SearchQuestsByRadius(w http.ResponseWriter, r *http.Request, params SearchQuestsByRadiusParams)
 	// Get quest details by ID
 	// (GET /quests/{quest_id})
 	GetQuestById(w http.ResponseWriter, r *http.Request, questId openapi_types.UUID)
-	// Assign quest to a user
+	// Assign quest to the authenticated user
 	// (POST /quests/{quest_id}/assign)
 	AssignQuest(w http.ResponseWriter, r *http.Request, questId openapi_types.UUID)
 	// Change quest status
@@ -250,9 +235,9 @@ func (_ Unimplemented) CreateQuest(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Get quests assigned to a user
+// Get quests assigned to the authenticated user
 // (GET /quests/assigned)
-func (_ Unimplemented) ListAssignedQuests(w http.ResponseWriter, r *http.Request, params ListAssignedQuestsParams) {
+func (_ Unimplemented) ListAssignedQuests(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
@@ -268,7 +253,7 @@ func (_ Unimplemented) GetQuestById(w http.ResponseWriter, r *http.Request, ques
 	w.WriteHeader(http.StatusNotImplemented)
 }
 
-// Assign quest to a user
+// Assign quest to the authenticated user
 // (POST /quests/{quest_id}/assign)
 func (_ Unimplemented) AssignQuest(w http.ResponseWriter, r *http.Request, questId openapi_types.UUID) {
 	w.WriteHeader(http.StatusNotImplemented)
@@ -345,34 +330,14 @@ func (siw *ServerInterfaceWrapper) CreateQuest(w http.ResponseWriter, r *http.Re
 // ListAssignedQuests operation middleware
 func (siw *ServerInterfaceWrapper) ListAssignedQuests(w http.ResponseWriter, r *http.Request) {
 
-	var err error
-
 	ctx := r.Context()
 
 	ctx = context.WithValue(ctx, BearerAuthScopes, []string{})
 
 	r = r.WithContext(ctx)
 
-	// Parameter object where we will unmarshal all parameters from the context
-	var params ListAssignedQuestsParams
-
-	// ------------- Required query parameter "user_id" -------------
-
-	if paramValue := r.URL.Query().Get("user_id"); paramValue != "" {
-
-	} else {
-		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "user_id"})
-		return
-	}
-
-	err = runtime.BindQueryParameter("form", true, true, "user_id", r.URL.Query(), &params.UserId)
-	if err != nil {
-		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "user_id", Err: err})
-		return
-	}
-
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.ListAssignedQuests(w, r, params)
+		siw.Handler.ListAssignedQuests(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -758,7 +723,6 @@ func (response CreateQuest500Response) VisitCreateQuestResponse(w http.ResponseW
 }
 
 type ListAssignedQuestsRequestObject struct {
-	Params ListAssignedQuestsParams
 }
 
 type ListAssignedQuestsResponseObject interface {
@@ -772,14 +736,6 @@ func (response ListAssignedQuests200JSONResponse) VisitListAssignedQuestsRespons
 	w.WriteHeader(200)
 
 	return json.NewEncoder(w).Encode(response)
-}
-
-type ListAssignedQuests400Response struct {
-}
-
-func (response ListAssignedQuests400Response) VisitListAssignedQuestsResponse(w http.ResponseWriter) error {
-	w.WriteHeader(400)
-	return nil
 }
 
 type ListAssignedQuests401Response struct {
@@ -882,7 +838,6 @@ func (response GetQuestById500Response) VisitGetQuestByIdResponse(w http.Respons
 
 type AssignQuestRequestObject struct {
 	QuestId openapi_types.UUID `json:"quest_id"`
-	Body    *AssignQuestJSONRequestBody
 }
 
 type AssignQuestResponseObject interface {
@@ -988,7 +943,7 @@ type StrictServerInterface interface {
 	// Create a new quest
 	// (POST /quests)
 	CreateQuest(ctx context.Context, request CreateQuestRequestObject) (CreateQuestResponseObject, error)
-	// Get quests assigned to a user
+	// Get quests assigned to the authenticated user
 	// (GET /quests/assigned)
 	ListAssignedQuests(ctx context.Context, request ListAssignedQuestsRequestObject) (ListAssignedQuestsResponseObject, error)
 	// Search quests within a radius
@@ -997,7 +952,7 @@ type StrictServerInterface interface {
 	// Get quest details by ID
 	// (GET /quests/{quest_id})
 	GetQuestById(ctx context.Context, request GetQuestByIdRequestObject) (GetQuestByIdResponseObject, error)
-	// Assign quest to a user
+	// Assign quest to the authenticated user
 	// (POST /quests/{quest_id}/assign)
 	AssignQuest(ctx context.Context, request AssignQuestRequestObject) (AssignQuestResponseObject, error)
 	// Change quest status
@@ -1092,10 +1047,8 @@ func (sh *strictHandler) CreateQuest(w http.ResponseWriter, r *http.Request) {
 }
 
 // ListAssignedQuests operation middleware
-func (sh *strictHandler) ListAssignedQuests(w http.ResponseWriter, r *http.Request, params ListAssignedQuestsParams) {
+func (sh *strictHandler) ListAssignedQuests(w http.ResponseWriter, r *http.Request) {
 	var request ListAssignedQuestsRequestObject
-
-	request.Params = params
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.ListAssignedQuests(ctx, request.(ListAssignedQuestsRequestObject))
@@ -1175,13 +1128,6 @@ func (sh *strictHandler) AssignQuest(w http.ResponseWriter, r *http.Request, que
 
 	request.QuestId = questId
 
-	var body AssignQuestJSONRequestBody
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
-		return
-	}
-	request.Body = &body
-
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
 		return sh.ssi.AssignQuest(ctx, request.(AssignQuestRequestObject))
 	}
@@ -1238,36 +1184,36 @@ func (sh *strictHandler) ChangeQuestStatus(w http.ResponseWriter, r *http.Reques
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"IjK/mP8ZAAD//5ICE6I7IwAA",
+	"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",
+	"zew4Oo7I+nr9/wAAAP//I7HLzVQiAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

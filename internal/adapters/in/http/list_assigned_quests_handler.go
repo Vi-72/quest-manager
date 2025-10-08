@@ -4,12 +4,20 @@ import (
 	"context"
 
 	v1 "quest-manager/api/http/quests/v1"
+	"quest-manager/internal/adapters/in/http/errors"
+	"quest-manager/internal/adapters/in/http/middleware"
 )
 
 // ListAssignedQuests implements GET /api/v1/quests/assigned from OpenAPI.
 func (a *ApiHandler) ListAssignedQuests(ctx context.Context, request v1.ListAssignedQuestsRequestObject) (v1.ListAssignedQuestsResponseObject, error) {
-	// UserId is already UUID type from OpenAPI, pass directly to handler
-	quests, err := a.listAssignedQuestsHandler.Handle(ctx, request.Params.UserId)
+	// Get authenticated user ID from context (set by auth middleware)
+	userID, ok := middleware.UserIDFromContext(ctx)
+	if !ok {
+		return nil, errors.NewBadRequest("user ID not found in context")
+	}
+
+	// Pass user ID from token to handler
+	quests, err := a.listAssignedQuestsHandler.Handle(ctx, userID)
 	if err != nil {
 		// Pass error to middleware for proper handling
 		return nil, err

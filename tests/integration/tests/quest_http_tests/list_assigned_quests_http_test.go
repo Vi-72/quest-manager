@@ -5,12 +5,10 @@ package quest_http_tests
 
 import (
 	"context"
-	"net/http"
-
-	"github.com/google/uuid"
 
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
+	"quest-manager/tests/integration/mock"
 )
 
 func (s *Suite) TestListAssignedQuestsHTTP() {
@@ -18,8 +16,9 @@ func (s *Suite) TestListAssignedQuestsHTTP() {
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 	listAssertions := assertions.NewQuestListAssertions(s.Assert())
 
-	// Pre-condition - create quests via handler and assign them to a specific user
-	testUserUUID := uuid.New() // Generate new UUID
+	// Pre-condition - create quests via handler and assign them to authenticated user
+	// User ID comes from mock auth client (DefaultUserID)
+	testUserUUID := mock.NewAlwaysSuccessAuthClient().DefaultUserID
 	expectedCount := 2
 
 	// Create quests via handler
@@ -32,8 +31,8 @@ func (s *Suite) TestListAssignedQuestsHTTP() {
 		s.Require().NoError(err)
 	}
 
-	// Act - get list of assigned quests via HTTP API
-	listReq := casesteps.ListAssignedQuestsHTTPRequest(testUserUUID)
+	// Act - get list of assigned quests via HTTP API (user ID comes from JWT token)
+	listReq := casesteps.ListAssignedQuestsHTTPRequest()
 	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
 
 	// Assert using helpers to eliminate boilerplate
@@ -46,28 +45,14 @@ func (s *Suite) TestListAssignedQuestsHTTPEmpty() {
 	ctx := context.Background()
 	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
 
-	// Pre-condition - use a user ID that has no assigned quests
-	nonExistentUserID := uuid.New().String() // Generate new UUID with no quests
+	// Pre-condition - no quests assigned to the authenticated user (DefaultUserID)
+	// Since we're using a fresh test environment, there should be no assigned quests
 
-	// Act - get list of assigned quests for user with no assignments via HTTP API
-	listReq := casesteps.ListAssignedQuestsHTTPRequestWithStringID(nonExistentUserID)
+	// Act - get list of assigned quests for authenticated user via HTTP API
+	listReq := casesteps.ListAssignedQuestsHTTPRequest()
 	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
 
 	// Assert using helper
 	assignedQuests := httpAssertions.QuestHTTPListSuccessfully(listResp, err)
 	s.Assert().Len(assignedQuests, 0, "Should return empty list for user with no assigned quests")
-}
-
-func (s *Suite) TestListAssignedQuestsHTTPInvalidUserID() {
-	ctx := context.Background()
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
-
-	// Act - try to get assigned quests with invalid user ID via HTTP API
-	listReq := casesteps.ListAssignedQuestsHTTPRequestWithStringID("InvalidUserID")
-	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
-
-	// Assert using helper
-	httpAssertions.QuestHTTPErrorResponse(listResp, err, http.StatusBadRequest, "validation failed")
-	s.Assert().Contains(listResp.Body, "user_id", "Error message should mention user_id field")
-	s.Assert().Contains(listResp.Body, "UUID", "Error message should mention UUID format requirement")
 }

@@ -109,27 +109,18 @@ paths:
 
   /quests/assigned:
     get:
-      summary: Get quests assigned to a user
+      summary: Get quests assigned to the authenticated user
       operationId: listAssignedQuests
-      parameters:
-        - name: user_id
-          in: query
-          required: true
-          schema:
-            type: string
-            format: uuid
-          description: UUID of the user
+      description: Returns all quests assigned to the user identified by the JWT token
       responses:
         '200':
-          description: List of quests assigned to the user
+          description: List of quests assigned to the authenticated user
           content:
             application/json:
               schema:
                 type: array
                 items:
                   $ref: '#/components/schemas/Quest'
-        '400':
-          description: Invalid user ID
         '401':
           description: Unauthorized - invalid or missing JWT token
         '500':
@@ -197,8 +188,9 @@ paths:
 
   /quests/{quest_id}/assign:
     post:
-      summary: Assign quest to a user
+      summary: Assign quest to the authenticated user
       operationId: assignQuest
+      description: Assigns the quest to the user identified by the JWT token
       parameters:
         - name: quest_id
           in: path
@@ -207,21 +199,15 @@ paths:
             type: string
             format: uuid
           description: Quest UUID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AssignQuestRequest'
       responses:
         '200':
-          description: Quest successfully assigned
+          description: Quest successfully assigned to the authenticated user
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/AssignQuestResult'
         '400':
-          description: Invalid user or status
+          description: Invalid quest status for assignment
         '401':
           description: Unauthorized - invalid or missing JWT token
         '404':
@@ -324,16 +310,6 @@ components:
           $ref: '#/components/schemas/QuestStatus'
       required:
         - status
-
-    AssignQuestRequest:
-      type: object
-      properties:
-        user_id:
-          type: string
-          format: uuid
-          description: User UUID to assign the quest to
-      required:
-        - user_id
 
     AssignQuestResult:
       type: object

@@ -3,10 +3,9 @@ package quest_http_tests
 import (
 	"context"
 
-	"github.com/google/uuid"
-
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
+	"quest-manager/tests/integration/mock"
 )
 
 // API layer validation tests driven by OpenAPI request validation
@@ -20,105 +19,16 @@ func (s *Suite) TestAssignQuestHTTP() {
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
 	s.Require().NoError(err)
 
-	// Act - assign quest via HTTP API (this is what we're testing)
-	userUUID := uuid.MustParse("123e4567-e89b-12d3-a456-426614174000") // Valid UUID
-	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID(), userUUID)
+	// Act - assign quest via HTTP API (user ID comes from JWT token)
+	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID())
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert - use helper to eliminate boilerplate
 	assignResult := httpAssertions.QuestHTTPAssignedSuccessfully(assignResp, err)
 
-	// Verify assignment result with existing assertion
-	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, createdQuest.ID(), userUUID)
-}
-
-func (s *Suite) TestAssignQuestHTTPMissingRequiredFields() {
-	ctx := context.Background()
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
-
-	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
-	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
-	s.Require().NoError(err)
-
-	// Act - send request with empty JSON body to test OpenAPI required-body validation
-	emptyBodyRequest := map[string]interface{}{} // Empty object
-
-	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID(), emptyBodyRequest)
-	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
-
-	// Assert - API layer should reject incomplete body
-	httpAssertions.QuestHTTPValidationError(assignResp, err, "")
-}
-
-func (s *Suite) TestAssignQuestHTTPMissingUserID() {
-	ctx := context.Background()
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
-
-	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
-	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
-	s.Require().NoError(err)
-
-	// Act - send request without user_id field
-	requestBody := map[string]interface{}{
-		// user_id is missing
-	}
-
-	assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID(), requestBody)
-	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
-
-	// Assert - API layer should reject missing user_id
-	httpAssertions.QuestHTTPValidationError(assignResp, err, "userId")
-}
-
-func (s *Suite) TestAssignQuestHTTPInvalidUserIDFormat() {
-	ctx := context.Background()
-	httpAssertions := assertions.NewQuestHTTPAssertions(s.Assert())
-
-	// Pre-condition - create quest directly via handler (faster, no HTTP overhead)
-	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
-	s.Require().NoError(err)
-
-	// Test cases with invalid UUID formats (OpenAPI format validation)
-	testCases := []struct {
-		name   string
-		userID string
-	}{
-		{
-			name:   "invalid UUID format",
-			userID: "not-a-uuid",
-		},
-		{
-			name:   "partial UUID",
-			userID: "123e4567-e89b-12d3-a456",
-		},
-		{
-			name:   "too long string",
-			userID: "123e4567-e89b-12d3-a456-426614174000-extra",
-		},
-		{
-			name:   "numeric string",
-			userID: "12345",
-		},
-		{
-			name:   "empty string",
-			userID: "",
-		},
-	}
-
-	for _, tc := range testCases {
-		s.Run(tc.name, func() {
-			// Act - send request with invalid user_id format
-			requestBody := map[string]interface{}{
-				"user_id": tc.userID,
-			}
-
-			assignReq := casesteps.AssignQuestHTTPRequestWithBody(createdQuest.ID(), requestBody)
-			assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
-
-			// Assert - API layer should reject invalid UUID format
-			httpAssertions.QuestHTTPValidationError(assignResp, err, "")
-		})
-	}
+	// Verify assignment result - user ID is taken from mock auth (DefaultUserID)
+	expectedUserID := mock.NewAlwaysSuccessAuthClient().DefaultUserID
+	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, createdQuest.ID(), expectedUserID)
 }
 
 func (s *Suite) TestAssignQuestHTTPInvalidQuestIDFormat() {
@@ -151,11 +61,7 @@ func (s *Suite) TestAssignQuestHTTPInvalidQuestIDFormat() {
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
 			// Act - send request with invalid quest_id in URL path
-			requestBody := map[string]interface{}{
-				"user_id": "123e4567-e89b-12d3-a456-426614174000", // Valid UUID
-			}
-
-			assignReq := casesteps.AssignQuestHTTPRequestWithStringID(tc.questID, requestBody)
+			assignReq := casesteps.AssignQuestHTTPRequestWithStringID(tc.questID)
 			assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 			// Assert - API layer should reject invalid quest ID format
@@ -176,9 +82,8 @@ func (s *Suite) TestAssignQuestHTTPPersistence() {
 	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
 	s.Require().NoError(err)
 
-	// Act - assign quest via HTTP API
-	userUUID := uuid.MustParse("123e4567-e89b-12d3-a456-426614174000")
-	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID(), userUUID)
+	// Act - assign quest via HTTP API (user ID comes from JWT token)
+	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID())
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Assert assignment using helper
@@ -189,6 +94,8 @@ func (s *Suite) TestAssignQuestHTTPPersistence() {
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
 	// Assert retrieval and assignment state using helper
+	// User ID is taken from mock auth (DefaultUserID)
+	expectedUserID := mock.NewAlwaysSuccessAuthClient().DefaultUserID
 	retrievedQuest := httpAssertions.QuestHTTPGetSuccessfully(getResp, err)
-	singleAssertions.QuestHTTPIsAssignedToUser(retrievedQuest, userUUID, createdQuest.ID())
+	singleAssertions.QuestHTTPIsAssignedToUser(retrievedQuest, expectedUserID, createdQuest.ID())
 }

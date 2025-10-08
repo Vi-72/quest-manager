@@ -5,18 +5,22 @@ import (
 
 	v1 "quest-manager/api/http/quests/v1"
 	"quest-manager/internal/adapters/in/http/errors"
+	"quest-manager/internal/adapters/in/http/middleware"
 	"quest-manager/internal/core/application/usecases/commands"
 )
 
 // AssignQuest implements POST /api/v1/quests/{quest_id}/assign from OpenAPI.
 func (a *ApiHandler) AssignQuest(ctx context.Context, request v1.AssignQuestRequestObject) (v1.AssignQuestResponseObject, error) {
-	if request.Body == nil {
-		return nil, errors.NewBadRequest("request body is required")
+	// Get authenticated user ID from context (set by auth middleware)
+	userID, ok := middleware.UserIDFromContext(ctx)
+	if !ok {
+		return nil, errors.NewBadRequest("user ID not found in context")
 	}
 
+	// Use user ID from JWT token instead of request body
 	cmd := commands.AssignQuestCommand{
 		ID:     request.QuestId,
-		UserID: request.Body.UserId,
+		UserID: userID,
 	}
 
 	result, err := a.assignQuestHandler.Handle(ctx, cmd)

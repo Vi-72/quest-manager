@@ -104,19 +104,23 @@ func AssignQuestHTTPRequestWithBody(questID uuid.UUID, requestBody interface{}) 
 }
 
 // AssignQuestHTTPRequestWithStringID создает HTTP запрос с строковым ID (для тестирования невалидных UUID)
-func AssignQuestHTTPRequestWithStringID(questID string, requestBody interface{}) HTTPRequest {
+func AssignQuestHTTPRequestWithStringID(questID string) HTTPRequest {
 	return HTTPRequest{
 		Method:      "POST",
 		URL:         "/api/v1/quests/" + questID + "/assign",
-		Body:        requestBody,
 		Headers:     withAuthHeader(nil),
 		ContentType: "application/json",
 	}
 }
 
 // AssignQuestHTTPRequest создает HTTP запрос для назначения квеста
-func AssignQuestHTTPRequest(questID uuid.UUID, userID uuid.UUID) HTTPRequest {
-	return AssignQuestHTTPRequestWithBody(questID, map[string]string{"user_id": userID.String()})
+func AssignQuestHTTPRequest(questID uuid.UUID) HTTPRequest {
+	return HTTPRequest{
+		Method:      "POST",
+		URL:         "/api/v1/quests/" + questID.String() + "/assign",
+		Headers:     withAuthHeader(nil),
+		ContentType: "application/json",
+	}
 }
 
 // GetQuestHTTPRequest создает HTTP запрос для получения квеста
@@ -151,20 +155,12 @@ func ListQuestsHTTPRequest(status string) HTTPRequest {
 	}
 }
 
-// ListAssignedQuestsHTTPRequest создает HTTP запрос для получения квестов назначенных пользователю
-func ListAssignedQuestsHTTPRequest(userID uuid.UUID) HTTPRequest {
+// ListAssignedQuestsHTTPRequest создает HTTP запрос для получения квестов назначенных аутентифицированному пользователю
+// User ID теперь берется из JWT токена, поэтому не передается в query параметрах
+func ListAssignedQuestsHTTPRequest() HTTPRequest {
 	return HTTPRequest{
 		Method:  "GET",
-		URL:     "/api/v1/quests/assigned?user_id=" + userID.String(),
-		Headers: withAuthHeader(nil),
-	}
-}
-
-// ListAssignedQuestsHTTPRequestWithStringID создает HTTP запрос с строковым ID (для тестирования невалидных UUID)
-func ListAssignedQuestsHTTPRequestWithStringID(userID string) HTTPRequest {
-	return HTTPRequest{
-		Method:  "GET",
-		URL:     "/api/v1/quests/assigned?user_id=" + userID,
+		URL:     "/api/v1/quests/assigned",
 		Headers: withAuthHeader(nil),
 	}
 }
