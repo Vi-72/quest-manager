@@ -181,6 +181,21 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	}
 }
 
+// NewHTTPRouterWithAuthClient создает новый HTTP router с кастомным auth client для тестирования различных сценариев аутентификации
+func (c *TestDIContainer) NewHTTPRouterWithAuthClient(authClient authclient.Client) http.Handler {
+	appConfig := cmd.Config{
+		EventGoroutineLimit: 5,
+		AuthFactory: &authclient.Factory{
+			Client: authClient,
+		},
+		Middleware: cmd.MiddlewareConfig{
+			EnableAuth: true,
+		},
+	}
+	compositionRoot, _ := cmd.NewContainer(appConfig, c.DB)
+	return cmd.NewRouter(compositionRoot)
+}
+
 // TearDownTest очищает ресурсы после теста
 func (c *TestDIContainer) TearDownTest() {
 	if c.CloseDB != nil {
