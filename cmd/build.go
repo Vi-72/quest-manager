@@ -12,8 +12,10 @@ func (c *Container) Build(ctx context.Context) error {
 		return fmt.Errorf("invalid configuration: %w", err)
 	}
 
-	// Initialize auth client (lazy initialization will happen on first access)
-	_ = c.GetAuthClient(ctx)
+	// Initialize auth client when authentication is enabled (lazy otherwise)
+	if c.configs.Middleware.EnableAuth {
+		_ = c.GetAuthClient(ctx)
+	}
 
 	// Validate all dependencies are initialized
 	return nilCheck(c)

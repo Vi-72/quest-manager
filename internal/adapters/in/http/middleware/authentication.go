@@ -22,10 +22,12 @@ var (
 	contextKeyAuthenticatedUser = contextKey("authenticated_user")
 )
 
-func userIDToContext(ctx context.Context, userID uuid.UUID) context.Context {
+// UserIDToContext adds user ID to context (exported for testing/mocking)
+func UserIDToContext(ctx context.Context, userID uuid.UUID) context.Context {
 	return context.WithValue(ctx, contextKeyAuthenticatedUser, userID)
 }
 
+// UserIDFromContext retrieves user ID from context
 func UserIDFromContext(ctx context.Context) (uuid.UUID, bool) {
 	c, ok := ctx.Value(contextKeyAuthenticatedUser).(uuid.UUID)
 	return c, ok
@@ -72,7 +74,7 @@ func (mw *AuthMiddleware) Auth(h http.Handler) http.Handler {
 			return
 		}
 
-		r = r.WithContext(userIDToContext(ctx, userID))
+		r = r.WithContext(UserIDToContext(ctx, userID))
 		h.ServeHTTP(w, r)
 	})
 }

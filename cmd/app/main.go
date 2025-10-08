@@ -83,6 +83,10 @@ func getConfigs() cmd.Config {
 		// Middleware configuration
 		Middleware: cmd.MiddlewareConfig{
 			EnableAuth: getEnvBool("ENABLE_AUTH_MIDDLEWARE", true),
+			DevAuth: cmd.DevAuthConfig{
+				HeaderName:   getEnvWithDefault("DEV_AUTH_HEADER_NAME", cmd.DefaultDevAuthHeaderName),
+				StaticUserID: getEnvWithDefault("DEV_AUTH_STATIC_USER_ID", cmd.DefaultDevAuthStaticUserID),
+			},
 		},
 	}
 }
@@ -91,6 +95,14 @@ func getEnv(key string) string {
 	val := os.Getenv(key)
 	if val == "" {
 		log.Fatalf("Missing env var: %s", key)
+	}
+	return val
+}
+
+func getEnvWithDefault(key, defaultValue string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultValue
 	}
 	return val
 }

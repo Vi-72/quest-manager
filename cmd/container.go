@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 
 	"gorm.io/gorm"
 
@@ -67,7 +68,16 @@ func (c *Container) GetAuthClient(ctx context.Context) ports.AuthClient {
 		return c.authClient
 	}
 	client, conn, _ := c.configs.AuthFactory.Create(ctx)
-	c.RegisterCloser(CloserFunc(conn.Close))
+	if conn != nil {
+		c.RegisterCloser(CloserFunc(conn.Close))
+	}
+
+	if client == nil {
+		if c.configs.Middleware.EnableAuth {
+			log.Printf("⚠️ Authentication middleware enabled but auth client is nil")
+		}
+		return nil
+	}
 
 	c.authClient = client
 	return c.authClient

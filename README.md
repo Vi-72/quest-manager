@@ -43,8 +43,12 @@ EVENT_GOROUTINE_LIMIT=10               # Лимит горутин для соб
 AUTH_GRPC=localhost:50051         # gRPC адрес Auth сервиса
 
 # Middleware Configuration (опционально)
-ENABLE_AUTH_MIDDLEWARE=true            # Включить аутентификацию
+ENABLE_AUTH_MIDDLEWARE=true            # Включить аутентификацию (true - production, false - dev mode)
 # Validation, Logging, Recovery - всегда включены
+
+# Development Auth Configuration (используется когда ENABLE_AUTH_MIDDLEWARE=false)
+DEV_AUTH_HEADER_NAME=X-Dev-User-ID     # Имя header для передачи user ID (по умолчанию: X-Dev-User-ID)
+DEV_AUTH_STATIC_USER_ID=00000000-0000-0000-0000-000000000001  # Дефолтный user ID для dev режима
 ```
 
 2. **Запуск:**
@@ -66,6 +70,51 @@ curl -H "Authorization: Bearer <your-jwt-token>" \
 **Коды ошибок аутентификации:**
 - `401 Unauthorized` - невалидный, истекший или отсутствующий токен
 - `403 Forbidden` - недостаточно прав (для будущих ролей)
+
+### 🔧 Development Mode (Mock Authentication)
+
+Для локальной разработки и тестирования можно отключить JWT аутентификацию:
+
+```bash
+ENABLE_AUTH_MIDDLEWARE=false
+```
+
+В этом режиме используется **mock authentication middleware**, который:
+- Автоматически авторизует все запросы
+- Читает `user_id` из HTTP header (по умолчанию `X-Dev-User-ID`)
+- Использует статический `user_id` если header не указан
+
+**Примеры использования:**
+
+```bash
+# Использовать дефолтный user ID
+curl -X POST http://localhost:8080/api/v1/quests \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test Quest", ...}'
+
+# Указать конкретный user ID через header
+curl -X POST http://localhost:8080/api/v1/quests \
+  -H "Content-Type: application/json" \
+  -H "X-Dev-User-ID: 12345678-1234-1234-1234-123456789012" \
+  -d '{"title": "Test Quest", ...}'
+
+# Использовать кастомный header name
+# В .env: DEV_AUTH_HEADER_NAME=X-User-ID
+curl -X POST http://localhost:8080/api/v1/quests \
+  -H "X-User-ID: 12345678-1234-1234-1234-123456789012" \
+  ...
+```
+
+**Настройка dev режима:**
+```bash
+# Имя header для передачи user ID (опционально)
+DEV_AUTH_HEADER_NAME=X-Dev-User-ID
+
+# Статический user ID для запросов без header (опционально)
+DEV_AUTH_STATIC_USER_ID=00000000-0000-0000-0000-000000000001
+```
+
+⚠️ **Важно:** Dev режим предназначен только для локальной разработки! В production всегда используйте `ENABLE_AUTH_MIDDLEWARE=true`.
 
 ### 🌐 API Endpoints
 
