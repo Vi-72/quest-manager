@@ -212,15 +212,3 @@ func withAuthHeader(headers map[string]string) map[string]string {
 	}
 	return result
 }
-
-// withoutAuthHeader creates headers map without adding default auth token (for testing missing token scenarios)
-func withoutAuthHeader(headers map[string]string) map[string]string {
-	if headers == nil {
-		return make(map[string]string)
-	}
-	result := make(map[string]string, len(headers))
-	for k, v := range headers {
-		result[k] = v
-	}
-	return result
-}
