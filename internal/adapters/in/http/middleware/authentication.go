@@ -88,5 +88,10 @@ func bearerTokenFromHeader(r *http.Request) (string, error) {
 		return "", errors.New("missing or invalid Authorization header")
 	}
 
-	return strings.TrimPrefix(authHeader, bearerPrefix), nil
+	token := strings.TrimSpace(strings.TrimPrefix(authHeader, bearerPrefix))
+	if token == "" {
+		return "", errors.New("missing or invalid Authorization header")
+	}
+
+	return token, nil
 }

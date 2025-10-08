@@ -92,17 +92,6 @@ func CreateQuestHTTPRequest(questData interface{}) HTTPRequest {
 	}
 }
 
-// AssignQuestHTTPRequestWithBody создает HTTP запрос для назначения квеста с кастомным телом запроса
-func AssignQuestHTTPRequestWithBody(questID uuid.UUID, requestBody interface{}) HTTPRequest {
-	return HTTPRequest{
-		Method:      "POST",
-		URL:         "/api/v1/quests/" + questID.String() + "/assign",
-		Body:        requestBody,
-		Headers:     withAuthHeader(nil),
-		ContentType: "application/json",
-	}
-}
-
 // AssignQuestHTTPRequestWithStringID создает HTTP запрос с строковым ID (для тестирования невалидных UUID)
 func AssignQuestHTTPRequestWithStringID(questID string) HTTPRequest {
 	return HTTPRequest{
@@ -209,12 +198,29 @@ func CreateMalformedJSONRequest(method, url string) HTTPRequest {
 }
 
 func withAuthHeader(headers map[string]string) map[string]string {
+	if headers == nil {
+		headers = make(map[string]string)
+	}
+
 	result := make(map[string]string, len(headers)+1)
 	for k, v := range headers {
 		result[k] = v
 	}
-	if _, ok := result["Authorization"]; !ok {
+	// Only add Authorization if not explicitly provided (even if empty)
+	if _, exists := result["Authorization"]; !exists {
 		result["Authorization"] = "Bearer test-token"
+	}
+	return result
+}
+
+// withoutAuthHeader creates headers map without adding default auth token (for testing missing token scenarios)
+func withoutAuthHeader(headers map[string]string) map[string]string {
+	if headers == nil {
+		return make(map[string]string)
+	}
+	result := make(map[string]string, len(headers))
+	for k, v := range headers {
+		result[k] = v
 	}
 	return result
 }

@@ -35,7 +35,7 @@ func (s *Suite) TestUserFromTokenForAssignQuest() {
 
 	// Assert - quest should be assigned to user from token
 	assignResult := httpAssertions.QuestHTTPAssignedSuccessfully(assignResp, err)
-	s.Assert().Equal(expectedUserID.String(), assignResult.Assignee, "Quest should be assigned to user from JWT token")
+	s.Assert().Equal(expectedUserID.String(), assignResult.Assignee.String(), "Quest should be assigned to user from JWT token")
 
 	// Verify in database
 	updatedQuest, err := s.TestDIContainer.QuestRepository.GetByID(ctx, createdQuest.ID())
@@ -75,8 +75,8 @@ func (s *Suite) TestUserFromTokenForListAssignedQuests() {
 	// Assert - should return only quests assigned to user1
 	quests := httpAssertions.QuestHTTPListSuccessfully(listResp, err)
 	s.Assert().Len(quests, 1, "Should return exactly 1 quest for user1")
-	s.Assert().Equal(quest1.ID().String(), quests[0].Id, "Should return quest assigned to user1")
-	s.Assert().Equal(userID1.String(), quests[0].Assignee, "Returned quest should be assigned to user1")
+	s.Assert().Equal(quest1.ID().String(), quests[0].Id.String(), "Should return quest assigned to user1")
+	s.Assert().Equal(userID1.String(), quests[0].Assignee.String(), "Returned quest should be assigned to user1")
 
 	// Act - list assigned quests for user2 (using token)
 	authClientForUser2 := mock.NewConfigurableAuthClient(mock.BehaviorSuccess, userID2)
@@ -88,8 +88,8 @@ func (s *Suite) TestUserFromTokenForListAssignedQuests() {
 	// Assert - should return only quests assigned to user2
 	quests2 := httpAssertions.QuestHTTPListSuccessfully(listResp2, err)
 	s.Assert().Len(quests2, 1, "Should return exactly 1 quest for user2")
-	s.Assert().Equal(quest2.ID().String(), quests2[0].Id, "Should return quest assigned to user2")
-	s.Assert().Equal(userID2.String(), quests2[0].Assignee, "Returned quest should be assigned to user2")
+	s.Assert().Equal(quest2.ID().String(), quests2[0].Id.String(), "Should return quest assigned to user2")
+	s.Assert().Equal(userID2.String(), quests2[0].Assignee.String(), "Returned quest should be assigned to user2")
 }
 
 // TestDifferentUsersCannotSeeEachOthersAssignedQuests проверяет изоляцию данных между пользователями
@@ -127,7 +127,7 @@ func (s *Suite) TestDifferentUsersCannotSeeEachOthersAssignedQuests() {
 	questsA := httpAssertions.QuestHTTPListSuccessfully(listRespA, err)
 	s.Assert().Len(questsA, 3, "User A should see exactly 3 assigned quests")
 	for _, q := range questsA {
-		s.Assert().Equal(userA.String(), q.Assignee, "All quests should be assigned to user A")
+		s.Assert().Equal(userA.String(), q.Assignee.String(), "All quests should be assigned to user A")
 	}
 
 	// Act & Assert - user B should see only their 2 quests
@@ -140,7 +140,7 @@ func (s *Suite) TestDifferentUsersCannotSeeEachOthersAssignedQuests() {
 	questsB := httpAssertions.QuestHTTPListSuccessfully(listRespB, err)
 	s.Assert().Len(questsB, 2, "User B should see exactly 2 assigned quests")
 	for _, q := range questsB {
-		s.Assert().Equal(userB.String(), q.Assignee, "All quests should be assigned to user B")
+		s.Assert().Equal(userB.String(), q.Assignee.String(), "All quests should be assigned to user B")
 	}
 }
 
@@ -202,8 +202,8 @@ func (s *Suite) TestAuthenticationPersistenceAcrossMultipleEndpoints() {
 		120,
 		testdatagenerators.DefaultTestCoordinate(),
 		testdatagenerators.DefaultTestCoordinate(),
-	)
-	createReq := casesteps.CreateQuestHTTPRequest(questData)
+	).ToCreateQuestRequest()
+	createReq := casesteps.CreateQuestHTTPRequest(&questData)
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, router, createReq)
 	createdQuest := httpAssertions.QuestHTTPCreatedSuccessfully(createResp, err)
 
@@ -212,7 +212,7 @@ func (s *Suite) TestAuthenticationPersistenceAcrossMultipleEndpoints() {
 	assignReq := casesteps.AssignQuestHTTPRequest(questID)
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, router, assignReq)
 	assignResult := httpAssertions.QuestHTTPAssignedSuccessfully(assignResp, err)
-	s.Assert().Equal(consistentUserID.String(), assignResult.Assignee, "Should be assigned to consistent user")
+	s.Assert().Equal(consistentUserID.String(), assignResult.Assignee.String(), "Should be assigned to consistent user")
 
 	// 3. List assigned quests
 	listReq := casesteps.ListAssignedQuestsHTTPRequest()
@@ -224,7 +224,7 @@ func (s *Suite) TestAuthenticationPersistenceAcrossMultipleEndpoints() {
 	for _, q := range quests {
 		if q.Id == createdQuest.Id {
 			found = true
-			s.Assert().Equal(consistentUserID.String(), q.Assignee, "Listed quest should be assigned to consistent user")
+			s.Assert().Equal(consistentUserID.String(), q.Assignee.String(), "Listed quest should be assigned to consistent user")
 			break
 		}
 	}

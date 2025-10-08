@@ -30,7 +30,7 @@ func (s *Suite) TestCreateQuestWithoutToken() {
 		Method:      "POST",
 		URL:         "/api/v1/quests",
 		Body:        questData,
-		Headers:     map[string]string{}, // No Authorization header
+		Headers:     nil, // Explicitly nil to avoid auto-adding auth
 		ContentType: "application/json",
 	}
 	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
@@ -52,7 +52,7 @@ func (s *Suite) TestAssignQuestWithoutToken() {
 		Method:      "POST",
 		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
 		Body:        nil,
-		Headers:     map[string]string{}, // No Authorization header
+		Headers:     nil, // Explicitly nil to avoid auto-adding auth
 		ContentType: "application/json",
 	}
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
@@ -69,7 +69,7 @@ func (s *Suite) TestListAssignedQuestsWithoutToken() {
 	listReq := casesteps.HTTPRequest{
 		Method:  "GET",
 		URL:     "/api/v1/quests/assigned",
-		Headers: map[string]string{}, // No Authorization header
+		Headers: nil, // Explicitly nil to avoid auto-adding auth
 	}
 	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
 
@@ -89,7 +89,7 @@ func (s *Suite) TestGetQuestByIdWithoutToken() {
 	getReq := casesteps.HTTPRequest{
 		Method:  "GET",
 		URL:     "/api/v1/quests/" + createdQuest.ID().String(),
-		Headers: map[string]string{}, // No Authorization header
+		Headers: nil, // Explicitly nil to avoid auto-adding auth
 	}
 	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
 
@@ -105,7 +105,7 @@ func (s *Suite) TestListQuestsWithoutToken() {
 	listReq := casesteps.HTTPRequest{
 		Method:  "GET",
 		URL:     "/api/v1/quests",
-		Headers: map[string]string{}, // No Authorization header
+		Headers: nil, // Explicitly nil to avoid auto-adding auth
 	}
 	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
 
@@ -126,7 +126,7 @@ func (s *Suite) TestChangeQuestStatusWithoutToken() {
 		Method:      "PATCH",
 		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/status",
 		Body:        map[string]string{"status": "posted"},
-		Headers:     map[string]string{}, // No Authorization header
+		Headers:     nil, // Explicitly nil to avoid auto-adding auth
 		ContentType: "application/json",
 	}
 	statusResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, statusReq)
@@ -143,7 +143,7 @@ func (s *Suite) TestSearchQuestsByRadiusWithoutToken() {
 	searchReq := casesteps.HTTPRequest{
 		Method:  "GET",
 		URL:     "/api/v1/quests/search-radius?lat=55.7558&lon=37.6173&radius_km=10",
-		Headers: map[string]string{}, // No Authorization header
+		Headers: nil, // Explicitly nil to avoid auto-adding auth
 	}
 	searchResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, searchReq)
 
