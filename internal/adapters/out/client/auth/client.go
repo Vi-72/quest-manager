@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
 	authv1 "github.com/Vi-72/quest-auth/api/grpc/sdk/go/auth/v1"
@@ -38,14 +39,17 @@ func (c *client) Authenticate(ctx context.Context, jwtToken string) (uuid.UUID, 
 	if strings.TrimSpace(jwtToken) == "" {
 		return uuid.Nil, errors.New("jwt token is empty")
 	}
-	// нормально мокать аут сервис если его не поднято локально? что делать?
-	// todo не завязываться на текст ошибки, написать автотесты на токены, сделать мок для авторизации, переделать фабрику
+
 	resp, err := c.authClient.Authenticate(ctx, &authv1.AuthenticateRequest{JwtToken: jwtToken})
 	if err != nil {
 		if s, ok := status.FromError(err); ok {
-			tokenExpiredMsg := "token is expired"
-			if strings.Contains(strings.ToLower(s.Message()), tokenExpiredMsg) {
+			switch s.Code() {
+			case codes.Unauthenticated:
 				return uuid.Nil, ErrTokenExpired
+			case codes.InvalidArgument:
+				return uuid.Nil, fmt.Errorf("invalid jwt token format: %s", s.Message())
+			default:
+				return uuid.Nil, fmt.Errorf("authenticate grpc call failed: code=%s, msg=%s", s.Code(), s.Message())
 			}
 		}
 		return uuid.Nil, fmt.Errorf("authenticate grpc call: %w", err)
