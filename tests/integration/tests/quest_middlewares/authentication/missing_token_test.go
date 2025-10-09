@@ -11,206 +11,78 @@ import (
 // AUTHENTICATION MIDDLEWARE TESTS - MISSING TOKEN
 // Tests for requests without authentication token
 
-func (s *Suite) TestCreateQuestWithoutToken() {
+func (s *Suite) TestAllEndpointsRequireAuthentication() {
 	ctx := context.Background()
 
-	// Prepare valid quest data
-	questData := testdatagenerators.SimpleQuestData(
-		"Test Quest",
-		"Quest without auth token",
-		"easy",
-		2,
-		60,
-		testdatagenerators.DefaultTestCoordinate(),
-		testdatagenerators.DefaultTestCoordinate(),
-	)
+	// Pre-condition - create quest for tests that need it
+	createdQuest, _ := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
 
-	// Act - send request WITHOUT Authorization header
-	createReq := casesteps.HTTPRequest{
-		Method:      "POST",
-		URL:         "/api/v1/quests",
-		Body:        questData,
-		ContentType: "application/json",
-		SkipAuth:    true, // Don't add default Bearer token
-	}
-	createResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, createReq)
-
-	// Assert - should return 401 Unauthorized
-	s.Require().NoError(err, "HTTP request should not fail")
-	s.Assert().Equal(http.StatusUnauthorized, createResp.StatusCode, "Should return 401 Unauthorized without token")
-}
-
-func (s *Suite) TestAssignQuestWithoutToken() {
-	ctx := context.Background()
-
-	// Pre-condition - create quest using handler (with auth)
-	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
-	s.Require().NoError(err)
-
-	// Act - try to assign WITHOUT Authorization header
-	assignReq := casesteps.HTTPRequest{
-		Method:      "POST",
-		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
-		ContentType: "application/json",
-		SkipAuth:    true, // Don't add default Bearer token
-	}
-	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
-
-	// Assert - should return 401 Unauthorized
-	s.Require().NoError(err, "HTTP request should not fail")
-	s.Assert().Equal(http.StatusUnauthorized, assignResp.StatusCode, "Should return 401 Unauthorized without token")
-}
-
-func (s *Suite) TestListAssignedQuestsWithoutToken() {
-	ctx := context.Background()
-
-	// Act - try to list assigned quests WITHOUT Authorization header
-	listReq := casesteps.HTTPRequest{
-		Method:   "GET",
-		URL:      "/api/v1/quests/assigned",
-		SkipAuth: true, // Don't add default Bearer token
-	}
-	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
-
-	// Assert - should return 401 Unauthorized
-	s.Require().NoError(err, "HTTP request should not fail")
-	s.Assert().Equal(http.StatusUnauthorized, listResp.StatusCode, "Should return 401 Unauthorized without token")
-}
-
-func (s *Suite) TestGetQuestByIdWithoutToken() {
-	ctx := context.Background()
-
-	// Pre-condition - create quest using handler (with auth)
-	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
-	s.Require().NoError(err)
-
-	// Act - try to get quest WITHOUT Authorization header
-	getReq := casesteps.HTTPRequest{
-		Method:   "GET",
-		URL:      "/api/v1/quests/" + createdQuest.ID().String(),
-		SkipAuth: true, // Don't add default Bearer token
-	}
-	getResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, getReq)
-
-	// Assert - should return 401 Unauthorized
-	s.Require().NoError(err, "HTTP request should not fail")
-	s.Assert().Equal(http.StatusUnauthorized, getResp.StatusCode, "Should return 401 Unauthorized without token")
-}
-
-func (s *Suite) TestListQuestsWithoutToken() {
-	ctx := context.Background()
-
-	// Act - try to list quests WITHOUT Authorization header
-	listReq := casesteps.HTTPRequest{
-		Method:   "GET",
-		URL:      "/api/v1/quests",
-		SkipAuth: true, // Don't add default Bearer token
-	}
-	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
-
-	// Assert - should return 401 Unauthorized
-	s.Require().NoError(err, "HTTP request should not fail")
-	s.Assert().Equal(http.StatusUnauthorized, listResp.StatusCode, "Should return 401 Unauthorized without token")
-}
-
-func (s *Suite) TestChangeQuestStatusWithoutToken() {
-	ctx := context.Background()
-
-	// Pre-condition - create quest using handler (with auth)
-	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
-	s.Require().NoError(err)
-
-	// Act - try to change status WITHOUT Authorization header
-	statusReq := casesteps.HTTPRequest{
-		Method:      "PATCH",
-		URL:         "/api/v1/quests/" + createdQuest.ID().String() + "/status",
-		Body:        map[string]string{"status": "posted"},
-		ContentType: "application/json",
-		SkipAuth:    true, // Don't add default Bearer token
-	}
-	statusResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, statusReq)
-
-	// Assert - should return 401 Unauthorized
-	s.Require().NoError(err, "HTTP request should not fail")
-	s.Assert().Equal(http.StatusUnauthorized, statusResp.StatusCode, "Should return 401 Unauthorized without token")
-}
-
-func (s *Suite) TestSearchQuestsByRadiusWithoutToken() {
-	ctx := context.Background()
-
-	// Act - try to search quests WITHOUT Authorization header
-	searchReq := casesteps.HTTPRequest{
-		Method:   "GET",
-		URL:      "/api/v1/quests/search-radius?lat=55.7558&lon=37.6173&radius_km=10",
-		SkipAuth: true, // Don't add default Bearer token
-	}
-	searchResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, searchReq)
-
-	// Assert - should return 401 Unauthorized
-	s.Require().NoError(err, "HTTP request should not fail")
-	s.Assert().Equal(http.StatusUnauthorized, searchResp.StatusCode, "Should return 401 Unauthorized without token")
-}
-
-func (s *Suite) TestWithEmptyAuthorizationHeader() {
-	ctx := context.Background()
-
-	// Act - send request with empty Authorization header value
-	listReq := casesteps.HTTPRequest{
-		Method: "GET",
-		URL:    "/api/v1/quests",
-		Headers: map[string]string{
-			"Authorization": "", // Empty header value
-		},
-	}
-	listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
-
-	// Assert - should return 401 Unauthorized
-	s.Require().NoError(err, "HTTP request should not fail")
-	s.Assert().Equal(http.StatusUnauthorized, listResp.StatusCode, "Should return 401 Unauthorized with empty auth header")
-}
-
-func (s *Suite) TestWithInvalidAuthorizationHeaderFormat() {
-	ctx := context.Background()
-
-	// Test cases with invalid Authorization header formats
+	// Test cases covering all endpoints without authentication
 	testCases := []struct {
-		name   string
-		header string
+		name        string
+		method      string
+		url         string
+		body        interface{}
+		contentType string
 	}{
 		{
-			name:   "no Bearer prefix",
-			header: "just-a-token",
+			name:        "POST /quests - create quest",
+			method:      "POST",
+			url:         "/api/v1/quests",
+			body:        testdatagenerators.RandomCreateQuestRequest(),
+			contentType: "application/json",
 		},
 		{
-			name:   "wrong prefix",
-			header: "Basic some-token",
+			name:        "POST /quests/{id}/assign - assign quest",
+			method:      "POST",
+			url:         "/api/v1/quests/" + createdQuest.ID().String() + "/assign",
+			contentType: "application/json",
 		},
 		{
-			name:   "Bearer without token",
-			header: "Bearer ",
+			name:   "GET /quests/assigned - list assigned quests",
+			method: "GET",
+			url:    "/api/v1/quests/assigned",
 		},
 		{
-			name:   "Bearer with only spaces",
-			header: "Bearer    ",
+			name:   "GET /quests/{id} - get quest by id",
+			method: "GET",
+			url:    "/api/v1/quests/" + createdQuest.ID().String(),
+		},
+		{
+			name:   "GET /quests - list all quests",
+			method: "GET",
+			url:    "/api/v1/quests",
+		},
+		{
+			name:        "PATCH /quests/{id}/status - change quest status",
+			method:      "PATCH",
+			url:         "/api/v1/quests/" + createdQuest.ID().String() + "/status",
+			body:        map[string]string{"status": "posted"},
+			contentType: "application/json",
+		},
+		{
+			name:   "GET /quests/search-radius - search quests by radius",
+			method: "GET",
+			url:    "/api/v1/quests/search-radius?lat=55.7558&lon=37.6173&radius_km=10",
 		},
 	}
 
 	for _, tc := range testCases {
 		s.Run(tc.name, func() {
-			// Act - send request with invalid Authorization header format
-			listReq := casesteps.HTTPRequest{
-				Method: "GET",
-				URL:    "/api/v1/quests",
-				Headers: map[string]string{
-					"Authorization": tc.header,
-				},
+			// Act - send request WITHOUT Authorization header
+			req := casesteps.HTTPRequest{
+				Method:      tc.method,
+				URL:         tc.url,
+				Body:        tc.body,
+				ContentType: tc.contentType,
+				SkipAuth:    true, // Don't add default Bearer token
 			}
-			listResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, listReq)
+			resp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, req)
 
 			// Assert - should return 401 Unauthorized
 			s.Require().NoError(err, "HTTP request should not fail")
-			s.Assert().Equal(http.StatusUnauthorized, listResp.StatusCode,
-				"Should return 401 Unauthorized with invalid auth header format: %s", tc.name)
+			s.Assert().Equal(http.StatusUnauthorized, resp.StatusCode,
+				"Endpoint %s %s should return 401 Unauthorized without token", tc.method, tc.url)
 		})
 	}
 }

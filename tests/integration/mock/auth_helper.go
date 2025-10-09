@@ -19,13 +19,6 @@ func NewAlwaysSuccessAuthClient() *AlwaysSuccessAuthClient {
 	}
 }
 
-// NewAlwaysSuccessAuthClientWithUserID creates a new auth client with custom user ID.
-func NewAlwaysSuccessAuthClientWithUserID(userID uuid.UUID) *AlwaysSuccessAuthClient {
-	return &AlwaysSuccessAuthClient{
-		DefaultUserID: userID,
-	}
-}
-
 // Authenticate always returns the configured user ID without any validation.
 func (a *AlwaysSuccessAuthClient) Authenticate(ctx context.Context, jwtToken string) (uuid.UUID, error) {
 	return a.DefaultUserID, nil

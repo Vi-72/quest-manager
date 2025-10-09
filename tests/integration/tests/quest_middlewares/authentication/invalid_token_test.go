@@ -12,66 +12,85 @@ import (
 // AUTHENTICATION MIDDLEWARE TESTS - INVALID TOKEN
 // Tests for requests with invalid/malformed authentication tokens
 
-func (s *Suite) TestCreateQuestWithInvalidToken() {
+func (s *Suite) TestAllEndpointsRejectInvalidToken() {
 	ctx := context.Background()
 
-	// Prepare invalid token auth client
+	// Pre-condition - create quest for tests that need it
+	createdQuest, _ := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
+
+	// Setup - create router with invalid token auth client
 	invalidTokenAuthClient := mock.NewInvalidTokenAuthClient()
 	routerWithInvalidAuth := s.TestDIContainer.NewHTTPRouterWithAuthClient(invalidTokenAuthClient)
 
-	// Prepare valid quest data
-	questData := testdatagenerators.SimpleQuestData(
-		"Test Quest",
-		"Quest with invalid token",
-		"easy",
-		2,
-		60,
-		testdatagenerators.DefaultTestCoordinate(),
-		testdatagenerators.DefaultTestCoordinate(),
-	)
+	// Test cases covering all endpoints with invalid token
+	testCases := []struct {
+		name        string
+		prepareReq  func() casesteps.HTTPRequest
+		checkError  bool
+		errorString string
+	}{
+		{
+			name: "POST /quests - create quest",
+			prepareReq: func() casesteps.HTTPRequest {
+				return casesteps.CreateQuestHTTPRequest(testdatagenerators.RandomCreateQuestRequest())
+			},
+			checkError:  true,
+			errorString: "Authentication Failed",
+		},
+		{
+			name: "POST /quests/{id}/assign - assign quest",
+			prepareReq: func() casesteps.HTTPRequest {
+				return casesteps.AssignQuestHTTPRequest(createdQuest.ID())
+			},
+		},
+		{
+			name: "GET /quests/assigned - list assigned quests",
+			prepareReq: func() casesteps.HTTPRequest {
+				return casesteps.ListAssignedQuestsHTTPRequest()
+			},
+		},
+		{
+			name: "GET /quests/{id} - get quest by id",
+			prepareReq: func() casesteps.HTTPRequest {
+				return casesteps.GetQuestHTTPRequest(createdQuest.ID())
+			},
+		},
+		{
+			name: "GET /quests - list all quests",
+			prepareReq: func() casesteps.HTTPRequest {
+				return casesteps.ListQuestsHTTPRequest("")
+			},
+		},
+		{
+			name: "PATCH /quests/{id}/status - change quest status",
+			prepareReq: func() casesteps.HTTPRequest {
+				return casesteps.ChangeQuestStatusHTTPRequest(createdQuest.ID(), map[string]string{"status": "posted"})
+			},
+		},
+		{
+			name: "GET /quests/search-radius - search quests",
+			prepareReq: func() casesteps.HTTPRequest {
+				return casesteps.SearchQuestsByRadiusHTTPRequest(55.7558, 37.6173, 10)
+			},
+		},
+	}
 
-	// Act - send request with invalid token
-	createReq := casesteps.CreateQuestHTTPRequest(questData)
-	createResp, err := casesteps.ExecuteHTTPRequest(ctx, routerWithInvalidAuth, createReq)
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			// Act - send request with invalid token
+			req := tc.prepareReq()
+			resp, err := casesteps.ExecuteHTTPRequest(ctx, routerWithInvalidAuth, req)
 
-	// Assert - should return 401 Unauthorized
-	s.Require().NoError(err, "HTTP request should not fail")
-	s.Assert().Equal(http.StatusUnauthorized, createResp.StatusCode, "Should return 401 Unauthorized for invalid token")
-	s.Assert().Contains(createResp.Body, "Authentication Failed", "Error should mention authentication failure")
-}
+			// Assert - should return 401 Unauthorized
+			s.Require().NoError(err, "HTTP request should not fail")
+			s.Assert().Equal(http.StatusUnauthorized, resp.StatusCode,
+				"Endpoint should return 401 Unauthorized for invalid token")
 
-func (s *Suite) TestAssignQuestWithInvalidToken() {
-	ctx := context.Background()
-
-	// Pre-condition - create quest using handler (with valid auth)
-	createdQuest, err := casesteps.CreateRandomQuestStep(ctx, s.TestDIContainer.CreateQuestHandler)
-	s.Require().NoError(err)
-
-	// Prepare invalid token auth client
-	invalidTokenAuthClient := mock.NewInvalidTokenAuthClient()
-	routerWithInvalidAuth := s.TestDIContainer.NewHTTPRouterWithAuthClient(invalidTokenAuthClient)
-
-	// Act - try to assign with invalid token
-	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID())
-	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, routerWithInvalidAuth, assignReq)
-
-	// Assert - should return 401 Unauthorized
-	s.Require().NoError(err, "HTTP request should not fail")
-	s.Assert().Equal(http.StatusUnauthorized, assignResp.StatusCode, "Should return 401 Unauthorized for invalid token")
-}
-
-func (s *Suite) TestListAssignedQuestsWithInvalidToken() {
-	ctx := context.Background()
-
-	// Prepare invalid token auth client
-	invalidTokenAuthClient := mock.NewInvalidTokenAuthClient()
-	routerWithInvalidAuth := s.TestDIContainer.NewHTTPRouterWithAuthClient(invalidTokenAuthClient)
-
-	// Act - try to list assigned quests with invalid token
-	listReq := casesteps.ListAssignedQuestsHTTPRequest()
-	listResp, err := casesteps.ExecuteHTTPRequest(ctx, routerWithInvalidAuth, listReq)
-
-	// Assert - should return 401 Unauthorized
-	s.Require().NoError(err, "HTTP request should not fail")
-	s.Assert().Equal(http.StatusUnauthorized, listResp.StatusCode, "Should return 401 Unauthorized for invalid token")
+			// Additional error message check if specified
+			if tc.checkError && tc.errorString != "" {
+				s.Assert().Contains(resp.Body, tc.errorString,
+					"Error should mention: %s", tc.errorString)
+			}
+		})
+	}
 }
