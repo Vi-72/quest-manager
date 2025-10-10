@@ -1,8 +1,8 @@
 openapi: 3.0.3
 info:
   title: Quest Management Service
-  version: 1.4.0
-  description: API for creating, retrieving, and managing quests. All endpoints require JWT authentication.
+  version: 1.5.0
+  description: API for creating, retrieving, and managing quests. All endpoints require JWT authentication. User ID is automatically extracted from JWT token.
 
 servers:
   - url: http://localhost:8080
