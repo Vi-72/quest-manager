@@ -45,7 +45,7 @@ func (c *client) Authenticate(ctx context.Context, jwtToken string) (uuid.UUID, 
 		if s, ok := status.FromError(err); ok {
 			switch s.Code() {
 			case codes.Unauthenticated:
-				return uuid.Nil, ErrTokenExpired
+				return uuid.Nil, ErrTokenExpired // todo
 			case codes.InvalidArgument:
 				return uuid.Nil, fmt.Errorf("invalid jwt token format: %s", s.Message())
 			default:

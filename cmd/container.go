@@ -1,14 +1,17 @@
 package cmd
 
 import (
-	"context"
 	"fmt"
-	"log"
+
+	authv1 "github.com/Vi-72/quest-auth/api/grpc/sdk/go/auth/v1"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"gorm.io/gorm"
 
 	v1 "quest-manager/api/http/quests/v1"
 	httphandlers "quest-manager/internal/adapters/in/http"
+	authclient "quest-manager/internal/adapters/out/client/auth"
 	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
 	"quest-manager/internal/core/application/usecases/commands"
@@ -27,7 +30,7 @@ type Container struct {
 }
 
 // NewContainer creates a new dependency injection container.
-// All heavy initialization is deferred to Build() method.
+// Initializes all dependencies including auth client (eager initialization).
 func NewContainer(configs Config, db *gorm.DB) (*Container, error) {
 	unitOfWork, err := postgres.NewUnitOfWork(db)
 	if err != nil {
@@ -42,12 +45,19 @@ func NewContainer(configs Config, db *gorm.DB) (*Container, error) {
 		return nil, fmt.Errorf("create event publisher: %w", err)
 	}
 
-	return &Container{
+	container := &Container{
 		configs:        configs,
 		db:             db,
 		unitOfWork:     unitOfWork,
 		eventPublisher: eventPublisher,
-	}, nil
+	}
+
+	if !configs.Middleware.DevAuth.Enabled {
+		authClient, _ := container.createAuthClient()
+		container.authClient = authClient
+	}
+
+	return container, nil
 }
 
 // Cfg returns configuration.
@@ -62,25 +72,32 @@ func (c *Container) GetUnitOfWork() ports.UnitOfWork { return c.unitOfWork }
 // EventPublisher returns EventPublisher.
 func (c *Container) EventPublisher() ports.EventPublisher { return c.eventPublisher }
 
-// GetAuthClient returns auth client (lazy-initialized via factory).
-func (c *Container) GetAuthClient(ctx context.Context) ports.AuthClient {
-	if c.authClient != nil {
-		return c.authClient
-	}
-	client, conn, _ := c.configs.AuthFactory.Create(ctx)
-	if conn != nil {
-		c.RegisterCloser(CloserFunc(conn.Close))
-	}
-
-	if client == nil {
-		if c.configs.Middleware.EnableAuth {
-			log.Printf("⚠️ Authentication middleware enabled but auth client is nil")
-		}
-		return nil
-	}
-
-	c.authClient = client
+// GetAuthClient returns auth client (initialized in NewContainer or injected via SetAuthClient).
+func (c *Container) GetAuthClient() ports.AuthClient {
 	return c.authClient
+}
+
+// SetAuthClient allows injecting a custom auth client (for testing).
+func (c *Container) SetAuthClient(client ports.AuthClient) {
+	c.authClient = client
+}
+
+// createAuthClient creates and initializes auth gRPC client (internal helper).
+func (c *Container) createAuthClient() (ports.AuthClient, error) {
+	// Create gRPC connection
+	conn, err := c.createGRPCConnection(c.configs.AuthGRPC)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create auth gRPC connection: %w", err)
+	}
+
+	// Register connection for cleanup
+	c.RegisterCloser(CloserFunc(conn.Close))
+
+	// Create auth gRPC client and wrap it
+	grpcClient := authv1.NewAuthServiceClient(conn)
+	authClient := authclient.NewUserAuthClient(grpcClient)
+
+	return authClient, nil
 }
 
 // QuestRepository returns repository from the single UoW.
@@ -132,6 +149,18 @@ func (c *Container) NewApiHandler() (v1.StrictServerInterface, error) {
 }
 
 // --- utility ---
+
+// createGRPCConnection creates a gRPC client connection with insecure credentials.
+func (c *Container) createGRPCConnection(address string) (*grpc.ClientConn, error) {
+	conn, err := grpc.NewClient(
+		address,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+	)
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
+}
 
 // CloserFunc allows inline closing functions to implement io.Closer.
 type CloserFunc func() error

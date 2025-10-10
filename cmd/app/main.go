@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 	"net/http"
 	"os"
@@ -10,7 +9,6 @@ import (
 	"github.com/joho/godotenv"
 
 	"quest-manager/cmd"
-	authclient "quest-manager/internal/adapters/out/client/auth"
 )
 
 func main() {
@@ -44,12 +42,6 @@ func main() {
 		log.Fatalf("failed to create container: %v", err)
 	}
 
-	// Build and validate container
-	ctx := context.Background()
-	if err := container.Build(ctx); err != nil {
-		log.Fatalf("failed to build container: %v", err)
-	}
-
 	defer container.CloseAll()
 
 	// Create router
@@ -74,16 +66,12 @@ func getConfigs() cmd.Config {
 		DbName:              getEnv("DB_NAME"),
 		DbSslMode:           getEnv("DB_SSLMODE"),
 		EventGoroutineLimit: getEnvInt("EVENT_GOROUTINE_LIMIT"),
-
-		// Auth factory
-		AuthFactory: &authclient.Factory{
-			Addr: getEnv("AUTH_GRPC"),
-		},
+		AuthGRPC:            getEnv("AUTH_GRPC"),
 
 		// Middleware configuration
 		Middleware: cmd.MiddlewareConfig{
-			EnableAuth: getEnvBool("ENABLE_AUTH_MIDDLEWARE", true),
 			DevAuth: cmd.DevAuthConfig{
+				Enabled:      getEnvBool("DEV_AUTH_ENABLED", false),
 				HeaderName:   getEnvWithDefault("DEV_AUTH_HEADER_NAME", cmd.DefaultDevAuthHeaderName),
 				StaticUserID: getEnvWithDefault("DEV_AUTH_STATIC_USER_ID", cmd.DefaultDevAuthStaticUserID),
 			},

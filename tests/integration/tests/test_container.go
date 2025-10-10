@@ -140,15 +140,19 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	// Create HTTP Router for API testing with mock auth client
 	appConfig := cmd.Config{
 		EventGoroutineLimit: 5,
-		AuthFactory: &authclient.Factory{
-			Client: mockAuthClient, // Inject mock for tests
-		},
+		AuthGRPC:            "", // Empty - using mock
 		Middleware: cmd.MiddlewareConfig{
-			EnableAuth: true,
+			DevAuth: cmd.DevAuthConfig{
+				Enabled: false, // Use production mode but with injected mock
+			},
 		},
 	}
-	compositionRoot, _ := cmd.NewContainer(appConfig, db)
-	httpRouter := cmd.NewRouter(compositionRoot)
+	container, _ := cmd.NewContainer(appConfig, db)
+
+	// Inject mock auth client for tests
+	container.SetAuthClient(mockAuthClient)
+
+	httpRouter := cmd.NewRouter(container)
 
 	return TestDIContainer{
 		SuiteDIContainer: suiteContainer,
@@ -185,15 +189,19 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 func (c *TestDIContainer) NewHTTPRouterWithAuthClient(authClient authclient.Client) http.Handler {
 	appConfig := cmd.Config{
 		EventGoroutineLimit: 5,
-		AuthFactory: &authclient.Factory{
-			Client: authClient,
-		},
+		AuthGRPC:            "", // Empty - using injected client
 		Middleware: cmd.MiddlewareConfig{
-			EnableAuth: true,
+			DevAuth: cmd.DevAuthConfig{
+				Enabled: false, // Use production mode but with custom injected client
+			},
 		},
 	}
-	compositionRoot, _ := cmd.NewContainer(appConfig, c.DB)
-	return cmd.NewRouter(compositionRoot)
+	container, _ := cmd.NewContainer(appConfig, c.DB)
+
+	// Inject custom auth client for test scenario
+	container.SetAuthClient(authClient)
+
+	return cmd.NewRouter(container)
 }
 
 // TearDownTest очищает ресурсы после теста

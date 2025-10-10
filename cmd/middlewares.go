@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"context"
 	"log"
 	"net/http"
 
@@ -16,22 +15,24 @@ import (
 func (c *Container) Middlewares(swagger *openapi3.T) []func(http.Handler) http.Handler {
 	middlewares := make([]func(http.Handler) http.Handler, 0, 6)
 
-	ctx := context.Background()
-
-	// 1. Authentication middleware (first) - configurable
-	if c.configs.Middleware.EnableAuth {
-		if authClient := c.GetAuthClient(ctx); authClient != nil {
-			authMW := httpmiddleware.NewAuthMiddleware(authClient)
-			middlewares = append(middlewares, authMW.Auth)
-			log.Printf("✅ Authentication middleware enabled")
-		}
-	} else {
+	// 1. Authentication middleware (first) - always enabled
+	// Mode: Dev (mock) or Production (real gRPC)
+	if c.configs.Middleware.DevAuth.Enabled {
 		// Development mode - use mock authentication
 		devHeader, devStatic := c.devAuthDefaults()
 		middlewares = append(middlewares, c.mockAuthMiddleware(devHeader, devStatic))
-		log.Printf("🔧 Mock authentication middleware enabled (dev mode)")
+		log.Printf("🔧 Development authentication mode enabled")
 		log.Printf("   - Header name: %s", devHeader)
 		log.Printf("   - Static user ID: %s", devStatic)
+	} else {
+		// Production mode - use real auth client
+		if authClient := c.GetAuthClient(); authClient != nil {
+			authMW := httpmiddleware.NewAuthMiddleware(authClient)
+			middlewares = append(middlewares, authMW.Auth)
+			log.Printf("Production authentication enabled (gRPC)")
+		} else {
+			log.Fatal("Production auth enabled but failed to create auth client")
+		}
 	}
 
 	// 2. OpenAPI validation middleware (second) - always enabled
@@ -41,19 +42,12 @@ func (c *Container) Middlewares(swagger *openapi3.T) []func(http.Handler) http.H
 			middlewares = append(middlewares, validationMW.Validate)
 		}
 	}
-
 	return middlewares
 }
 
 // mockAuthMiddleware returns a middleware for local development/testing
 // that automatically authenticates requests with a configurable user ID
 func (c *Container) mockAuthMiddleware(headerName, staticUserID string) func(http.Handler) http.Handler {
-	// Pre-parse static user ID to validate it early
-	defaultUserID, err := uuid.Parse(staticUserID)
-	if err != nil {
-		log.Fatalf("Invalid DEV_AUTH_STATIC_USER_ID: %s", staticUserID)
-	}
-
 	return func(h http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			// Try to read user ID from header
@@ -65,17 +59,13 @@ func (c *Container) mockAuthMiddleware(headerName, staticUserID string) func(htt
 			}
 
 			// Parse user ID
-			userID, err := uuid.Parse(userIDStr)
-			if err != nil {
-				log.Printf("⚠️  Mock auth: invalid user ID '%s', using static: %s", userIDStr, staticUserID)
-				userID = defaultUserID
-			}
+			userID, _ := uuid.Parse(userIDStr)
 
 			// Add user ID to context
 			ctx := httpmiddleware.UserIDToContext(r.Context(), userID)
 			r = r.WithContext(ctx)
 
-			log.Printf("🔧 Mock auth: request from user %s", userID)
+			log.Printf("Mock auth: request from user %s", userID)
 			h.ServeHTTP(w, r)
 		})
 	}
