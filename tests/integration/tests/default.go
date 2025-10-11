@@ -37,9 +37,6 @@ func (s *DefaultSuite) SetupTest() {
 	// Clean database before each test
 	err := s.TestDIContainer.CleanupDatabase()
 	s.Require().NoError(err, "Failed to cleanup database")
-
-	// Recreate TestDIContainer for each test to avoid transaction issues
-	s.TestDIContainer = NewTestDIContainer(s.SuiteDIContainer)
 }
 
 // TearDownTest cleans state after each test

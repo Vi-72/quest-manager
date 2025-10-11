@@ -15,6 +15,7 @@ func main() {
 	_ = godotenv.Load(".env")
 	configs := getConfigs()
 
+	// Database setup
 	connectionString, err := cmd.MakeConnectionString(
 		configs.DbHost,
 		configs.DbPort,
@@ -35,15 +36,20 @@ func main() {
 	gormDb := cmd.MustGormOpen(connectionString)
 	cmd.MustAutoMigrate(gormDb)
 
-	compositionRoot := cmd.NewCompositionRoot(
-		configs,
-		gormDb,
-	)
-	defer compositionRoot.CloseAll()
+	// Create container
+	container, err := cmd.NewContainer(configs, gormDb)
+	if err != nil {
+		log.Fatalf("failed to create container: %v", err)
+	}
 
-	router := cmd.NewRouter(compositionRoot)
+	defer container.CloseAll()
 
-	log.Printf("Server running on :%s", configs.HttpPort)
+	// Create router
+	router := cmd.NewRouter(container)
+
+	// Start server
+	log.Printf("🚀 Server starting on :%s", configs.HttpPort)
+
 	err = http.ListenAndServe(":"+configs.HttpPort, router)
 	if err != nil {
 		log.Fatalf("failed to start server: %v", err)
@@ -61,6 +67,15 @@ func getConfigs() cmd.Config {
 		DbSslMode:           getEnv("DB_SSLMODE"),
 		EventGoroutineLimit: getEnvInt("EVENT_GOROUTINE_LIMIT"),
 		AuthGRPC:            getEnv("AUTH_GRPC"),
+
+		// Middleware configuration
+		Middleware: cmd.MiddlewareConfig{
+			DevAuth: cmd.DevAuthConfig{
+				Enabled:      getEnvBool("DEV_AUTH_ENABLED", false),
+				HeaderName:   getEnvWithDefault("DEV_AUTH_HEADER_NAME", cmd.DefaultDevAuthHeaderName),
+				StaticUserID: getEnvWithDefault("DEV_AUTH_STATIC_USER_ID", cmd.DefaultDevAuthStaticUserID),
+			},
+		},
 	}
 }
 
@@ -68,6 +83,14 @@ func getEnv(key string) string {
 	val := os.Getenv(key)
 	if val == "" {
 		log.Fatalf("Missing env var: %s", key)
+	}
+	return val
+}
+
+func getEnvWithDefault(key, defaultValue string) string {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultValue
 	}
 	return val
 }
@@ -82,4 +105,17 @@ func getEnvInt(key string) int {
 		log.Fatalf("Invalid integer value for env var %s: %s", key, val)
 	}
 	return intVal
+}
+
+func getEnvBool(key string, defaultValue bool) bool {
+	val := os.Getenv(key)
+	if val == "" {
+		return defaultValue
+	}
+	boolVal, err := strconv.ParseBool(val)
+	if err != nil {
+		log.Printf("Invalid boolean value for env var %s: %s, using default: %v", key, val, defaultValue)
+		return defaultValue
+	}
+	return boolVal
 }

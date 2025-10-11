@@ -14,6 +14,7 @@ import (
 	"quest-manager/tests/contracts/mocks"
 
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -125,17 +126,18 @@ func (s *CreateQuestCommandHandlerContractSuite) TestHandleValidCommand() {
 
 	// Contract: Handle should return a valid quest without error
 	createdQuest, err := s.handler.Handle(s.ctx, cmd)
-	s.Require().NoError(err, "Handle should succeed with valid command")
+	s.T().Helper()
+	require.NoError(s.T(), err, "Handle should succeed with valid command")
 
 	// Contract: Returned quest should match command data
-	s.Assert().Equal(cmd.Title, createdQuest.Title, "Quest title should match command")
-	s.Assert().Equal(cmd.Description, createdQuest.Description, "Quest description should match command")
-	s.Assert().Equal(quest.Difficulty(cmd.Difficulty), createdQuest.Difficulty, "Quest difficulty should match command")
-	s.Assert().Equal(cmd.Reward, createdQuest.Reward, "Quest reward should match command")
-	s.Assert().Equal(time.Duration(cmd.DurationMinutes)*time.Minute, time.Duration(createdQuest.DurationMinutes)*time.Minute, "Quest duration should match command")
-	s.Assert().Equal(cmd.Creator, createdQuest.Creator, "Quest creator should match command")
-	s.Assert().Equal(quest.StatusCreated, createdQuest.Status, "New quest should have 'created' status")
-	s.Assert().NotEqual(uuid.Nil, createdQuest.ID(), "Quest should have a valid ID")
+	require.Equal(s.T(), cmd.Title, createdQuest.Title, "Quest title should match command")
+	require.Equal(s.T(), cmd.Description, createdQuest.Description, "Quest description should match command")
+	require.Equal(s.T(), quest.Difficulty(cmd.Difficulty), createdQuest.Difficulty, "Quest difficulty should match command")
+	require.Equal(s.T(), cmd.Reward, createdQuest.Reward, "Quest reward should match command")
+	require.Equal(s.T(), time.Duration(cmd.DurationMinutes)*time.Minute, time.Duration(createdQuest.DurationMinutes)*time.Minute, "Quest duration should match command")
+	require.Equal(s.T(), cmd.Creator, createdQuest.Creator, "Quest creator should match command")
+	require.Equal(s.T(), quest.StatusCreated, createdQuest.Status, "New quest should have 'created' status")
+	require.NotEqual(s.T(), uuid.Nil, createdQuest.ID(), "Quest should have a valid ID")
 }
 
 func (s *CreateQuestCommandHandlerContractSuite) TestHandleInvalidDifficulty() {
@@ -159,9 +161,9 @@ func (s *CreateQuestCommandHandlerContractSuite) TestHandleInvalidDifficulty() {
 
 	// Contract: Handle should return validation error
 	_, err := s.handler.Handle(s.ctx, cmd)
-	s.Require().Error(err, "Handle should return error for invalid difficulty")
+	require.Error(s.T(), err, "Handle should return error for invalid difficulty")
 	var domainErr *errs.DomainValidationError
-	s.Assert().True(errors.As(err, &domainErr), "Should return domain validation error")
+	require.True(s.T(), errors.As(err, &domainErr), "Should return domain validation error")
 }
 
 // Note: Coordinate validation is handled at the API layer before hitting the command handler
@@ -189,7 +191,7 @@ func (s *AssignQuestCommandHandlerContractSuite) TestHandleValidAssignment() {
 	}
 
 	createdQuest, err := s.createHandler.Handle(s.ctx, createCmd)
-	s.Require().NoError(err)
+	require.NoError(s.T(), err)
 
 	// Contract: Handler should successfully assign quest to user
 	assignCmd := commands.AssignQuestCommand{
@@ -199,12 +201,12 @@ func (s *AssignQuestCommandHandlerContractSuite) TestHandleValidAssignment() {
 
 	// Contract: Handle should return assignment result without error
 	result, err := s.handler.Handle(s.ctx, assignCmd)
-	s.Require().NoError(err, "Handle should succeed with valid assignment command")
+	require.NoError(s.T(), err, "Handle should succeed with valid assignment command")
 
 	// Contract: Result should reflect the assignment
-	s.Assert().Equal(assignCmd.ID, result.ID, "Result ID should match quest ID")
-	s.Assert().Equal(assignCmd.UserID, result.Assignee, "Result assignee should match user ID")
-	s.Assert().Equal(string(quest.StatusAssigned), result.Status, "Quest should be assigned status")
+	s.Equal(assignCmd.ID, result.ID, "Result ID should match quest ID")
+	s.Equal(assignCmd.UserID, result.Assignee, "Result assignee should match user ID")
+	s.Equal(string(quest.StatusAssigned), result.Status, "Quest should be assigned status")
 }
 
 func (s *AssignQuestCommandHandlerContractSuite) TestHandleNonExistentQuest() {
@@ -217,9 +219,9 @@ func (s *AssignQuestCommandHandlerContractSuite) TestHandleNonExistentQuest() {
 
 	// Contract: Handle should return not found error
 	_, err := s.handler.Handle(s.ctx, assignCmd)
-	s.Require().Error(err, "Handle should return error for non-existent quest")
+	s.Error(err, "Handle should return error for non-existent quest")
 	var notFoundErr *errs.NotFoundError
-	s.Assert().True(errors.As(err, &notFoundErr), "Should return not found error")
+	s.True(errors.As(err, &notFoundErr), "Should return not found error")
 }
 
 func (s *AssignQuestCommandHandlerContractSuite) TestHandleAlreadyAssignedQuest() {
@@ -242,7 +244,7 @@ func (s *AssignQuestCommandHandlerContractSuite) TestHandleAlreadyAssignedQuest(
 	}
 
 	createdQuest, err := s.createHandler.Handle(s.ctx, createCmd)
-	s.Require().NoError(err)
+	require.NoError(s.T(), err)
 
 	// First assignment
 	firstAssignCmd := commands.AssignQuestCommand{
@@ -250,7 +252,7 @@ func (s *AssignQuestCommandHandlerContractSuite) TestHandleAlreadyAssignedQuest(
 		UserID: uuid.New(),
 	}
 	_, err = s.handler.Handle(s.ctx, firstAssignCmd)
-	s.Require().NoError(err)
+	require.NoError(s.T(), err)
 
 	// Contract: Handler should return domain validation error for already assigned quest
 	secondAssignCmd := commands.AssignQuestCommand{
@@ -260,9 +262,9 @@ func (s *AssignQuestCommandHandlerContractSuite) TestHandleAlreadyAssignedQuest(
 
 	// Contract: Handle should return validation error
 	_, err = s.handler.Handle(s.ctx, secondAssignCmd)
-	s.Require().Error(err, "Handle should return error for already assigned quest")
+	s.Error(err, "Handle should return error for already assigned quest")
 	var domainErr *errs.DomainValidationError
-	s.Assert().True(errors.As(err, &domainErr), "Should return domain validation error")
+	s.True(errors.As(err, &domainErr), "Should return domain validation error")
 }
 
 // ChangeQuestStatusCommandHandler contract tests
@@ -287,7 +289,7 @@ func (s *ChangeQuestStatusCommandHandlerContractSuite) TestHandleValidStatusChan
 	}
 
 	createdQuest, err := s.createHandler.Handle(s.ctx, createCmd)
-	s.Require().NoError(err)
+	require.NoError(s.T(), err)
 
 	// Contract: Handler should successfully change quest status
 	statusCmd := commands.ChangeQuestStatusCommand{
@@ -297,11 +299,11 @@ func (s *ChangeQuestStatusCommandHandlerContractSuite) TestHandleValidStatusChan
 
 	// Contract: Handle should return status change result without error
 	result, err := s.handler.Handle(s.ctx, statusCmd)
-	s.Require().NoError(err, "Handle should succeed with valid status change command")
+	s.NoError(err, "Handle should succeed with valid status change command")
 
 	// Contract: Result should reflect the status change
-	s.Assert().Equal(statusCmd.QuestID, result.ID, "Result ID should match quest ID")
-	s.Assert().Equal(string(statusCmd.Status), result.Status, "Result status should match new status")
+	s.Equal(statusCmd.QuestID, result.ID, "Result ID should match quest ID")
+	s.Equal(string(statusCmd.Status), result.Status, "Result status should match new status")
 }
 
 func (s *ChangeQuestStatusCommandHandlerContractSuite) TestHandleInvalidStatus() {
@@ -324,7 +326,7 @@ func (s *ChangeQuestStatusCommandHandlerContractSuite) TestHandleInvalidStatus()
 	}
 
 	createdQuest, err := s.createHandler.Handle(s.ctx, createCmd)
-	s.Require().NoError(err)
+	require.NoError(s.T(), err)
 
 	// Contract: Handler should return domain validation error for invalid status
 	statusCmd := commands.ChangeQuestStatusCommand{
@@ -334,9 +336,9 @@ func (s *ChangeQuestStatusCommandHandlerContractSuite) TestHandleInvalidStatus()
 
 	// Contract: Handle should return validation error
 	_, err = s.handler.Handle(s.ctx, statusCmd)
-	s.Require().Error(err, "Handle should return error for invalid status")
+	s.Error(err, "Handle should return error for invalid status")
 	var domainErr *errs.DomainValidationError
-	s.Assert().True(errors.As(err, &domainErr), "Should return domain validation error")
+	s.True(errors.As(err, &domainErr), "Should return domain validation error")
 }
 
 func (s *ChangeQuestStatusCommandHandlerContractSuite) TestHandleInvalidStatusTransition() {
@@ -359,7 +361,7 @@ func (s *ChangeQuestStatusCommandHandlerContractSuite) TestHandleInvalidStatusTr
 	}
 
 	createdQuest, err := s.createHandler.Handle(s.ctx, createCmd)
-	s.Require().NoError(err)
+	require.NoError(s.T(), err)
 
 	// Contract: Handler should return domain validation error for invalid status transition
 	statusCmd := commands.ChangeQuestStatusCommand{
@@ -369,9 +371,9 @@ func (s *ChangeQuestStatusCommandHandlerContractSuite) TestHandleInvalidStatusTr
 
 	// Contract: Handle should return validation error
 	_, err = s.handler.Handle(s.ctx, statusCmd)
-	s.Require().Error(err, "Handle should return error for invalid status transition")
+	s.Error(err, "Handle should return error for invalid status transition")
 	var domainErr *errs.DomainValidationError
-	s.Assert().True(errors.As(err, &domainErr), "Should return domain validation error")
+	s.True(errors.As(err, &domainErr), "Should return domain validation error")
 }
 
 func (s *ChangeQuestStatusCommandHandlerContractSuite) TestHandleNonExistentQuest() {
@@ -384,7 +386,7 @@ func (s *ChangeQuestStatusCommandHandlerContractSuite) TestHandleNonExistentQues
 
 	// Contract: Handle should return not found error
 	_, err := s.handler.Handle(s.ctx, statusCmd)
-	s.Require().Error(err, "Handle should return error for non-existent quest")
+	s.Error(err, "Handle should return error for non-existent quest")
 	var notFoundErr *errs.NotFoundError
-	s.Assert().True(errors.As(err, &notFoundErr), "Should return not found error")
+	s.True(errors.As(err, &notFoundErr), "Should return not found error")
 }

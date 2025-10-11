@@ -9,6 +9,7 @@ import (
 	"gorm.io/gorm"
 
 	"quest-manager/cmd"
+	authclient "quest-manager/internal/adapters/out/client/auth"
 	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
 	"quest-manager/internal/core/application/usecases/commands"
@@ -139,10 +140,19 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	// Create HTTP Router for API testing with mock auth client
 	appConfig := cmd.Config{
 		EventGoroutineLimit: 5,
-		AuthClient:          mockAuthClient, // Inject mock for tests
+		AuthGRPC:            "", // Empty - using mock
+		Middleware: cmd.MiddlewareConfig{
+			DevAuth: cmd.DevAuthConfig{
+				Enabled: false, // Use production mode but with injected mock
+			},
+		},
 	}
-	compositionRoot := cmd.NewCompositionRoot(appConfig, db)
-	httpRouter := cmd.NewRouter(compositionRoot)
+	container, _ := cmd.NewContainer(appConfig, db)
+
+	// Inject mock auth client for tests
+	container.SetAuthClient(mockAuthClient)
+
+	httpRouter := cmd.NewRouter(container)
 
 	return TestDIContainer{
 		SuiteDIContainer: suiteContainer,
@@ -173,6 +183,25 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 
 		HTTPRouter: httpRouter,
 	}
+}
+
+// NewHTTPRouterWithAuthClient создает новый HTTP router с кастомным auth client для тестирования различных сценариев аутентификации
+func (c *TestDIContainer) NewHTTPRouterWithAuthClient(authClient authclient.Client) http.Handler {
+	appConfig := cmd.Config{
+		EventGoroutineLimit: 5,
+		AuthGRPC:            "", // Empty - using injected client
+		Middleware: cmd.MiddlewareConfig{
+			DevAuth: cmd.DevAuthConfig{
+				Enabled: false, // Use production mode but with custom injected client
+			},
+		},
+	}
+	container, _ := cmd.NewContainer(appConfig, c.DB)
+
+	// Inject custom auth client for test scenario
+	container.SetAuthClient(authClient)
+
+	return cmd.NewRouter(container)
 }
 
 // TearDownTest очищает ресурсы после теста

@@ -19,6 +19,7 @@ type HTTPRequest struct {
 	Body        interface{}
 	Headers     map[string]string
 	ContentType string
+	SkipAuth    bool // If true, don't add default Bearer token
 }
 
 // HTTPResponse представляет HTTP ответ
@@ -30,7 +31,10 @@ type HTTPResponse struct {
 
 // ExecuteHTTPRequest выполняет HTTP запрос через тестовый сервер
 func ExecuteHTTPRequest(ctx context.Context, handler http.Handler, req HTTPRequest) (*HTTPResponse, error) {
-	req.Headers = withAuthHeader(req.Headers)
+	// Add default auth token unless explicitly skipped
+	if !req.SkipAuth {
+		req.Headers = withAuthHeader(req.Headers)
+	}
 	var body io.Reader
 
 	// Подготавливаем тело запроса
@@ -92,31 +96,24 @@ func CreateQuestHTTPRequest(questData interface{}) HTTPRequest {
 	}
 }
 
-// AssignQuestHTTPRequestWithBody создает HTTP запрос для назначения квеста с кастомным телом запроса
-func AssignQuestHTTPRequestWithBody(questID uuid.UUID, requestBody interface{}) HTTPRequest {
-	return HTTPRequest{
-		Method:      "POST",
-		URL:         "/api/v1/quests/" + questID.String() + "/assign",
-		Body:        requestBody,
-		Headers:     withAuthHeader(nil),
-		ContentType: "application/json",
-	}
-}
-
 // AssignQuestHTTPRequestWithStringID создает HTTP запрос с строковым ID (для тестирования невалидных UUID)
-func AssignQuestHTTPRequestWithStringID(questID string, requestBody interface{}) HTTPRequest {
+func AssignQuestHTTPRequestWithStringID(questID string) HTTPRequest {
 	return HTTPRequest{
 		Method:      "POST",
 		URL:         "/api/v1/quests/" + questID + "/assign",
-		Body:        requestBody,
 		Headers:     withAuthHeader(nil),
 		ContentType: "application/json",
 	}
 }
 
 // AssignQuestHTTPRequest создает HTTP запрос для назначения квеста
-func AssignQuestHTTPRequest(questID uuid.UUID, userID uuid.UUID) HTTPRequest {
-	return AssignQuestHTTPRequestWithBody(questID, map[string]string{"user_id": userID.String()})
+func AssignQuestHTTPRequest(questID uuid.UUID) HTTPRequest {
+	return HTTPRequest{
+		Method:      "POST",
+		URL:         "/api/v1/quests/" + questID.String() + "/assign",
+		Headers:     withAuthHeader(nil),
+		ContentType: "application/json",
+	}
 }
 
 // GetQuestHTTPRequest создает HTTP запрос для получения квеста
@@ -151,20 +148,12 @@ func ListQuestsHTTPRequest(status string) HTTPRequest {
 	}
 }
 
-// ListAssignedQuestsHTTPRequest создает HTTP запрос для получения квестов назначенных пользователю
-func ListAssignedQuestsHTTPRequest(userID uuid.UUID) HTTPRequest {
+// ListAssignedQuestsHTTPRequest создает HTTP запрос для получения квестов назначенных аутентифицированному пользователю
+// User ID теперь берется из JWT токена, поэтому не передается в query параметрах
+func ListAssignedQuestsHTTPRequest() HTTPRequest {
 	return HTTPRequest{
 		Method:  "GET",
-		URL:     "/api/v1/quests/assigned?user_id=" + userID.String(),
-		Headers: withAuthHeader(nil),
-	}
-}
-
-// ListAssignedQuestsHTTPRequestWithStringID создает HTTP запрос с строковым ID (для тестирования невалидных UUID)
-func ListAssignedQuestsHTTPRequestWithStringID(userID string) HTTPRequest {
-	return HTTPRequest{
-		Method:  "GET",
-		URL:     "/api/v1/quests/assigned?user_id=" + userID,
+		URL:     "/api/v1/quests/assigned",
 		Headers: withAuthHeader(nil),
 	}
 }
@@ -213,11 +202,16 @@ func CreateMalformedJSONRequest(method, url string) HTTPRequest {
 }
 
 func withAuthHeader(headers map[string]string) map[string]string {
+	if headers == nil {
+		headers = make(map[string]string)
+	}
+
 	result := make(map[string]string, len(headers)+1)
 	for k, v := range headers {
 		result[k] = v
 	}
-	if _, ok := result["Authorization"]; !ok {
+	// Only add Authorization if not explicitly provided (even if empty)
+	if _, exists := result["Authorization"]; !exists {
 		result["Authorization"] = "Bearer test-token"
 	}
 	return result

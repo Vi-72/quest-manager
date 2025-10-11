@@ -11,8 +11,7 @@ import (
 	"quest-manager/tests/integration/core/assertions"
 	casesteps "quest-manager/tests/integration/core/case_steps"
 	testdatagenerators "quest-manager/tests/integration/core/test_data_generators"
-
-	"github.com/google/uuid"
+	"quest-manager/tests/integration/mock"
 )
 
 // Test 1: Create quest via handler, assign via API, verify database and events
@@ -36,9 +35,10 @@ func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 	// Wait for async processing
 	time.Sleep(100 * time.Millisecond)
 
-	// 2. Assign quest through API using helper
-	userID := uuid.New()
-	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID(), userID)
+	// 2. Assign quest through API using helper (user ID comes from JWT token)
+	// In tests, mock auth returns DefaultUserID
+	expectedUserID := mock.NewAlwaysSuccessAuthClient().DefaultUserID
+	assignReq := casesteps.AssignQuestHTTPRequest(createdQuest.ID())
 	assignResp, err := casesteps.ExecuteHTTPRequest(ctx, s.TestDIContainer.HTTPRouter, assignReq)
 
 	// Check HTTP response
@@ -57,11 +57,11 @@ func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 	s.Require().NoError(err, "Should retrieve updated quest from database")
 	s.Assert().Equal(quest.StatusAssigned, updatedQuest.Status, "Quest status should be assigned")
 	s.Assert().NotNil(updatedQuest.Assignee, "Assignee field should be set")
-	s.Assert().Equal(userID, *updatedQuest.Assignee, "Assignee ID should match")
+	s.Assert().Equal(expectedUserID, *updatedQuest.Assignee, "Assignee ID should match DefaultUserID from mock auth")
 
 	// Verify response data matches DB using assign assertions
 	assignAssertions := assertions.NewQuestAssignAssertions(s.Assert())
-	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, createdQuest.ID(), userID)
+	assignAssertions.VerifyQuestAssignmentResponse(&assignResult, createdQuest.ID(), expectedUserID)
 
 	// 4. Verify assignment events were published
 	s.Assert().True(updatedQuest.UpdatedAt.After(updatedQuest.CreatedAt), "Update time should be after creation time")
@@ -69,12 +69,12 @@ func (s *E2ESuite) TestCreateThroughHandlerAssignThroughAPI() {
 	s.Assert().NotNil(updatedQuest.Assignee, "Assignee field indicates assign event was processed")
 	s.Assert().True(updatedQuest.UpdatedAt.After(createdQuest.UpdatedAt), "Updated time change indicates assign event was processed")
 
-	assignedQuests, err := s.TestDIContainer.QuestRepository.FindByAssignee(ctx, userID)
+	assignedQuests, err := s.TestDIContainer.QuestRepository.FindByAssignee(ctx, expectedUserID)
 	s.Require().NoError(err, "Should find quests by assignee")
 	s.Assert().Len(assignedQuests, 1, "Should find exactly one assigned quest")
 	s.Assert().Equal(createdQuest.ID(), assignedQuests[0].ID(), "Found quest should match the assigned quest")
 
-	listAssignedResult, err := casesteps.ListAssignedQuestsStep(ctx, s.TestDIContainer.ListAssignedQuestsHandler, userID)
+	listAssignedResult, err := casesteps.ListAssignedQuestsStep(ctx, s.TestDIContainer.ListAssignedQuestsHandler, expectedUserID)
 	s.Require().NoError(err, "Should list assigned quests successfully")
 	s.Assert().Len(listAssignedResult, 1, "Should have one assigned quest in list")
 	s.Assert().Equal(createdQuest.ID(), listAssignedResult[0].ID(), "Listed quest should match assigned quest")

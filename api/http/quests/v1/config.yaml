@@ -1,4 +1,4 @@
-package: servers
+package: v1
 output: servers.gen.go
 generate:
   - types

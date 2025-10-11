@@ -15,7 +15,7 @@ import (
 
 const apiV1Prefix = "/api/v1"
 
-func NewRouter(root *CompositionRoot) http.Handler {
+func NewRouter(root *Container) http.Handler {
 	router := chi.NewRouter()
 
 	// --- Базовые middleware ---
@@ -77,7 +77,10 @@ func NewRouter(root *CompositionRoot) http.Handler {
 		`))
 	})
 
-	strictHandler := root.NewApiHandler()
+	strictHandler, err := root.NewApiHandler()
+	if err != nil {
+		panic("failed to create API handler: " + err.Error())
+	}
 
 	// Create StrictHandler with custom error handling for parameter parsing and validation
 	apiHandler := v1.NewStrictHandlerWithOptions(strictHandler, nil, v1.StrictHTTPServerOptions{

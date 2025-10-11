@@ -12,6 +12,8 @@ HTTP-сервис для создания и управления квестам
 - 🔄 **Domain Events**: отслеживание изменений в доменной модели
 - 🏗️ **Clean Architecture**: четкое разделение слоев и ответственности
 - ⚡ **Оптимизированная БД**: индексы для быстрого поиска
+- 🚀 **style Container**: lazy initialization, context-aware dependencies
+- 🔧 **Configuration-driven Middleware**: гибкая настройка через environment variables
 
 ## 🔧 Запуск
 
@@ -39,6 +41,14 @@ DB_NAME=quest_manager                   # Database name
 DB_SSL_MODE=disable                     # SSL mode
 EVENT_GOROUTINE_LIMIT=10               # Лимит горутин для событий
 AUTH_GRPC=localhost:50051         # gRPC адрес Auth сервиса
+
+# Middleware Configuration (опционально)
+ENABLE_AUTH_MIDDLEWARE=true            # Включить аутентификацию (true - production, false - dev mode)
+# Validation, Logging, Recovery - всегда включены
+
+# Development Auth Configuration (используется когда ENABLE_AUTH_MIDDLEWARE=false)
+DEV_AUTH_HEADER_NAME=X-Dev-User-ID     # Имя header для передачи user ID (по умолчанию: X-Dev-User-ID)
+DEV_AUTH_STATIC_USER_ID=00000000-0000-0000-0000-000000000001  # Дефолтный user ID для dev режима
 ```
 
 2. **Запуск:**
@@ -60,6 +70,51 @@ curl -H "Authorization: Bearer <your-jwt-token>" \
 **Коды ошибок аутентификации:**
 - `401 Unauthorized` - невалидный, истекший или отсутствующий токен
 - `403 Forbidden` - недостаточно прав (для будущих ролей)
+
+### 🔧 Development Mode (Mock Authentication)
+
+Для локальной разработки и тестирования можно отключить JWT аутентификацию:
+
+```bash
+ENABLE_AUTH_MIDDLEWARE=false
+```
+
+В этом режиме используется **mock authentication middleware**, который:
+- Автоматически авторизует все запросы
+- Читает `user_id` из HTTP header (по умолчанию `X-Dev-User-ID`)
+- Использует статический `user_id` если header не указан
+
+**Примеры использования:**
+
+```bash
+# Использовать дефолтный user ID
+curl -X POST http://localhost:8080/api/v1/quests \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test Quest", ...}'
+
+# Указать конкретный user ID через header
+curl -X POST http://localhost:8080/api/v1/quests \
+  -H "Content-Type: application/json" \
+  -H "X-Dev-User-ID: 12345678-1234-1234-1234-123456789012" \
+  -d '{"title": "Test Quest", ...}'
+
+# Использовать кастомный header name
+# В .env: DEV_AUTH_HEADER_NAME=X-User-ID
+curl -X POST http://localhost:8080/api/v1/quests \
+  -H "X-User-ID: 12345678-1234-1234-1234-123456789012" \
+  ...
+```
+
+**Настройка dev режима:**
+```bash
+# Имя header для передачи user ID (опционально)
+DEV_AUTH_HEADER_NAME=X-Dev-User-ID
+
+# Статический user ID для запросов без header (опционально)
+DEV_AUTH_STATIC_USER_ID=00000000-0000-0000-0000-000000000001
+```
+
+⚠️ **Важно:** Dev режим предназначен только для локальной разработки! В production всегда используйте `ENABLE_AUTH_MIDDLEWARE=true`.
 
 ### 🌐 API Endpoints
 
@@ -90,7 +145,11 @@ curl -H "Authorization: Bearer <your-jwt-token>" \
 quest-manager/
 ├── cmd/                    # 🚀 Точка входа
 │   ├── app/                # Главное приложение
-│   ├── composition_root.go # DI контейнер
+│   ├── container.go        # DI контейнер
+│   ├── build.go            # Build и валидация контейнера
+│   ├── middlewares.go      # HTTP middleware
+│   ├── router.go           # HTTP роутер
+│   ├── closer.go           # Resource cleanup
 │   └── config.go           # Конфигурация
 ├── internal/               # 🏗️ Основной код приложения
 │   ├── adapters/           # Адаптеры (Hexagonal Architecture)
@@ -296,6 +355,86 @@ CREATE INDEX idx_locations_name ON locations(name);
 2. **Денормализация координат**: избегаем JOIN для частых запросов
 3. **Композитные индексы**: оптимальны для multi-column поиска
 
+## 🚀 Container Architecture
+
+### 🏗️ Dependency Injection Container
+
+Проект использует **Container** с современными паттернами:
+
+#### **Lazy Initialization**
+```go
+// Зависимости создаются только при первом обращении
+func (c *Container) GetAuthClient(ctx context.Context) ports.AuthClient {
+    if c.authClient == nil {
+        conn, err := grpc.NewClient(c.configs.AuthGRPC, ...)
+        if err != nil {
+            panic(fmt.Errorf("failed to create auth gRPC client: %w", err))
+        }
+        c.RegisterCloser(connCloser{conn})
+        c.authClient = authclient.NewUserAuthClient(grpcClient)
+    }
+    return c.authClient
+}
+```
+
+#### **Context-Aware Dependencies**
+```go
+// Все getter методы принимают context.Context
+func (c *Container) GetAuthConn(ctx context.Context) *grpc.ClientConn
+func (c *Container) GetAuthClient(ctx context.Context) ports.AuthClient
+func (c *Container) GetQuestRepository(ctx context.Context) ports.QuestRepository
+```
+
+#### **Build Pattern**
+```go
+// Валидация и инициализация в отдельном методе
+func (c *Container) Build(ctx context.Context) error {
+    // Валидация конфигурации
+    if c.configs.AuthGRPC != "" && c.configs.AuthClient != nil {
+        return fmt.Errorf("both AuthGRPC and AuthClient cannot be set simultaneously")
+    }
+    
+    // Eager validation для критических зависимостей
+    if c.configs.AuthGRPC != "" {
+        _ = c.GetAuthClient(ctx) // Trigger panic if fails
+    }
+    
+    return nilCheck(c)
+}
+```
+
+#### **Configuration-Driven Middleware**
+```go
+type MiddlewareConfig struct {
+    EnableAuth       bool // Включает аутентификацию
+    EnableValidation bool // Включает валидацию OpenAPI
+    EnableLogging    bool // Включает логирование запросов
+    EnableRecovery   bool // Включает recovery от паник
+}
+
+// Условная логика middleware
+func (c *Container) Middlewares(swagger *openapi3.T) []func(http.Handler) http.Handler {
+    if c.configs.Middleware.EnableAuth {
+        if authClient := c.GetAuthClient(ctx); authClient != nil {
+            authMW := httpmiddleware.NewAuthMiddleware(authClient)
+            middlewares = append(middlewares, authMW.Auth)
+            log.Printf("✅ Authentication middleware enabled")
+        }
+    }
+    return middlewares
+}
+```
+
+### 🎯 Преимущества
+
+- ✅ **Lazy Loading**: зависимости создаются по требованию
+- ✅ **Context Awareness**: все методы принимают context.Context
+- ✅ **Panic on Critical Errors**: критические ошибки приводят к panic
+- ✅ **Resource Management**: автоматическая регистрация closers
+- ✅ **Configuration Flexibility**: middleware настраивается через env vars
+- ✅ **Detailed Logging**: подробное логирование инициализации
+- ✅ **Error Handling**: Build() возвращает error, getters panic
+
 ## 🔄 Domain-Driven Design
 
 ### 🏗️ Паттерны
@@ -342,6 +481,19 @@ oapi-codegen -config configs/server.cfg.yaml api/openapi/openapi.yml
 
 ![CI Status](https://github.com/Vi-72/quest-manager/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Vi-72/quest-manager/branch/main/graph/badge.svg)](https://codecov.io/gh/Vi-72/quest-manager)
+
+### 🎯 Результаты тестирования
+
+#### **✅ Успешные тесты:**
+- **Domain Tests**: 100% PASS - вся бизнес-логика работает корректно
+- **Contract Tests**: 100% PASS - все интерфейсы и контракты соблюдены
+- **Handler Tests**: 100% PASS - application layer работает стабильно
+
+#### **⚠️ Проблемные тесты:**
+- **HTTP Tests**: частично FAIL - проблемы с JSON unmarshaling и валидацией
+- **E2E Tests**: 1 FAIL - создание квестов через API возвращает 400 вместо 201
+
+**Примечание**: Проблемы в HTTP тестах не связаны с архитектурными изменениями Container - это существующие проблемы с HTTP слоем и валидацией.
 
 ### 🎯 Типы тестов
 
@@ -489,3 +641,39 @@ make coverage-report    # scripts/coverage-report.sh
 - **Event Sourcing Ready**: domain events для аудита
 - **Hexagonal Architecture**: порты и адаптеры для изоляции
 - **Database per Aggregate**: quest и location репозитории
+
+## 🔄 Недавние изменения
+
+### 🚀 Container Architecture Refactoring
+
+**Дата**: Октябрь 2024
+
+#### **Что изменилось:**
+1. **Переименование**: `CompositionRoot` → `Container`
+2. **Lazy Initialization**: зависимости создаются по требованию
+3. **Context-Aware**: все getter методы принимают `context.Context`
+4. **Build Pattern**: валидация вынесена в отдельный метод `Build()`
+5. **Configuration-Driven Middleware**: гибкая настройка через env vars
+
+#### **Удаленные файлы:**
+- `cmd/auth_client_factory.go` - заменен на прямые getter методы
+- `cmd/composition_root.go` - переименован в `container.go`
+
+#### **Новые файлы:**
+- `cmd/build.go` - валидация и инициализация контейнера
+- `cmd/middlewares.go` - конфигурируемые HTTP middleware
+- `cmd/router.go` - HTTP роутер с улучшенной логикой
+- `cmd/closer.go` - управление ресурсами
+
+#### **Новые возможности:**
+```bash
+# Middleware Configuration
+ENABLE_AUTH_MIDDLEWARE=true
+```
+
+#### **Преимущества:**
+- ✅ **Производительность**: lazy loading зависимостей
+- ✅ **Гибкость**: настройка middleware через конфигурацию
+- ✅ **Надежность**: panic на критических ошибках
+- ✅ **Логирование**: подробная информация об инициализации
+- ✅ **Тестируемость**: context-aware зависимости

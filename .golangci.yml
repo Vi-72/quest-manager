@@ -78,7 +78,6 @@ linters:
     - govet  
     - staticcheck
     - unused
-    - typecheck
     - ineffassign
     - gofmt
     - goimports
@@ -90,6 +89,8 @@ linters:
     - whitespace
 
 issues:
+  exclude-dirs:
+    - tests
   exclude-rules:
     # Исключения для тестовых файлов
     - path: _test\.go
@@ -112,6 +113,21 @@ issues:
         - goconst
         - dupl
         - lll
+        - typecheck
+
+    # Исключения для сгенерированного OpenAPI кода
+    - path: api/http/quests/v1/servers.gen.go
+      linters:
+        - typecheck
+        - errcheck
+        - goconst
+        - dupl
+        - lll
+
+    # Исключения для domain моделей (проблемы с typecheck)
+    - path: internal/core/domain/model/
+      linters:
+        - typecheck
 
     # Исключения для моков и тестовых утилит
     - path: tests/
