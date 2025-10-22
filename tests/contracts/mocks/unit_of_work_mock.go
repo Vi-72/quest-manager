@@ -84,3 +84,23 @@ func (m *MockUnitOfWork) ClearRepositories() {
 		mockLocationRepo.Clear()
 	}
 }
+
+// MockUnitOfWorkFactory is a mock implementation of UnitOfWorkFactory for contract testing
+type MockUnitOfWorkFactory struct {
+	unitOfWork *MockUnitOfWork
+}
+
+func NewMockUnitOfWorkFactory() *MockUnitOfWorkFactory {
+	return &MockUnitOfWorkFactory{
+		unitOfWork: NewMockUnitOfWork(),
+	}
+}
+
+func (m *MockUnitOfWorkFactory) CreateUnitOfWork() (ports.UnitOfWork, error) {
+	return m.unitOfWork, nil
+}
+
+// Helper methods for testing
+func (m *MockUnitOfWorkFactory) GetUnitOfWork() *MockUnitOfWork {
+	return m.unitOfWork
+}

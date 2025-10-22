@@ -5,6 +5,7 @@ import (
 
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
+	"quest-manager/internal/pkg/ddd"
 	"quest-manager/internal/pkg/errs"
 )
 
@@ -14,15 +15,13 @@ type ChangeQuestStatusCommandHandler interface {
 }
 
 type changeQuestStatusHandler struct {
-	unitOfWork     ports.UnitOfWork
-	eventPublisher ports.EventPublisher
+	executor *CommandExecutor
 }
 
 // NewChangeQuestStatusCommandHandler creates a new ChangeQuestStatusCommandHandler instance.
-func NewChangeQuestStatusCommandHandler(unitOfWork ports.UnitOfWork, eventPublisher ports.EventPublisher) ChangeQuestStatusCommandHandler {
+func NewChangeQuestStatusCommandHandler(uowFactory ports.UnitOfWorkFactory, eventPublisher ports.EventPublisher) ChangeQuestStatusCommandHandler {
 	return &changeQuestStatusHandler{
-		unitOfWork:     unitOfWork,
-		eventPublisher: eventPublisher,
+		executor: NewCommandExecutor(uowFactory, eventPublisher),
 	}
 }
 
@@ -33,51 +32,34 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 		return ChangeQuestStatusResult{}, errs.NewDomainValidationError("status", "must be one of 'created', 'posted', 'assigned', 'in_progress', 'declined', 'completed'")
 	}
 
-	// Begin transaction
-	if err := h.unitOfWork.Begin(ctx); err != nil {
-		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to begin quest status change transaction", err)
-	}
+	var result ChangeQuestStatusResult
 
-	// Get quest - if not found → 404
-	q, err := h.unitOfWork.QuestRepository().GetByID(ctx, cmd.QuestID)
-	if err != nil {
-		_ = h.unitOfWork.Rollback()
-		return ChangeQuestStatusResult{}, errs.NewNotFoundErrorWithCause("quest", cmd.QuestID.String(), err)
-	}
-
-	// Use domain logic for status change - domain validation error → 400
-	if err := q.ChangeStatus(cmd.Status); err != nil {
-		_ = h.unitOfWork.Rollback()
-		return ChangeQuestStatusResult{}, errs.NewDomainValidationErrorWithCause("status", "invalid status transition", err)
-	}
-
-	// Save quest - infrastructure error → 500
-	if err := h.unitOfWork.QuestRepository().Save(ctx, q); err != nil {
-		_ = h.unitOfWork.Rollback()
-		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to save quest", err)
-	}
-
-	// Publish domain events within the same transaction
-	if h.eventPublisher != nil {
-		if err := h.eventPublisher.Publish(ctx, q.GetDomainEvents()...); err != nil {
-			_ = h.unitOfWork.Rollback()
-			return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to publish events", err)
+	err := h.executor.Execute(ctx, func(ctx context.Context, uow ports.UnitOfWork) ([]ddd.AggregateRoot, error) {
+		// Get quest - if not found → 404
+		q, err := uow.QuestRepository().GetByID(ctx, cmd.QuestID)
+		if err != nil {
+			return nil, errs.NewNotFoundErrorWithCause("quest", cmd.QuestID.String(), err)
 		}
-	}
 
-	// Commit transaction
-	err = h.unitOfWork.Commit(ctx)
-	if err != nil {
-		return ChangeQuestStatusResult{}, errs.WrapInfrastructureError("failed to commit quest status change transaction", err)
-	}
+		// Use domain logic for status change - domain validation error → 400
+		if err := q.ChangeStatus(cmd.Status); err != nil {
+			return nil, errs.NewDomainValidationErrorWithCause("status", "invalid status transition", err)
+		}
 
-	// Clear events after successful commit
-	q.ClearDomainEvents()
+		// Save quest - infrastructure error → 500
+		if err := uow.QuestRepository().Save(ctx, q); err != nil {
+			return nil, errs.WrapInfrastructureError("failed to save quest", err)
+		}
 
-	// Form result from updated quest
-	return ChangeQuestStatusResult{
-		ID:       q.ID(),
-		Assignee: q.Assignee, // Now both are *uuid.UUID
-		Status:   string(q.Status),
-	}, nil
+		result = ChangeQuestStatusResult{
+			ID:       q.ID(),
+			Assignee: q.Assignee, // Now both are *uuid.UUID
+			Status:   string(q.Status),
+		}
+
+		// Return aggregate for event publishing
+		return []ddd.AggregateRoot{&q}, nil
+	})
+
+	return result, err
 }

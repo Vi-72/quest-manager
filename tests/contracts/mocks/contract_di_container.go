@@ -15,7 +15,7 @@ type ContractDIContainer struct {
 	QuestRepository    ports.QuestRepository
 	LocationRepository ports.LocationRepository
 	EventPublisher     ports.EventPublisher
-	UnitOfWork         ports.UnitOfWork
+	UnitOfWorkFactory  ports.UnitOfWorkFactory
 
 	// Command Handlers
 	CreateQuestHandler       commands.CreateQuestCommandHandler
@@ -35,12 +35,12 @@ func NewContractDIContainer() *ContractDIContainer {
 	questRepo := NewMockQuestRepository()
 	locationRepo := NewMockLocationRepository()
 	eventPublisher := &MockEventPublisher{}
-	unitOfWork := NewMockUnitOfWork()
+	unitOfWorkFactory := NewMockUnitOfWorkFactory()
 
 	// Create command handlers with mocked dependencies
-	createQuestHandler := commands.NewCreateQuestCommandHandler(unitOfWork, eventPublisher)
-	assignQuestHandler := commands.NewAssignQuestCommandHandler(unitOfWork, eventPublisher)
-	changeQuestStatusHandler := commands.NewChangeQuestStatusCommandHandler(unitOfWork, eventPublisher)
+	createQuestHandler := commands.NewCreateQuestCommandHandler(unitOfWorkFactory, eventPublisher)
+	assignQuestHandler := commands.NewAssignQuestCommandHandler(unitOfWorkFactory, eventPublisher)
+	changeQuestStatusHandler := commands.NewChangeQuestStatusCommandHandler(unitOfWorkFactory, eventPublisher)
 
 	// Create query handlers with mocked dependencies
 	listQuestsHandler := queries.NewListQuestsQueryHandler(questRepo)
@@ -52,7 +52,7 @@ func NewContractDIContainer() *ContractDIContainer {
 		QuestRepository:    questRepo,
 		LocationRepository: locationRepo,
 		EventPublisher:     eventPublisher,
-		UnitOfWork:         unitOfWork,
+		UnitOfWorkFactory:  unitOfWorkFactory,
 
 		CreateQuestHandler:       createQuestHandler,
 		AssignQuestHandler:       assignQuestHandler,
@@ -78,7 +78,8 @@ func (c *ContractDIContainer) CleanupAll() {
 		mockEventPublisher.PublishAsyncEvents = nil
 		mockEventPublisher.PublishError = nil
 	}
-	if mockUnitOfWork, ok := c.UnitOfWork.(*MockUnitOfWork); ok {
+	if mockUnitOfWorkFactory, ok := c.UnitOfWorkFactory.(*MockUnitOfWorkFactory); ok {
+		mockUnitOfWork := mockUnitOfWorkFactory.GetUnitOfWork()
 		mockUnitOfWork.ClearRepositories()
 		mockUnitOfWork.SetShouldFail(false)
 	}

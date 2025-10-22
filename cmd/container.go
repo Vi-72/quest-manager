@@ -23,7 +23,6 @@ import (
 type Container struct {
 	configs        Config
 	db             *gorm.DB
-	unitOfWork     ports.UnitOfWork
 	eventPublisher ports.EventPublisher
 	authClient     ports.AuthClient
 	closers        []Closer
@@ -32,25 +31,20 @@ type Container struct {
 // NewContainer creates a new dependency injection container.
 // Initializes all dependencies including auth client (eager initialization).
 func NewContainer(configs Config, db *gorm.DB) (*Container, error) {
-	unitOfWork, err := postgres.NewUnitOfWork(db)
-	if err != nil {
-		return nil, fmt.Errorf("create unit of work: %w", err)
+	container := &Container{
+		configs: configs,
+		db:      db,
 	}
 
+	// EventPublisher now uses container as UnitOfWorkFactory
 	eventPublisher, err := eventrepo.NewRepository(
-		unitOfWork.(ports.Tracker),
+		container, // Container implements UnitOfWorkFactory
 		configs.EventGoroutineLimit,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create event publisher: %w", err)
 	}
-
-	container := &Container{
-		configs:        configs,
-		db:             db,
-		unitOfWork:     unitOfWork,
-		eventPublisher: eventPublisher,
-	}
+	container.eventPublisher = eventPublisher
 
 	if !configs.Middleware.DevAuth.Enabled {
 		authClient, _ := container.createAuthClient()
@@ -66,8 +60,11 @@ func (c *Container) Cfg() Config { return c.configs }
 // DB returns database connection.
 func (c *Container) DB() *gorm.DB { return c.db }
 
-// GetUnitOfWork returns the single UnitOfWork instance.
-func (c *Container) GetUnitOfWork() ports.UnitOfWork { return c.unitOfWork }
+// CreateUnitOfWork creates a new UnitOfWork instance for this request
+// This ensures thread safety by avoiding shared state between concurrent requests
+func (c *Container) CreateUnitOfWork() (ports.UnitOfWork, error) {
+	return postgres.NewUnitOfWork(c.db)
+}
 
 // EventPublisher returns EventPublisher.
 func (c *Container) EventPublisher() ports.EventPublisher { return c.eventPublisher }
@@ -100,16 +97,6 @@ func (c *Container) createAuthClient() (ports.AuthClient, error) {
 	return authClient, nil
 }
 
-// QuestRepository returns repository from the single UoW.
-func (c *Container) QuestRepository() ports.QuestRepository {
-	return c.unitOfWork.QuestRepository()
-}
-
-// LocationRepository returns repository from the single UoW.
-func (c *Container) LocationRepository() ports.LocationRepository {
-	return c.unitOfWork.LocationRepository()
-}
-
 // Handlers groups all command/query handlers for API wiring.
 type Handlers struct {
 	CreateQuest       commands.CreateQuestCommandHandler
@@ -123,14 +110,19 @@ type Handlers struct {
 
 // Handlers initializes all application handlers.
 func (c *Container) Handlers() Handlers {
+	// Create a temporary UoW to get repositories for query handlers
+	tempUoW, _ := c.CreateUnitOfWork()
+	questRepo := tempUoW.QuestRepository()
+
 	return Handlers{
-		CreateQuest:       commands.NewCreateQuestCommandHandler(c.unitOfWork, c.eventPublisher),
-		ListQuests:        queries.NewListQuestsQueryHandler(c.QuestRepository()),
-		GetQuestByID:      queries.NewGetQuestByIDQueryHandler(c.QuestRepository()),
-		ChangeQuestStatus: commands.NewChangeQuestStatusCommandHandler(c.unitOfWork, c.eventPublisher),
-		AssignQuest:       commands.NewAssignQuestCommandHandler(c.unitOfWork, c.eventPublisher),
-		SearchByRadius:    queries.NewSearchQuestsByRadiusQueryHandler(c.QuestRepository()),
-		ListAssigned:      queries.NewListAssignedQuestsQueryHandler(c.QuestRepository()),
+		CreateQuest:       commands.NewCreateQuestCommandHandler(c, c.eventPublisher),
+		ChangeQuestStatus: commands.NewChangeQuestStatusCommandHandler(c, c.eventPublisher),
+		AssignQuest:       commands.NewAssignQuestCommandHandler(c, c.eventPublisher),
+		// Queries use direct repository access for simplicity
+		ListQuests:     queries.NewListQuestsQueryHandler(questRepo),
+		GetQuestByID:   queries.NewGetQuestByIDQueryHandler(questRepo),
+		SearchByRadius: queries.NewSearchQuestsByRadiusQueryHandler(questRepo),
+		ListAssigned:   queries.NewListAssignedQuestsQueryHandler(questRepo),
 	}
 }
 

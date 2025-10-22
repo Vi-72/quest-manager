@@ -53,7 +53,7 @@ type ChangeQuestStatusCommandHandlerContractSuite struct {
 func (s *CreateQuestCommandHandlerContractSuite) SetupSuite() {
 	s.container = mocks.NewContractDIContainer()
 	s.handler = s.container.CreateQuestHandler
-	s.unitOfWork = s.container.UnitOfWork
+	s.unitOfWork = s.container.UnitOfWorkFactory.(*mocks.MockUnitOfWorkFactory).GetUnitOfWork()
 	s.eventPublisher = s.container.EventPublisher
 	s.ctx = context.Background()
 }
@@ -67,7 +67,7 @@ func (s *AssignQuestCommandHandlerContractSuite) SetupSuite() {
 	s.container = mocks.NewContractDIContainer()
 	s.handler = s.container.AssignQuestHandler
 	s.createHandler = s.container.CreateQuestHandler
-	s.unitOfWork = s.container.UnitOfWork
+	s.unitOfWork = s.container.UnitOfWorkFactory.(*mocks.MockUnitOfWorkFactory).GetUnitOfWork()
 	s.eventPublisher = s.container.EventPublisher
 	s.ctx = context.Background()
 }
@@ -81,7 +81,7 @@ func (s *ChangeQuestStatusCommandHandlerContractSuite) SetupSuite() {
 	s.container = mocks.NewContractDIContainer()
 	s.handler = s.container.ChangeQuestStatusHandler
 	s.createHandler = s.container.CreateQuestHandler
-	s.unitOfWork = s.container.UnitOfWork
+	s.unitOfWork = s.container.UnitOfWorkFactory.(*mocks.MockUnitOfWorkFactory).GetUnitOfWork()
 	s.eventPublisher = s.container.EventPublisher
 	s.ctx = context.Background()
 }

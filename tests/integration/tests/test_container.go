@@ -10,7 +10,6 @@ import (
 
 	"quest-manager/cmd"
 	authclient "quest-manager/internal/adapters/out/client/auth"
-	"quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/adapters/out/postgres/eventrepo"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
@@ -99,13 +98,16 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	db, sqlDB, err := cmd.MustConnectDB(databaseURL)
 	suiteContainer.Require().NoError(err, "Failed to connect to test database")
 
-	// Создание Unit of Work (он сам создает внутри себя quest и location репозитории)
-	unitOfWork, err := postgres.NewUnitOfWork(db)
-	suiteContainer.Require().NoError(err, "Failed to create unit of work")
+	// Создание UnitOfWorkFactory
+	uowFactory := NewTestUnitOfWorkFactory(db)
 
 	// Создание event репозитория отдельно
-	eventRepo, err := eventrepo.NewRepository(unitOfWork.(ports.Tracker), 5) // лимит горутин = 5
+	eventRepo, err := eventrepo.NewRepository(uowFactory, 5) // лимит горутин = 5
 	suiteContainer.Require().NoError(err, "Failed to create event repository")
+
+	// Создание UnitOfWork для получения репозиториев (для обратной совместимости)
+	unitOfWork, err := uowFactory.CreateUnitOfWork()
+	suiteContainer.Require().NoError(err, "Failed to create unit of work")
 
 	// Получаем репозитории из UnitOfWork
 	questRepo := unitOfWork.QuestRepository()
@@ -116,15 +118,15 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 
 	// Создание обработчиков команд
 	createQuestHandler := commands.NewCreateQuestCommandHandler(
-		unitOfWork,
+		uowFactory,
 		eventRepo,
 	)
 	assignQuestHandler := commands.NewAssignQuestCommandHandler(
-		unitOfWork,
+		uowFactory,
 		eventRepo,
 	)
 	changeQuestStatusHandler := commands.NewChangeQuestStatusCommandHandler(
-		unitOfWork,
+		uowFactory,
 		eventRepo,
 	)
 

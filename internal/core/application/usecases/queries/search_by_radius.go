@@ -5,6 +5,7 @@ import (
 
 	"quest-manager/internal/core/domain/model/kernel"
 	"quest-manager/internal/core/domain/model/quest"
+	"quest-manager/internal/core/domain/services"
 	"quest-manager/internal/core/ports"
 )
 
@@ -14,37 +15,33 @@ type SearchQuestsByRadiusQueryHandler interface {
 }
 
 type searchQuestsByRadiusHandler struct {
-	repo ports.QuestRepository
+	questRepo     ports.QuestRepository
+	searchService services.QuestSearchService
 }
 
 // NewSearchQuestsByRadiusQueryHandler creates a new SearchQuestsByRadiusQueryHandler instance.
-func NewSearchQuestsByRadiusQueryHandler(repo ports.QuestRepository) SearchQuestsByRadiusQueryHandler {
-	return &searchQuestsByRadiusHandler{repo: repo}
+func NewSearchQuestsByRadiusQueryHandler(questRepo ports.QuestRepository) SearchQuestsByRadiusQueryHandler {
+	return &searchQuestsByRadiusHandler{
+		questRepo:     questRepo,
+		searchService: services.NewQuestSearchService(),
+	}
 }
 
 // Handle retrieves quests within the specified radius from the center coordinate.
-// This method contains the business logic for geospatial search:
+// This method orchestrates the geospatial search:
 // 1. Calculate bounding box for efficient database query
-// 2. Filter results by exact radius using Haversine distance
+// 2. Get candidates from database (infrastructure concern)
+// 3. Apply domain service for precise filtering
 func (h *searchQuestsByRadiusHandler) Handle(ctx context.Context, center kernel.GeoCoordinate, radiusKm float64) ([]quest.Quest, error) {
 	// Step 1: Calculate bounding box using domain model
 	bbox := center.BoundingBoxForRadius(radiusKm)
 
 	// Step 2: Get candidates from repository using simple bounding box query
-	candidates, err := h.repo.FindByBoundingBox(ctx, bbox)
+	candidates, err := h.questRepo.FindByBoundingBox(ctx, bbox)
 	if err != nil {
 		return nil, err
 	}
 
-	// Step 3: Apply business logic - filter by exact radius using accurate Haversine distance
-	var result []quest.Quest
-	for _, q := range candidates {
-		// Check if either target location OR execution location is within radius
-		if center.DistanceTo(q.TargetLocation) <= radiusKm ||
-			center.DistanceTo(q.ExecutionLocation) <= radiusKm {
-			result = append(result, q)
-		}
-	}
-
-	return result, nil
+	// Step 3: Apply domain service for precise filtering
+	return h.searchService.FilterByRadius(candidates, center, radiusKm), nil
 }
