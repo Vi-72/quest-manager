@@ -3,7 +3,6 @@ package commands
 import (
 	"context"
 
-	_ "quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
 	"quest-manager/internal/pkg/ddd"
 	"quest-manager/internal/pkg/errs"
