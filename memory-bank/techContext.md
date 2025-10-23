@@ -433,7 +433,13 @@ volumes:
 - **Response Time**: <100ms for typical operations
 - **Memory Usage**: <100MB per instance
 - **Database Connections**: Max 25 concurrent connections
-- **Event Processing**: Async with goroutine pool (max 10 workers)
+- **Event Processing**: Async with goroutine pool (max 10 workers); sync Publish prefers UoW from context and falls back to creating UoW if absent
+
+## 🧩 Application Behaviors (UoW & Queries)
+
+- **UoW per-request**: created via `UnitOfWorkFactory`, commands use `Begin/Commit` with `ctxWithUow`.
+- **Read-your-writes**: repositories use `Tx()` when `InTx()==true` for reads; otherwise use `Db()`.
+- **Event Publisher (sync)**: uses UoW from context; if missing, creates its own UoW for persistence.
 
 ### Security Requirements
 - **Authentication**: JWT tokens required for all endpoints

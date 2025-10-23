@@ -390,6 +390,60 @@ type Container struct {
 
 ---
 
+## 🔗 Microservice Interaction
+
+### High-level interactions
+```
+┌────────────┐        HTTP/JSON         ┌──────────────────────┐
+│   Client   │ ───────────────────────▶ │   Quest Manager API  │
+└────────────┘                          │  (Handlers + Usecases)│
+                                        └──────────┬───────────┘
+                                                   │
+                                                   │ gRPC (JWT validation)
+                                                   ▼
+                                        ┌──────────────────────┐
+                                        │   Auth Service (gRPC)│
+                                        └──────────────────────┘
+                                                   
+                                                   │
+                                                   │ SQL (Tx via UoW)
+                                                   ▼
+                                        ┌──────────────────────┐
+                                        │     PostgreSQL       │
+                                        │  quests, locations   │
+                                        │  events (outbox)     │
+                                        └──────────────────────┘
+```
+
+### Transaction and event publishing flow
+```
+CommandHandler
+  ↓
+CommandExecutor
+  - Create UoW (per-request)
+  - Begin(ctx)
+  - ctx' = ctx + UoW
+  - Business logic (repositories use UoW.Tx())
+  - Commit(ctx')
+  - PublishDomainEventsAsync(...)
+
+EventPublisher (sync Publish)
+  - Reuses UoW from ctx if present
+  - If absent: creates its own UoW (fallback)
+  - Writes to events table (same DB)
+```
+
+### Query path (read-your-writes)
+- Queries create a fresh UoW but do not begin a transaction.
+- Repositories read via `Db()` normally; if `InTx()==true` (e.g., when called within a command), reads use `Tx()` to ensure read-your-writes consistency.
+
+### Notes
+- UoW is strictly per-request to avoid shared state and data races.
+- Event publisher prefers the caller transaction; otherwise, it safely opens a scoped UoW.
+- Auth is an external microservice (gRPC); Quest Manager calls it in middleware to validate JWT and extract `user_id` into request context.
+
+---
+
 ## 📐 Quality Attributes
 
 ### Maintainability
@@ -458,6 +512,6 @@ For detailed information, see:
 
 ---
 
-**Architecture Version:** 1.5.0  
-**Last Updated:** October 9, 2025  
+**Architecture Version:** 1.5.1  
+**Last Updated:** October 23, 2025  
 **Status:** Production Ready ✅

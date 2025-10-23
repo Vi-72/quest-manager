@@ -477,7 +477,7 @@ oapi-codegen -config configs/server.cfg.yaml api/openapi/openapi.yml
 
 ## 🧪 Тестирование
 
-### 📊 Покрытие кода: **75.6%**
+### 📊 Покрытие кода: **78.0% (internal)**
 
 ![CI Status](https://github.com/Vi-72/quest-manager/actions/workflows/ci.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Vi-72/quest-manager/branch/main/graph/badge.svg)](https://codecov.io/gh/Vi-72/quest-manager)
@@ -584,7 +584,9 @@ tests/
 
 ### 📋 GitHub Actions
 
-Автоматическое тестирование при каждом push и pull request:
+Автоматическое тестирование при каждом push и pull request.
+
+⚠️ Nightly прогоны тестов не настроены. Для локальных проверок используйте команды из раздела «Тестирование», для CI — триггеры на push/PR.
 
 - ✅ **Unit Tests** - доменная логика и контрактные тесты
 - ✅ **Integration Tests** - полный стек с PostgreSQL  

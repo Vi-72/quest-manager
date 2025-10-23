@@ -2,9 +2,9 @@
 
 ## 🎯 Current Status
 
-**Version**: 1.5.0  
+**Version**: 1.5.1  
 **Status**: Production Ready ✅  
-**Last Updated**: October 9, 2025
+**Last Updated**: October 23, 2025
 
 ## ✅ What Works
 
@@ -39,7 +39,7 @@
 - ✅ **Query Optimization**: Composite indexes for multi-column searches
 
 ### Testing & Quality
-- ✅ **Test Coverage**: 75.6% (exceeds 70% target)
+- ✅ **Test Coverage**: 78.0% internal (exceeds 70% target)
 - ✅ **Test Suite**: 110+ tests across all layers
 - ✅ **Unit Tests**: Domain layer with 100% business logic coverage
 - ✅ **Contract Tests**: Interface compliance verification
@@ -132,6 +132,7 @@
 4. **v1.3**: Added CQRS and event-driven architecture
 5. **v1.4**: Enhanced security with JWT authentication
 6. **v1.5**: Container refactoring with lazy initialization
+7. **v1.5.1**: UoW read-your-writes, EventPublisher fallback, coverage/reporting updates
 
 ### Key Architectural Decisions
 - **ADR-001**: Clean Architecture + DDD for maintainability
