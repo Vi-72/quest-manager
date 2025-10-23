@@ -25,6 +25,13 @@ func NewRepository(tracker ports.Tracker) (*Repository, error) {
 	return &Repository{tracker: tracker}, nil
 }
 
+func (r *Repository) dbWithCtx(ctx context.Context) *gorm.DB {
+	if r.tracker.InTx() {
+		return r.tracker.Tx().WithContext(ctx)
+	}
+	return r.tracker.Db().WithContext(ctx)
+}
+
 // Save saves a single quest.
 func (r *Repository) Save(ctx context.Context, q quest.Quest) error {
 	dto := DomainToDTO(q)
@@ -59,8 +66,8 @@ func (r *Repository) Save(ctx context.Context, q quest.Quest) error {
 // GetByID retrieves a quest by its ID.
 func (r *Repository) GetByID(ctx context.Context, questID uuid.UUID) (quest.Quest, error) {
 	var dto QuestWithAddressDTO
-	db := r.tracker.Db()
-	if err := db.WithContext(ctx).
+	db := r.dbWithCtx(ctx)
+	if err := db.
 		Select("quests.*, target_loc.address as target_address, exec_loc.address as execution_address").
 		Table("quests").
 		Joins("LEFT JOIN locations target_loc ON quests.target_location_id = target_loc.id").
@@ -78,8 +85,8 @@ func (r *Repository) GetByID(ctx context.Context, questID uuid.UUID) (quest.Ques
 func (r *Repository) FindByBoundingBox(ctx context.Context, bbox kernel.BoundingBox) ([]quest.Quest, error) {
 	var dtos []QuestDTO
 
-	db := r.tracker.Db()
-	if err := db.WithContext(ctx).
+	db := r.dbWithCtx(ctx)
+	if err := db.
 		Where("(target_latitude BETWEEN ? AND ? AND target_longitude BETWEEN ? AND ?) OR "+
 			"(execution_latitude BETWEEN ? AND ? AND execution_longitude BETWEEN ? AND ?)",
 			bbox.MinLat, bbox.MaxLat, bbox.MinLon, bbox.MaxLon,
@@ -104,8 +111,8 @@ func (r *Repository) FindByBoundingBox(ctx context.Context, bbox kernel.Bounding
 func (r *Repository) FindByAssignee(ctx context.Context, userID uuid.UUID) ([]quest.Quest, error) {
 	var dtos []QuestDTO
 
-	db := r.tracker.Db()
-	if err := db.WithContext(ctx).
+	db := r.dbWithCtx(ctx)
+	if err := db.
 		Where("assignee = ?", userID.String()).
 		Find(&dtos).Error; err != nil {
 		return nil, errs.WrapInfrastructureError("failed to get quests by assignee", err)
@@ -126,8 +133,8 @@ func (r *Repository) FindByAssignee(ctx context.Context, userID uuid.UUID) ([]qu
 // FindAll retrieves all quests without any filter.
 func (r *Repository) FindAll(ctx context.Context) ([]quest.Quest, error) {
 	var dtos []QuestDTO
-	db := r.tracker.Db()
-	if err := db.WithContext(ctx).Find(&dtos).Error; err != nil {
+	db := r.dbWithCtx(ctx)
+	if err := db.Find(&dtos).Error; err != nil {
 		return nil, errs.WrapInfrastructureError("failed to get all quests", err)
 	}
 
@@ -146,8 +153,8 @@ func (r *Repository) FindAll(ctx context.Context) ([]quest.Quest, error) {
 // FindByStatus retrieves all quests with the specified status.
 func (r *Repository) FindByStatus(ctx context.Context, status quest.Status) ([]quest.Quest, error) {
 	var dtos []QuestDTO
-	db := r.tracker.Db()
-	if err := db.WithContext(ctx).
+	db := r.dbWithCtx(ctx)
+	if err := db.
 		Where("status = ?", string(status)).
 		Find(&dtos).Error; err != nil {
 		return nil, errs.WrapInfrastructureError("failed to get quests by status", err)

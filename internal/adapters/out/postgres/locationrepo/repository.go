@@ -25,6 +25,13 @@ func NewRepository(tracker ports.Tracker) (*Repository, error) {
 	return &Repository{tracker: tracker}, nil
 }
 
+func (r *Repository) dbWithCtx(ctx context.Context) *gorm.DB {
+	if r.tracker.InTx() {
+		return r.tracker.Tx().WithContext(ctx)
+	}
+	return r.tracker.Db().WithContext(ctx)
+}
+
 // Save saves a single location.
 func (r *Repository) Save(ctx context.Context, l *location.Location) error {
 	dto := DomainToDTO(l)
@@ -59,8 +66,8 @@ func (r *Repository) Save(ctx context.Context, l *location.Location) error {
 // GetByID retrieves a location by its ID.
 func (r *Repository) GetByID(ctx context.Context, locationID uuid.UUID) (*location.Location, error) {
 	var dto LocationDTO
-	db := r.tracker.Db()
-	if err := db.WithContext(ctx).
+	db := r.dbWithCtx(ctx)
+	if err := db.
 		Where("id = ?", locationID.String()).
 		First(&dto).Error; err != nil {
 		return nil, errs.WrapInfrastructureError("failed to get location by ID", err)
@@ -71,8 +78,8 @@ func (r *Repository) GetByID(ctx context.Context, locationID uuid.UUID) (*locati
 // FindAll retrieves all locations without filters.
 func (r *Repository) FindAll(ctx context.Context) ([]*location.Location, error) {
 	var dtos []LocationDTO
-	db := r.tracker.Db()
-	if err := db.WithContext(ctx).Find(&dtos).Error; err != nil {
+	db := r.dbWithCtx(ctx)
+	if err := db.Find(&dtos).Error; err != nil {
 		return nil, errs.WrapInfrastructureError("failed to get all locations", err)
 	}
 
@@ -92,8 +99,8 @@ func (r *Repository) FindAll(ctx context.Context) ([]*location.Location, error) 
 func (r *Repository) FindByBoundingBox(ctx context.Context, bbox kernel.BoundingBox) ([]*location.Location, error) {
 	var dtos []LocationDTO
 
-	db := r.tracker.Db()
-	if err := db.WithContext(ctx).
+	db := r.dbWithCtx(ctx)
+	if err := db.
 		Where("latitude BETWEEN ? AND ? AND longitude BETWEEN ? AND ?",
 			bbox.MinLat, bbox.MaxLat, bbox.MinLon, bbox.MaxLon).
 		Find(&dtos).Error; err != nil {
@@ -115,8 +122,8 @@ func (r *Repository) FindByBoundingBox(ctx context.Context, bbox kernel.Bounding
 // FindByName searches locations by name (partial match).
 func (r *Repository) FindByName(ctx context.Context, namePattern string) ([]*location.Location, error) {
 	var dtos []LocationDTO
-	db := r.tracker.Db()
-	if err := db.WithContext(ctx).
+	db := r.dbWithCtx(ctx)
+	if err := db.
 		Where("name ILIKE ?", "%"+namePattern+"%").
 		Find(&dtos).Error; err != nil {
 		return nil, errs.WrapInfrastructureError("failed to get locations by name", err)

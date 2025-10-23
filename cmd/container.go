@@ -25,7 +25,6 @@ type Container struct {
 	db             *gorm.DB
 	eventPublisher ports.EventPublisher
 	authClient     ports.AuthClient
-	questRepo      ports.QuestRepository
 	closers        []Closer
 }
 
@@ -46,12 +45,6 @@ func NewContainer(configs Config, db *gorm.DB) (*Container, error) {
 		return nil, fmt.Errorf("create event publisher: %w", err)
 	}
 	container.eventPublisher = eventPublisher
-
-	queryUoW, err := container.CreateUnitOfWork()
-	if err != nil {
-		return nil, fmt.Errorf("init quest repository: %w", err)
-	}
-	container.questRepo = queryUoW.QuestRepository()
 
 	if !configs.Middleware.DevAuth.Enabled {
 		authClient, _ := container.createAuthClient()
@@ -121,11 +114,11 @@ func (c *Container) Handlers() Handlers {
 		CreateQuest:       commands.NewCreateQuestCommandHandler(c, c.eventPublisher),
 		ChangeQuestStatus: commands.NewChangeQuestStatusCommandHandler(c, c.eventPublisher),
 		AssignQuest:       commands.NewAssignQuestCommandHandler(c, c.eventPublisher),
-		// Queries use direct repository access for simplicity
-		ListQuests:     queries.NewListQuestsQueryHandler(c.questRepo),
-		GetQuestByID:   queries.NewGetQuestByIDQueryHandler(c.questRepo),
-		SearchByRadius: queries.NewSearchQuestsByRadiusQueryHandler(c.questRepo),
-		ListAssigned:   queries.NewListAssignedQuestsQueryHandler(c.questRepo),
+		// Queries use UnitOfWorkFactory to ensure per-request UoW
+		ListQuests:     queries.NewListQuestsQueryHandler(c),
+		GetQuestByID:   queries.NewGetQuestByIDQueryHandler(c),
+		SearchByRadius: queries.NewSearchQuestsByRadiusQueryHandler(c),
+		ListAssigned:   queries.NewListAssignedQuestsQueryHandler(c),
 	}
 }
 

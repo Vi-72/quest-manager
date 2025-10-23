@@ -69,11 +69,17 @@ func (r *Repository) Publish(ctx context.Context, events ...ddd.DomainEvent) err
 		return nil
 	}
 
-	// Require UnitOfWork in context for synchronous publishing to ensure consistency
+	// Prefer using existing UnitOfWork from context when available
 	if existingUow, ok := ports.UoWFromCtx(ctx); ok {
 		return r.publishWithUnitOfWork(ctx, existingUow, events...)
 	}
-	return errs.NewValueIsRequiredError("unitOfWork in context")
+
+	// Fallback: create a new UnitOfWork for synchronous publishing
+	uow, err := r.uowFactory.CreateUnitOfWork()
+	if err != nil {
+		return errs.WrapInfrastructureError("failed to create unit of work for event publishing", err)
+	}
+	return r.publishWithUnitOfWork(ctx, uow, events...)
 }
 
 func (r *Repository) publishWithUnitOfWork(ctx context.Context, uow ports.UnitOfWork, events ...ddd.DomainEvent) error {

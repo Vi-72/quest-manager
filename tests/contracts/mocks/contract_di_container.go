@@ -31,11 +31,14 @@ type ContractDIContainer struct {
 
 // NewContractDIContainer creates a new DI container with mocked dependencies
 func NewContractDIContainer() *ContractDIContainer {
-	// Create mocked repositories
-	questRepo := NewMockQuestRepository()
-	locationRepo := NewMockLocationRepository()
+	// Create event publisher and UoW factory (single per-container)
 	eventPublisher := &MockEventPublisher{}
 	unitOfWorkFactory := NewMockUnitOfWorkFactory()
+
+	// Use repositories from the same UnitOfWork to ensure handlers and tests share state
+	mockUow := unitOfWorkFactory.GetUnitOfWork()
+	questRepo := mockUow.QuestRepository()
+	locationRepo := mockUow.LocationRepository()
 
 	// Create command handlers with mocked dependencies
 	createQuestHandler := commands.NewCreateQuestCommandHandler(unitOfWorkFactory, eventPublisher)
@@ -43,10 +46,10 @@ func NewContractDIContainer() *ContractDIContainer {
 	changeQuestStatusHandler := commands.NewChangeQuestStatusCommandHandler(unitOfWorkFactory, eventPublisher)
 
 	// Create query handlers with mocked dependencies
-	listQuestsHandler := queries.NewListQuestsQueryHandler(questRepo)
-	getQuestByIDHandler := queries.NewGetQuestByIDQueryHandler(questRepo)
-	searchQuestsByRadiusHandler := queries.NewSearchQuestsByRadiusQueryHandler(questRepo)
-	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(questRepo)
+	listQuestsHandler := queries.NewListQuestsQueryHandler(unitOfWorkFactory)
+	getQuestByIDHandler := queries.NewGetQuestByIDQueryHandler(unitOfWorkFactory)
+	searchQuestsByRadiusHandler := queries.NewSearchQuestsByRadiusQueryHandler(unitOfWorkFactory)
+	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(unitOfWorkFactory)
 
 	return &ContractDIContainer{
 		QuestRepository:    questRepo,

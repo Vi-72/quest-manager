@@ -131,10 +131,10 @@ func NewTestDIContainer(suiteContainer SuiteDIContainer) TestDIContainer {
 	)
 
 	// Создание обработчиков запросов
-	listQuestsHandler := queries.NewListQuestsQueryHandler(questRepo)
-	getQuestByIDHandler := queries.NewGetQuestByIDQueryHandler(questRepo)
-	searchQuestsByRadiusHandler := queries.NewSearchQuestsByRadiusQueryHandler(questRepo)
-	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(questRepo)
+	listQuestsHandler := queries.NewListQuestsQueryHandler(uowFactory)
+	getQuestByIDHandler := queries.NewGetQuestByIDQueryHandler(uowFactory)
+	searchQuestsByRadiusHandler := queries.NewSearchQuestsByRadiusQueryHandler(uowFactory)
+	listAssignedQuestsHandler := queries.NewListAssignedQuestsQueryHandler(uowFactory)
 
 	// Create Mock Auth Client for tests (always returns successful authentication)
 	mockAuthClient := integrationmock.NewAlwaysSuccessAuthClient()
