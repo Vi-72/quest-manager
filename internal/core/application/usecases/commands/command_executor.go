@@ -34,7 +34,7 @@ func (e *CommandExecutor) Execute(ctx context.Context, fn func(ctx context.Conte
 	}
 
 	// Propagate UoW in context so downstream (e.g., EventPublisher) can reuse current transaction
-	ctxWithUow := ports.WithUnitOfWork(ctx, uow)
+	ctxWithUow := ports.CtxWithUoW(ctx, uow)
 
 	aggregates, err := fn(ctxWithUow, uow)
 	if err != nil {

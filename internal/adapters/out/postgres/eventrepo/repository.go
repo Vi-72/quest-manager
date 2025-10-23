@@ -69,12 +69,11 @@ func (r *Repository) Publish(ctx context.Context, events ...ddd.DomainEvent) err
 		return nil
 	}
 
-	// For synchronous publishing, create new UoW
-	uow, err := r.uowFactory.CreateUnitOfWork()
-	if err != nil {
-		return errs.WrapInfrastructureError("failed to create UoW", err)
+	// Require UnitOfWork in context for synchronous publishing to ensure consistency
+	if existingUow, ok := ports.UoWFromCtx(ctx); ok {
+		return r.publishWithUnitOfWork(ctx, existingUow, events...)
 	}
-	return r.publishWithUnitOfWork(ctx, uow, events...)
+	return errs.NewValueIsRequiredError("unitOfWork in context")
 }
 
 func (r *Repository) publishWithUnitOfWork(ctx context.Context, uow ports.UnitOfWork, events ...ddd.DomainEvent) error {
@@ -82,13 +81,14 @@ func (r *Repository) publishWithUnitOfWork(ctx context.Context, uow ports.UnitOf
 		return nil
 	}
 
-	// Events are always published in their own transaction
-	if err := uow.Begin(ctx); err != nil {
-		return errs.WrapInfrastructureError("failed to begin event transaction", err)
-	}
-
-	// Get tracker from UnitOfWork
+	// Detect whether we are already in a transaction and manage tx boundaries accordingly
 	tracker := uow.(ports.Tracker)
+	alreadyInTx := tracker.InTx()
+	if !alreadyInTx {
+		if err := uow.Begin(ctx); err != nil {
+			return errs.WrapInfrastructureError("failed to begin event transaction", err)
+		}
+	}
 	tx := tracker.Tx()
 
 	for _, event := range events {
@@ -100,13 +100,17 @@ func (r *Repository) publishWithUnitOfWork(ctx context.Context, uow ports.UnitOf
 
 		err = tx.WithContext(ctx).Create(&dto).Error
 		if err != nil {
-			_ = uow.Rollback()
+			if !alreadyInTx {
+				_ = uow.Rollback()
+			}
 			return errs.WrapInfrastructureError("failed to save event", err)
 		}
 	}
 
-	if err := uow.Commit(ctx); err != nil {
-		return errs.WrapInfrastructureError("failed to commit event transaction", err)
+	if !alreadyInTx {
+		if err := uow.Commit(ctx); err != nil {
+			return errs.WrapInfrastructureError("failed to commit event transaction", err)
+		}
 	}
 
 	return nil
