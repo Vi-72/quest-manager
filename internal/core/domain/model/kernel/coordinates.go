@@ -14,28 +14,12 @@ const (
 	epsilon       = 1e-12
 )
 
-// GeoCoordinate is a Value Object representing geographical coordinates.
-//
-// IMMUTABILITY CONTRACT:
-// While fields are public for serialization and Go idioms, GeoCoordinate
-// instances MUST be treated as immutable. Create new instances instead
-// of modifying existing ones.
-//
-// Correct usage:
-//
-//	coord1 := kernel.NewGeoCoordinate(10.0, 20.0)
-//	coord2 := kernel.NewGeoCoordinate(15.0, 25.0) // New instance
-//
-// Incorrect usage (DO NOT DO):
-//
-//	coord.Lat = 15.0 // Violates immutability
 type GeoCoordinate struct {
-	Lat float64 `json:"lat"` // Read-only after creation
-	Lon float64 `json:"lon"` // Read-only after creation
+	Lat float64 `json:"lat"`
+	Lon float64 `json:"lon"`
 }
 
 // BoundingBox represents a geographical bounding box.
-// IMMUTABILITY: Treat as read-only after creation.
 type BoundingBox struct {
 	MinLat float64
 	MaxLat float64
