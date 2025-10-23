@@ -3,7 +3,6 @@ package eventrepo
 import (
 	"context"
 	"log"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -19,8 +18,7 @@ var _ ports.EventPublisher = &Repository{}
 
 type Repository struct {
 	uowFactory         ports.UnitOfWorkFactory
-	goroutineSemaphore chan struct{} // Semaphore for limiting goroutines
-	mu                 sync.Mutex
+	goroutineSemaphore chan struct{}
 }
 
 func NewRepository(uowFactory ports.UnitOfWorkFactory, goroutineLimit int) (*Repository, error) {
