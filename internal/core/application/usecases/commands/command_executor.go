@@ -33,7 +33,10 @@ func (e *CommandExecutor) Execute(ctx context.Context, fn func(ctx context.Conte
 		return errs.WrapInfrastructureError("failed to begin transaction", err)
 	}
 
-	aggregates, err := fn(ctx, uow)
+	// Propagate UoW in context so downstream (e.g., EventPublisher) can reuse current transaction
+	ctxWithUow := ports.WithUnitOfWork(ctx, uow)
+
+	aggregates, err := fn(ctxWithUow, uow)
 	if err != nil {
 		_ = uow.Rollback()
 		return err
@@ -49,17 +52,4 @@ func (e *CommandExecutor) Execute(ctx context.Context, fn func(ctx context.Conte
 	}
 
 	return nil
-}
-
-// ExecuteWithResult runs business logic and returns a result along with aggregates
-func (e *CommandExecutor) ExecuteWithResult(ctx context.Context, fn func(ctx context.Context, uow ports.UnitOfWork) (interface{}, []ddd.AggregateRoot, error)) (interface{}, error) {
-	var result interface{}
-
-	err := e.Execute(ctx, func(ctx context.Context, uow ports.UnitOfWork) ([]ddd.AggregateRoot, error) {
-		res, aggs, err := fn(ctx, uow)
-		result = res
-		return aggs, err
-	})
-
-	return result, err
 }
