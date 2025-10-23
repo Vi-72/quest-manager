@@ -94,7 +94,9 @@ func (r *Repository) publishWithUnitOfWork(ctx context.Context, uow ports.UnitOf
 	for _, event := range events {
 		dto, err := r.domainEventToDTO(event)
 		if err != nil {
-			_ = uow.Rollback()
+			if !alreadyInTx {
+				_ = uow.Rollback()
+			}
 			return errs.WrapInfrastructureError("failed to convert event to DTO", err)
 		}
 

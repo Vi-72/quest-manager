@@ -42,7 +42,7 @@ func (e *CommandExecutor) Execute(ctx context.Context, fn func(ctx context.Conte
 		return err
 	}
 
-	if err := uow.Commit(ctx); err != nil {
+	if err := uow.Commit(ctxWithUow); err != nil {
 		return errs.WrapInfrastructureError("failed to commit transaction", err)
 	}
 
