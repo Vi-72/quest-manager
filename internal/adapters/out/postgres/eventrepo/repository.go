@@ -87,6 +87,16 @@ func (r *Repository) publishWithUnitOfWork(ctx context.Context, uow ports.UnitOf
 		return nil
 	}
 
+	// Convert all events to DTOs before touching transaction boundaries
+	var dtos []EventDTO
+	for _, event := range events {
+		dto, err := r.domainEventToDTO(event)
+		if err != nil {
+			return errs.WrapInfrastructureError("failed to convert event to DTO", err)
+		}
+		dtos = append(dtos, dto)
+	}
+
 	// Detect whether we are already in a transaction and manage tx boundaries accordingly
 	tracker := uow.(ports.Tracker)
 	alreadyInTx := tracker.InTx()
@@ -97,17 +107,8 @@ func (r *Repository) publishWithUnitOfWork(ctx context.Context, uow ports.UnitOf
 	}
 	tx := tracker.Tx()
 
-	for _, event := range events {
-		dto, err := r.domainEventToDTO(event)
-		if err != nil {
-			if !alreadyInTx {
-				_ = uow.Rollback()
-			}
-			return errs.WrapInfrastructureError("failed to convert event to DTO", err)
-		}
-
-		err = tx.WithContext(ctx).Create(&dto).Error
-		if err != nil {
+	for i := range dtos {
+		if err := tx.WithContext(ctx).Create(&dtos[i]).Error; err != nil {
 			if !alreadyInTx {
 				_ = uow.Rollback()
 			}
