@@ -9,7 +9,7 @@ import (
 // DefaultSuite basic test suite for integration tests
 type DefaultSuite struct {
 	SuiteDIContainer
-	TestDIContainer
+	TestDIContainer *TestContainer
 }
 
 // NewDefault creates new DefaultSuite
@@ -21,7 +21,13 @@ func NewDefault(s suite.TestingSuite) DefaultSuite {
 
 // SetupSuite initializes resources before running all tests in the suite
 func (s *DefaultSuite) SetupSuite() {
-	s.TestDIContainer = NewTestDIContainer(s.SuiteDIContainer)
+	// Get DB from the test environment
+	// Use test database URL - in real tests this would come from environment
+	testDBURL := "postgres://postgres:postgres@localhost:5432/quest_manager_test?sslmode=disable"
+	db, _, err := cmd.MustConnectDB(testDBURL)
+	s.Require().NoError(err, "Failed to connect to test database")
+
+	s.TestDIContainer = NewTestContainer(db)
 
 	// Run migrations
 	cmd.MustAutoMigrate(s.TestDIContainer.DB)
@@ -29,14 +35,13 @@ func (s *DefaultSuite) SetupSuite() {
 
 // TearDownSuite cleans up resources after completing all tests in the suite
 func (s *DefaultSuite) TearDownSuite() {
-	s.TestDIContainer.TearDownTest()
+	s.TestDIContainer.CleanupAll()
 }
 
 // SetupTest prepares state before each test
 func (s *DefaultSuite) SetupTest() {
 	// Clean database before each test
-	err := s.TestDIContainer.CleanupDatabase()
-	s.Require().NoError(err, "Failed to cleanup database")
+	s.TestDIContainer.CleanupAll()
 }
 
 // TearDownTest cleans state after each test

@@ -23,7 +23,6 @@ type CreateQuestCommandHandlerContractSuite struct {
 	suite.Suite
 	container      *mocks.ContractDIContainer
 	handler        commands.CreateQuestCommandHandler
-	unitOfWork     ports.UnitOfWork
 	eventPublisher ports.EventPublisher
 	ctx            context.Context
 }
@@ -34,7 +33,6 @@ type AssignQuestCommandHandlerContractSuite struct {
 	container      *mocks.ContractDIContainer
 	handler        commands.AssignQuestCommandHandler
 	createHandler  commands.CreateQuestCommandHandler
-	unitOfWork     ports.UnitOfWork
 	eventPublisher ports.EventPublisher
 	ctx            context.Context
 }
@@ -45,7 +43,6 @@ type ChangeQuestStatusCommandHandlerContractSuite struct {
 	container      *mocks.ContractDIContainer
 	handler        commands.ChangeQuestStatusCommandHandler
 	createHandler  commands.CreateQuestCommandHandler
-	unitOfWork     ports.UnitOfWork
 	eventPublisher ports.EventPublisher
 	ctx            context.Context
 }
@@ -53,7 +50,6 @@ type ChangeQuestStatusCommandHandlerContractSuite struct {
 func (s *CreateQuestCommandHandlerContractSuite) SetupSuite() {
 	s.container = mocks.NewContractDIContainer()
 	s.handler = s.container.CreateQuestHandler
-	s.unitOfWork = s.container.UnitOfWorkFactory.(*mocks.MockUnitOfWorkFactory).GetUnitOfWork()
 	s.eventPublisher = s.container.EventPublisher
 	s.ctx = context.Background()
 }
@@ -67,7 +63,6 @@ func (s *AssignQuestCommandHandlerContractSuite) SetupSuite() {
 	s.container = mocks.NewContractDIContainer()
 	s.handler = s.container.AssignQuestHandler
 	s.createHandler = s.container.CreateQuestHandler
-	s.unitOfWork = s.container.UnitOfWorkFactory.(*mocks.MockUnitOfWorkFactory).GetUnitOfWork()
 	s.eventPublisher = s.container.EventPublisher
 	s.ctx = context.Background()
 }
@@ -81,7 +76,6 @@ func (s *ChangeQuestStatusCommandHandlerContractSuite) SetupSuite() {
 	s.container = mocks.NewContractDIContainer()
 	s.handler = s.container.ChangeQuestStatusHandler
 	s.createHandler = s.container.CreateQuestHandler
-	s.unitOfWork = s.container.UnitOfWorkFactory.(*mocks.MockUnitOfWorkFactory).GetUnitOfWork()
 	s.eventPublisher = s.container.EventPublisher
 	s.ctx = context.Background()
 }
