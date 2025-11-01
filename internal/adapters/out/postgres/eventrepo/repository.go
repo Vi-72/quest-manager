@@ -2,7 +2,6 @@ package eventrepo
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/google/uuid"
@@ -23,20 +22,6 @@ type Repository struct {
 
 func NewRepository(db *gorm.DB) *Repository {
 	return &Repository{db: db}
-}
-
-// PublishAsync asynchronously publishes events
-func (r *Repository) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
-	if len(events) == 0 {
-		return
-	}
-
-	// Run in goroutine for async behavior
-	go func() {
-		if err := r.Publish(context.Background(), events...); err != nil {
-			log.Printf("ERROR: Failed to publish events: %v", err)
-		}
-	}()
 }
 
 // Publish сохраняет доменные события в базу данных

@@ -23,16 +23,14 @@ func (s *EventPublisherContractSuite) SetupTest() {
 	// Clear state for MockEventPublisher before each test
 	if mockPublisher, ok := s.publisher.(*MockEventPublisher); ok {
 		mockPublisher.PublishedEvents = nil
-		mockPublisher.PublishAsyncEvents = nil
 		mockPublisher.PublishError = nil
 	}
 }
 
 // MockEventPublisher for testing contract behavior
 type MockEventPublisher struct {
-	PublishedEvents    []ddd.DomainEvent
-	PublishError       error
-	PublishAsyncEvents []ddd.DomainEvent
+	PublishedEvents []ddd.DomainEvent
+	PublishError    error
 }
 
 func (m *MockEventPublisher) Publish(ctx context.Context, events ...ddd.DomainEvent) error {
@@ -42,11 +40,6 @@ func (m *MockEventPublisher) Publish(ctx context.Context, events ...ddd.DomainEv
 	}
 	m.PublishedEvents = append(m.PublishedEvents, events...)
 	return nil
-}
-
-func (m *MockEventPublisher) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
-	_ = ctx // unused in mock
-	m.PublishAsyncEvents = append(m.PublishAsyncEvents, events...)
 }
 
 // TestNullEventPublisherContract tests the NullEventPublisher implementation
@@ -141,106 +134,6 @@ func (s *EventPublisherContractSuite) TestPublishNoEvents() {
 	}
 }
 
-func (s *EventPublisherContractSuite) TestPublishAsyncSingleEvent() {
-	// Create a test event
-	event := quest.NewQuestCreated(
-		uuid.New(),
-		"async-creator",
-	)
-
-	// Contract: PublishAsync should handle a single event without blocking or returning error
-	// Since PublishAsync is asynchronous, we can't directly assert on errors, but it shouldn't panic
-	s.Assert().NotPanics(func() {
-		s.publisher.PublishAsync(s.ctx, event)
-	}, "PublishAsync should not panic with a single event")
-
-	// For MockEventPublisher, verify the event was captured
-	if mockPublisher, ok := s.publisher.(*MockEventPublisher); ok {
-		s.Assert().Len(mockPublisher.PublishAsyncEvents, 1, "Should have async published exactly one event")
-		s.Assert().Equal(event.GetID(), mockPublisher.PublishAsyncEvents[0].GetID(), "Async published event should match")
-	}
-}
-
-func (s *EventPublisherContractSuite) TestPublishAsyncMultipleEvents() {
-	// Create multiple test events
-	event1 := quest.NewQuestStatusChanged(
-		uuid.New(),
-		quest.StatusAssigned,
-		quest.StatusInProgress,
-	)
-
-	event2 := quest.NewQuestStatusChanged(
-		uuid.New(),
-		quest.StatusInProgress,
-		quest.StatusCompleted,
-	)
-
-	// Contract: PublishAsync should handle multiple events without blocking or panicking
-	s.Assert().NotPanics(func() {
-		s.publisher.PublishAsync(s.ctx, event1, event2)
-	}, "PublishAsync should not panic with multiple events")
-
-	// For MockEventPublisher, verify events were captured
-	if mockPublisher, ok := s.publisher.(*MockEventPublisher); ok {
-		// Should have at least these 2 events (might have more from previous tests)
-		s.Assert().True(len(mockPublisher.PublishAsyncEvents) >= 2, "Should have async published at least two events")
-
-		// Find our events in the list
-		found1, found2 := false, false
-		for _, publishedEvent := range mockPublisher.PublishAsyncEvents {
-			if publishedEvent.GetID() == event1.GetID() {
-				found1 = true
-			}
-			if publishedEvent.GetID() == event2.GetID() {
-				found2 = true
-			}
-		}
-		s.Assert().True(found1, "Should have async published first event")
-		s.Assert().True(found2, "Should have async published second event")
-	}
-}
-
-func (s *EventPublisherContractSuite) TestPublishAsyncNoEvents() {
-	// Contract: PublishAsync should handle empty event list without panicking
-	s.Assert().NotPanics(func() {
-		s.publisher.PublishAsync(s.ctx)
-	}, "PublishAsync should not panic with no events")
-}
-
-// Test that PublishAsync doesn't interfere with synchronous Publish
-func (s *EventPublisherContractSuite) TestPublishSyncAndAsyncIndependence() {
-	if mockPublisher, ok := s.publisher.(*MockEventPublisher); ok {
-		// Clear any previous events
-		mockPublisher.PublishedEvents = nil
-		mockPublisher.PublishAsyncEvents = nil
-
-		// Create different events for sync and async
-		syncEvent := quest.NewQuestCreated(
-			uuid.New(),
-			"sync-creator",
-		)
-
-		asyncEvent := quest.NewQuestAssigned(
-			uuid.New(),
-			uuid.New(), // async-assignee as UUID
-		)
-
-		// Publish synchronously
-		err := s.publisher.Publish(s.ctx, syncEvent)
-		s.Assert().NoError(err)
-
-		// Publish asynchronously
-		s.publisher.PublishAsync(s.ctx, asyncEvent)
-
-		// Contract: Sync and async events should be tracked separately
-		s.Assert().Len(mockPublisher.PublishedEvents, 1, "Should have one sync published event")
-		s.Assert().Len(mockPublisher.PublishAsyncEvents, 1, "Should have one async published event")
-
-		s.Assert().Equal(syncEvent.GetID(), mockPublisher.PublishedEvents[0].GetID(), "Sync event should match")
-		s.Assert().Equal(asyncEvent.GetID(), mockPublisher.PublishAsyncEvents[0].GetID(), "Async event should match")
-	}
-}
-
 // Test error handling in Publish method
 func (s *EventPublisherContractSuite) TestPublishErrorHandling() {
 	if mockPublisher, ok := s.publisher.(*MockEventPublisher); ok {
@@ -286,11 +179,5 @@ func (s *EventPublisherContractSuite) TestContextHandling() {
 	err := s.publisher.Publish(ctx, event)
 	s.Assert().NoError(err, "Publish should succeed with custom context")
 
-	// Cancel context and test async publish
 	cancel()
-
-	// Contract: PublishAsync should handle canceled context gracefully (not panic)
-	s.Assert().NotPanics(func() {
-		s.publisher.PublishAsync(ctx, event)
-	}, "PublishAsync should not panic with canceled context")
 }

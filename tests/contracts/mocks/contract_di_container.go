@@ -81,7 +81,6 @@ func (c *ContractDIContainer) CleanupAll() {
 	}
 	if mockEventPublisher, ok := c.EventPublisher.(*MockEventPublisher); ok {
 		mockEventPublisher.PublishedEvents = nil
-		mockEventPublisher.PublishAsyncEvents = nil
 		mockEventPublisher.PublishError = nil
 	}
 }
@@ -112,9 +111,8 @@ func (m *MockTransactionManager) RunInTransaction(ctx context.Context, fn func(c
 
 // MockEventPublisher for testing
 type MockEventPublisher struct {
-	PublishedEvents    []ddd.DomainEvent
-	PublishError       error
-	PublishAsyncEvents []ddd.DomainEvent
+	PublishedEvents []ddd.DomainEvent
+	PublishError    error
 }
 
 func (m *MockEventPublisher) Publish(ctx context.Context, events ...ddd.DomainEvent) error {
@@ -124,9 +122,4 @@ func (m *MockEventPublisher) Publish(ctx context.Context, events ...ddd.DomainEv
 	}
 	m.PublishedEvents = append(m.PublishedEvents, events...)
 	return nil
-}
-
-func (m *MockEventPublisher) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
-	_ = ctx // unused in mock
-	m.PublishAsyncEvents = append(m.PublishAsyncEvents, events...)
 }

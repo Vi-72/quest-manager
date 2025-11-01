@@ -169,7 +169,7 @@ type QuestAssignedEvent struct {
 ```go
 type EventPublisher interface {
     Publish(ctx context.Context, events ...ddd.DomainEvent) error
-    PublishAsync(events ...ddd.DomainEvent)
+    Publish(ctx context.Context, events ...ddd.DomainEvent) error
 }
 ```
 
