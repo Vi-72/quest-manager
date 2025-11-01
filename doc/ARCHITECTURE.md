@@ -419,28 +419,28 @@ type Container struct {
 ```
 CommandHandler
   ↓
-CommandExecutor
-  - Create UoW (per-request)
-  - Begin(ctx)
-  - ctx' = ctx + UoW
-  - Business logic (repositories use UoW.Tx())
-  - Commit(ctx')
-  - PublishDomainEventsAsync(...)
+TransactionManager.RunInTransaction(ctx, fn)
+  - GORM Transaction begins
+  - Create repository instances with transaction
+  - Execute business logic closure
+  - Publish events synchronously in same transaction
+  - Commit or rollback automatically
 
-EventPublisher (sync Publish)
-  - Reuses UoW from ctx if present
-  - If absent: creates its own UoW (fallback)
-  - Writes to events table (same DB)
+EventPublisher (Publish)
+  - Writes to events table within transaction
+  - Events are part of same transaction as domain changes
 ```
 
-### Query path (read-your-writes)
-- Queries create a fresh UoW but do not begin a transaction.
-- Repositories read via `Db()` normally; if `InTx()==true` (e.g., when called within a command), reads use `Tx()` to ensure read-your-writes consistency.
+### Query path
+- Queries use bare repositories without transactions
+- Repositories receive `*gorm.DB` directly
+- No transaction overhead for read operations
 
 ### Notes
-- UoW is strictly per-request to avoid shared state and data races.
-- Event publisher prefers the caller transaction; otherwise, it safely opens a scoped UoW.
-- Auth is an external microservice (gRPC); Quest Manager calls it in middleware to validate JWT and extract `user_id` into request context.
+- TransactionManager uses closure pattern (ThreeDots Labs style)
+- GORM manages transaction lifecycle automatically
+- All repositories within closure share the same transaction
+- Auth is an external microservice (gRPC); Quest Manager calls it in middleware to validate JWT and extract `user_id` into request context
 
 ---
 

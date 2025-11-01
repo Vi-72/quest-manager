@@ -2,14 +2,23 @@
 
 ## 🎯 Current Work Focus
 
-**Date**: October 23, 2025  
-**Status**: Production Ready (v1.5.1)  
+**Date**: November 1, 2025  
+**Status**: Production Ready (v1.6.0)  
 **Current Branch**: `UOW`
 
 ### Recent Major Achievement
 ✅ **Memory Bank Setup Complete** - Successfully created comprehensive Memory Bank documentation system for Quest Manager project, including all 7 core files with detailed project analysis and architectural patterns.
 
 ## 🔄 Recent Changes
+
+### Transaction Management Refactoring (November 1, 2025)
+- ✅ **Replaced UnitOfWork with TransactionManager**: Simplified transaction management using ThreeDots Labs pattern
+- ✅ **Closure-based Transactions**: Implemented `RunInTransaction` method with closure pattern
+- ✅ **Simplified Repositories**: Removed `Tracker` interface, repositories now use plain `*gorm.DB`
+- ✅ **Updated Command Handlers**: All command handlers now use `TransactionManager.RunInTransaction`
+- ✅ **Updated Query Handlers**: Query handlers use bare repositories without transactions
+- ✅ **Removed PublishAsync**: Deleted unused async event publishing method
+- ✅ **Updated Tests**: Contract and integration tests adapted to new transaction pattern
 
 ### Memory Bank Implementation (October 9, 2025)
 - ✅ Created `memory-bank/` directory structure
@@ -126,8 +135,8 @@
 - ✅ **CQRS**: Command/Query separation implemented
 - ✅ **Event-Driven**: Domain events with PostgreSQL storage
 - ✅ **Hexagonal Architecture**: Ports and adapters pattern
-- ✅ **UoW Consistency**: Read-your-writes for repository reads inside active transactions
-- ✅ **Event Publisher Fallback**: Sync Publish creates UoW when none in context
+- ✅ **TransactionManager**: Closure-based transaction management (ThreeDots Labs pattern)
+- ✅ **Simplified Repositories**: Direct `*gorm.DB` usage without Tracker abstraction
 
 ### Feature Completeness
 - ✅ **Quest Management**: Full CRUD operations

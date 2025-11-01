@@ -162,42 +162,75 @@ func (c *Container) GetAuthClient(ctx context.Context) ports.AuthClient {
 }
 ```
 
-**Context-Aware Dependencies**:
+**Dependency Injection**:
 ```go
-// All getter methods accept context.Context
-func (c *Container) GetAuthConn(ctx context.Context) *grpc.ClientConn
-func (c *Container) GetQuestRepository(ctx context.Context) ports.QuestRepository
-func (c *Container) GetUnitOfWork(ctx context.Context) ports.UnitOfWork
-```
+// Container holds dependencies
+type Container struct {
+    configs    Config
+    db         *gorm.DB
+    txManager  ports.TransactionManager
+    authClient ports.AuthClient
+}
 
-### 2. Unit of Work Pattern
-
-**Transactional Consistency**:
-```go
-func (h *CreateQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand) error {
-    uow := h.container.GetUnitOfWork(ctx)
-    
-    if err := uow.Begin(ctx); err != nil {
-        return err
+// Handlers initialized with dependencies
+func (c *Container) Handlers() Handlers {
+    return Handlers{
+        CreateQuest: commands.NewCreateQuestCommandHandler(c.txManager),
+        ListQuests:  queries.NewListQuestsQueryHandler(questrepo.NewRepository(c.db)),
     }
-    defer uow.Rollback(ctx)
-    
-    // Business logic
-    quest := quest.NewQuest(cmd.Title, cmd.Difficulty, ...)
-    
-    // Persist changes
-    if err := uow.QuestRepository().Save(ctx, quest); err != nil {
-        return err
-    }
-    
-    // Publish events
-    if err := h.eventPublisher.Publish(ctx, quest.Events()); err != nil {
-        return err
-    }
-    
-    return uow.Commit(ctx)
 }
 ```
+
+### 2. Transaction Management Pattern (ThreeDots Labs)
+
+**Closure-based Transactions**:
+```go
+// TransactionManager handles database transactions
+type TransactionManager interface {
+    RunInTransaction(ctx context.Context, fn func(ctx context.Context, repos Repositories) error) error
+}
+
+// Repositories holds all repository instances for a transaction
+type Repositories struct {
+    Quest    QuestRepository
+    Location LocationRepository
+    Event    EventPublisher
+}
+
+// Command handler using TransactionManager
+func (h *CreateQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand) (quest.Quest, error) {
+    var createdQuest quest.Quest
+    
+    err := h.txManager.RunInTransaction(ctx, func(ctx context.Context, repos ports.Repositories) error {
+        // Business logic within transaction
+        q, err := quest.NewQuest(...)
+        if err != nil {
+            return err
+        }
+        
+        // Save quest
+        if err := repos.Quest.Save(ctx, q); err != nil {
+            return err
+        }
+        
+        // Publish events synchronously in same transaction
+        if err := repos.Event.Publish(ctx, q.GetDomainEvents()...); err != nil {
+            return err
+        }
+        
+        createdQuest = q
+        return nil
+    })
+    
+    return createdQuest, err
+}
+```
+
+**Key Benefits**:
+- GORM manages transaction lifecycle automatically
+- Explicit transaction boundaries via closure
+- Repository instances scoped to transaction
+- Simpler than UnitOfWork pattern
 
 ### 3. Repository Pattern
 

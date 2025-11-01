@@ -2,9 +2,9 @@
 
 ## 🎯 Current Status
 
-**Version**: 1.5.1  
+**Version**: 1.6.0  
 **Status**: Production Ready ✅  
-**Last Updated**: October 23, 2025
+**Last Updated**: November 1, 2025
 
 ## ✅ What Works
 
@@ -23,6 +23,8 @@
 - ✅ **Event-Driven**: Domain events with PostgreSQL storage
 - ✅ **Hexagonal Architecture**: Ports and adapters pattern
 - ✅ **Container Pattern**: Dependency injection with lazy initialization
+- ✅ **TransactionManager**: Closure-based transaction management (ThreeDots Labs pattern)
+- ✅ **Simplified Repositories**: Direct `*gorm.DB` usage without Tracker abstraction
 
 ### API & Integration
 - ✅ **REST API**: 7 endpoints with OpenAPI 3.0 specification
@@ -35,7 +37,7 @@
 - ✅ **PostgreSQL**: Spatial extensions with optimized queries
 - ✅ **Spatial Indexing**: Bounding box + Haversine for geospatial search
 - ✅ **Connection Pooling**: Efficient database connection management
-- ✅ **Async Events**: Goroutine pool for event processing
+- ✅ **Transaction Management**: Closure-based transactions via TransactionManager
 - ✅ **Query Optimization**: Composite indexes for multi-column searches
 
 ### Testing & Quality
@@ -133,6 +135,7 @@
 5. **v1.4**: Enhanced security with JWT authentication
 6. **v1.5**: Container refactoring with lazy initialization
 7. **v1.5.1**: UoW read-your-writes, EventPublisher fallback, coverage/reporting updates
+8. **v1.6.0**: TransactionManager refactoring (ThreeDots Labs pattern), removed UnitOfWork/Tracker, simplified repositories
 
 ### Key Architectural Decisions
 - **ADR-001**: Clean Architecture + DDD for maintainability

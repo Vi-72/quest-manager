@@ -137,25 +137,35 @@ func (c GeoCoordinate) BoundingBoxForRadius(radiusKm float64) BoundingBox {
 **Pattern:**
 ```go
 func (h *handler) Handle(ctx context.Context, cmd Command) (Result, error) {
-    // 1. Begin transaction
-    h.unitOfWork.Begin(ctx)
+    var result Result
     
-    // 2. Load aggregate
-    aggregate := h.repository.GetByID(ctx, cmd.ID)
+    err := h.txManager.RunInTransaction(ctx, func(ctx context.Context, repos ports.Repositories) error {
+        // 1. Load aggregate
+        aggregate, err := repos.Quest.GetByID(ctx, cmd.ID)
+        if err != nil {
+            return err
+        }
+        
+        // 2. Execute domain logic
+        if err := aggregate.DoSomething(cmd.Params); err != nil {
+            return err
+        }
+        
+        // 3. Save aggregate
+        if err := repos.Quest.Save(ctx, aggregate); err != nil {
+            return err
+        }
+        
+        // 4. Publish events synchronously in same transaction
+        if err := repos.Event.Publish(ctx, aggregate.GetDomainEvents()...); err != nil {
+            return err
+        }
+        
+        result = aggregate
+        return nil
+    })
     
-    // 3. Execute domain logic
-    aggregate.DoSomething(cmd.Params)
-    
-    // 4. Save aggregate
-    h.repository.Save(ctx, aggregate)
-    
-    // 5. Publish events
-    h.eventPublisher.Publish(ctx, aggregate.GetDomainEvents()...)
-    
-    // 6. Commit transaction
-    h.unitOfWork.Commit(ctx)
-    
-    return result, nil
+    return result, err
 }
 ```
 
@@ -189,8 +199,8 @@ func (h *handler) Handle(ctx context.Context, query Query) ([]Result, error) {
 **Key Interfaces:**
 - `QuestRepository` - Quest persistence
 - `LocationRepository` - Location persistence
-- `UnitOfWork` - Transaction management
-- `EventPublisher` - Event publishing
+- `TransactionManager` - Transaction management (closure-based)
+- `EventPublisher` - Event publishing (synchronous only)
 - `AuthClient` - Authentication service
 
 **Hexagonal Architecture:** Domain depends on ports, not implementations.
@@ -276,14 +286,14 @@ problem.WriteResponse(w)
 - Coordinate precision handling
 
 **Event Repository** (`eventrepo/`)
-- Persist domain events
-- Async event publishing
-- Goroutine pool for performance
+- Persist domain events synchronously
+- Events stored within same transaction as domain changes
+- Outbox pattern for event reliability
 
-**Unit of Work** (`unit_of_work.go`)
-- Transaction management
-- Repository factory
-- Per-request lifecycle
+**Transaction Manager** (`transaction_manager.go`)
+- Closure-based transaction management
+- GORM transaction lifecycle
+- Repository instances scoped to transaction
 
 ---
 

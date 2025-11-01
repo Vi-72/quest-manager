@@ -169,22 +169,23 @@ type QuestAssignedEvent struct {
 ```go
 type EventPublisher interface {
     Publish(ctx context.Context, events ...ddd.DomainEvent) error
-    Publish(ctx context.Context, events ...ddd.DomainEvent) error
 }
 ```
 
 ### Implementation (`eventrepo/repository.go`)
 
 **Features:**
-- Goroutine pool for async publishing
+- Synchronous publishing within transaction
+- Events stored in same transaction as domain changes
+- Outbox pattern for event reliability
 - Transactional support
 - Event persistence to PostgreSQL
 - JSON serialization of event data
 
 **Configuration:**
 ```go
-// Create publisher with goroutine limit
-publisher := eventrepo.NewRepository(tracker, 10)
+// Create publisher with database connection
+publisher := eventrepo.NewRepository(db)
 ```
 
 ---
@@ -357,26 +358,19 @@ func (s *Suite) TestQuestCreatedEvent_Data() {
 - **High traffic:** ~1000 events/minute
 
 ### Performance
-- Event publishing: <5ms (sync)
+- Event publishing: <5ms (synchronous within transaction)
 - Event persistence: <10ms (with transaction)
-- Goroutine pool prevents overload
+- Transactional consistency ensures events are committed with domain changes
 
 ---
 
 ## ⚙️ Event Configuration
 
-### Goroutine Limit
-```bash
-# Control concurrent event processing
-export EVENT_GOROUTINE_LIMIT=20
-
-# Default: 10
-```
-
-**Tuning:**
-- Low traffic: 5-10 goroutines
-- Medium traffic: 10-20 goroutines
-- High traffic: 20-50 goroutines
+### Transaction Integration
+Events are published synchronously within the same transaction as domain changes:
+- Ensures atomicity: domain changes and events commit together
+- No separate event processing queue needed
+- Reliable event delivery (outbox pattern)
 
 ### Event Retention (Future)
 ```sql
