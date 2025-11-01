@@ -2,13 +2,11 @@ package eventrepo
 
 import (
 	"context"
-	"log"
-	"sync"
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
-	postgres "quest-manager/internal/adapters/out/postgres"
 	"quest-manager/internal/core/domain/model/location"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
@@ -19,111 +17,40 @@ import (
 var _ ports.EventPublisher = &Repository{}
 
 type Repository struct {
-	trackerFactory     func() (ports.Tracker, error)
-	tracker            ports.Tracker
-	goroutineSemaphore chan struct{} // Semaphore for limiting goroutines
-	mu                 sync.Mutex
+	db *gorm.DB
 }
 
-func NewRepository(tracker ports.Tracker, goroutineLimit int) (*Repository, error) {
-	if tracker == nil {
-		return nil, errs.NewValueIsRequiredError("tracker")
-	}
-	if goroutineLimit <= 0 {
-		goroutineLimit = 5 // default value
-	}
-
-	db := tracker.Db()
-
-	return &Repository{
-		tracker: tracker,
-		trackerFactory: func() (ports.Tracker, error) {
-			uow, err := postgres.NewUnitOfWork(db)
-			if err != nil {
-				return nil, err
-			}
-			return uow.(ports.Tracker), nil
-		},
-		goroutineSemaphore: make(chan struct{}, goroutineLimit),
-	}, nil
-}
-
-// PublishAsync asynchronously publishes events with goroutine limiting
-func (r *Repository) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
-	if len(events) == 0 {
-		return
-	}
-
-	// Запускаем в горутине с ограничением
-	go func() {
-		// Занимаем слот в семафоре
-		r.goroutineSemaphore <- struct{}{}
-		defer func() {
-			// Освобождаем слот
-			<-r.goroutineSemaphore
-		}()
-
-		tracker, err := r.trackerFactory()
-		if err != nil {
-			log.Printf("ERROR: Failed to create tracker for event publishing: %v", err)
-			return
-		}
-
-		if err := r.publishWithTracker(ctx, tracker, events...); err != nil {
-			log.Printf("ERROR: Failed to publish events: %v", err)
-		}
-	}()
+func NewRepository(db *gorm.DB) *Repository {
+	return &Repository{db: db}
 }
 
 // Publish сохраняет доменные события в базу данных
+// Использует существующую транзакцию из r.db, если она есть
+// (например, когда вызывается из TransactionManager.RunInTransaction)
 func (r *Repository) Publish(ctx context.Context, events ...ddd.DomainEvent) error {
 	if len(events) == 0 {
 		return nil
 	}
 
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	return r.publishWithTracker(ctx, r.tracker, events...)
-}
-
-func (r *Repository) publishWithTracker(ctx context.Context, tracker ports.Tracker, events ...ddd.DomainEvent) error {
-	if len(events) == 0 {
-		return nil
-	}
-
-	isInTransaction := tracker.InTx()
-	if !isInTransaction {
-		if err := tracker.Begin(ctx); err != nil {
-			return errs.WrapInfrastructureError("failed to begin event transaction", err)
-		}
-	}
-	tx := tracker.Tx()
-
+	// Convert all events to DTOs
+	var dtos []EventDTO
 	for _, event := range events {
 		dto, err := r.domainEventToDTO(event)
 		if err != nil {
-			if !isInTransaction {
-				_ = tracker.Rollback()
-			}
 			return errs.WrapInfrastructureError("failed to convert event to DTO", err)
 		}
+		dtos = append(dtos, dto)
+	}
 
-		err = tx.WithContext(ctx).Create(&dto).Error
-		if err != nil {
-			if !isInTransaction {
-				_ = tracker.Rollback()
-			}
+	// Use r.db directly - it's already a transaction when called from TransactionManager
+	// If it's not a transaction, GORM will execute operations without transaction
+	// This ensures events are part of the same transaction as domain changes
+	db := r.db.WithContext(ctx)
+	for i := range dtos {
+		if err := db.Create(&dtos[i]).Error; err != nil {
 			return errs.WrapInfrastructureError("failed to save event", err)
 		}
 	}
-
-	if !isInTransaction {
-		if err := tracker.Commit(ctx); err != nil {
-			return errs.WrapInfrastructureError("failed to commit event transaction", err)
-		}
-	}
-
 	return nil
 }
 

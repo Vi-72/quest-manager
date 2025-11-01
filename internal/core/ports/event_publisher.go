@@ -10,7 +10,6 @@ import (
 // EventPublisher defines methods for publishing domain events
 type EventPublisher interface {
 	Publish(ctx context.Context, events ...ddd.DomainEvent) error
-	PublishAsync(ctx context.Context, events ...ddd.DomainEvent)
 }
 
 // NullEventPublisher is a no-op implementation for development
@@ -26,11 +25,4 @@ func (p *NullEventPublisher) Publish(ctx context.Context, events ...ddd.DomainEv
 		)
 	}
 	return nil
-}
-
-func (p *NullEventPublisher) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
-	// Asynchronous version - simply call the synchronous one
-	if err := p.Publish(ctx, events...); err != nil {
-		slog.ErrorContext(ctx, "failed to publish domain events", slog.Any("error", err))
-	}
 }

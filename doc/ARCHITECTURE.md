@@ -390,6 +390,60 @@ type Container struct {
 
 ---
 
+## 🔗 Microservice Interaction
+
+### High-level interactions
+```
+┌────────────┐        HTTP/JSON         ┌──────────────────────┐
+│   Client   │ ───────────────────────▶ │   Quest Manager API  │
+└────────────┘                          │  (Handlers + Usecases)│
+                                        └──────────┬───────────┘
+                                                   │
+                                                   │ gRPC (JWT validation)
+                                                   ▼
+                                        ┌──────────────────────┐
+                                        │   Auth Service (gRPC)│
+                                        └──────────────────────┘
+                                                   
+                                                   │
+                                                   │ SQL (Tx via UoW)
+                                                   ▼
+                                        ┌──────────────────────┐
+                                        │     PostgreSQL       │
+                                        │  quests, locations   │
+                                        │  events (outbox)     │
+                                        └──────────────────────┘
+```
+
+### Transaction and event publishing flow
+```
+CommandHandler
+  ↓
+TransactionManager.RunInTransaction(ctx, fn)
+  - GORM Transaction begins
+  - Create repository instances with transaction
+  - Execute business logic closure
+  - Publish events synchronously in same transaction
+  - Commit or rollback automatically
+
+EventPublisher (Publish)
+  - Writes to events table within transaction
+  - Events are part of same transaction as domain changes
+```
+
+### Query path
+- Queries use bare repositories without transactions
+- Repositories receive `*gorm.DB` directly
+- No transaction overhead for read operations
+
+### Notes
+- TransactionManager uses closure pattern (ThreeDots Labs style)
+- GORM manages transaction lifecycle automatically
+- All repositories within closure share the same transaction
+- Auth is an external microservice (gRPC); Quest Manager calls it in middleware to validate JWT and extract `user_id` into request context
+
+---
+
 ## 📐 Quality Attributes
 
 ### Maintainability
@@ -458,6 +512,6 @@ For detailed information, see:
 
 ---
 
-**Architecture Version:** 1.5.0  
-**Last Updated:** October 9, 2025  
+**Architecture Version:** 1.5.1  
+**Last Updated:** October 23, 2025  
 **Status:** Production Ready ✅

@@ -15,7 +15,7 @@ type ContractDIContainer struct {
 	QuestRepository    ports.QuestRepository
 	LocationRepository ports.LocationRepository
 	EventPublisher     ports.EventPublisher
-	UnitOfWork         ports.UnitOfWork
+	TransactionManager ports.TransactionManager
 
 	// Command Handlers
 	CreateQuestHandler       commands.CreateQuestCommandHandler
@@ -31,18 +31,24 @@ type ContractDIContainer struct {
 
 // NewContractDIContainer creates a new DI container with mocked dependencies
 func NewContractDIContainer() *ContractDIContainer {
-	// Create mocked repositories
+	// Create mock repositories
 	questRepo := NewMockQuestRepository()
 	locationRepo := NewMockLocationRepository()
 	eventPublisher := &MockEventPublisher{}
-	unitOfWork := NewMockUnitOfWork()
 
-	// Create command handlers with mocked dependencies
-	createQuestHandler := commands.NewCreateQuestCommandHandler(unitOfWork, eventPublisher)
-	assignQuestHandler := commands.NewAssignQuestCommandHandler(unitOfWork, eventPublisher)
-	changeQuestStatusHandler := commands.NewChangeQuestStatusCommandHandler(unitOfWork, eventPublisher)
+	// Create transaction manager with mock repositories
+	txManager := &MockTransactionManager{
+		questRepo:    questRepo,
+		locationRepo: locationRepo,
+		eventRepo:    eventPublisher,
+	}
 
-	// Create query handlers with mocked dependencies
+	// Create command handlers with transaction manager
+	createQuestHandler := commands.NewCreateQuestCommandHandler(txManager)
+	assignQuestHandler := commands.NewAssignQuestCommandHandler(txManager)
+	changeQuestStatusHandler := commands.NewChangeQuestStatusCommandHandler(txManager)
+
+	// Create query handlers with bare repositories
 	listQuestsHandler := queries.NewListQuestsQueryHandler(questRepo)
 	getQuestByIDHandler := queries.NewGetQuestByIDQueryHandler(questRepo)
 	searchQuestsByRadiusHandler := queries.NewSearchQuestsByRadiusQueryHandler(questRepo)
@@ -52,7 +58,7 @@ func NewContractDIContainer() *ContractDIContainer {
 		QuestRepository:    questRepo,
 		LocationRepository: locationRepo,
 		EventPublisher:     eventPublisher,
-		UnitOfWork:         unitOfWork,
+		TransactionManager: txManager,
 
 		CreateQuestHandler:       createQuestHandler,
 		AssignQuestHandler:       assignQuestHandler,
@@ -75,12 +81,7 @@ func (c *ContractDIContainer) CleanupAll() {
 	}
 	if mockEventPublisher, ok := c.EventPublisher.(*MockEventPublisher); ok {
 		mockEventPublisher.PublishedEvents = nil
-		mockEventPublisher.PublishAsyncEvents = nil
 		mockEventPublisher.PublishError = nil
-	}
-	if mockUnitOfWork, ok := c.UnitOfWork.(*MockUnitOfWork); ok {
-		mockUnitOfWork.ClearRepositories()
-		mockUnitOfWork.SetShouldFail(false)
 	}
 }
 
@@ -90,11 +91,28 @@ func (c *ContractDIContainer) WaitForEventProcessing(expectedCount int64) {
 	// No-op for mocks
 }
 
-// MockEventPublisher for testing (moved from event_publisher_contracts_test.go)
+// MockTransactionManager for testing
+type MockTransactionManager struct {
+	questRepo    ports.QuestRepository
+	locationRepo ports.LocationRepository
+	eventRepo    ports.EventPublisher
+}
+
+var _ ports.TransactionManager = &MockTransactionManager{}
+
+func (m *MockTransactionManager) RunInTransaction(ctx context.Context, fn func(ctx context.Context, repos ports.Repositories) error) error {
+	repos := ports.Repositories{
+		Quest:    m.questRepo,
+		Location: m.locationRepo,
+		Event:    m.eventRepo,
+	}
+	return fn(ctx, repos)
+}
+
+// MockEventPublisher for testing
 type MockEventPublisher struct {
-	PublishedEvents    []ddd.DomainEvent
-	PublishError       error
-	PublishAsyncEvents []ddd.DomainEvent
+	PublishedEvents []ddd.DomainEvent
+	PublishError    error
 }
 
 func (m *MockEventPublisher) Publish(ctx context.Context, events ...ddd.DomainEvent) error {
@@ -104,9 +122,4 @@ func (m *MockEventPublisher) Publish(ctx context.Context, events ...ddd.DomainEv
 	}
 	m.PublishedEvents = append(m.PublishedEvents, events...)
 	return nil
-}
-
-func (m *MockEventPublisher) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
-	_ = ctx // unused in mock
-	m.PublishAsyncEvents = append(m.PublishAsyncEvents, events...)
 }

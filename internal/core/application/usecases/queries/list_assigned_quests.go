@@ -15,15 +15,15 @@ type ListAssignedQuestsQueryHandler interface {
 }
 
 type listAssignedQuestsHandler struct {
-	repo ports.QuestRepository
+	questRepo ports.QuestRepository
 }
 
 // NewListAssignedQuestsQueryHandler creates a new instance of ListAssignedQuestsQueryHandler.
-func NewListAssignedQuestsQueryHandler(repo ports.QuestRepository) ListAssignedQuestsQueryHandler {
-	return &listAssignedQuestsHandler{repo: repo}
+func NewListAssignedQuestsQueryHandler(questRepo ports.QuestRepository) ListAssignedQuestsQueryHandler {
+	return &listAssignedQuestsHandler{questRepo: questRepo}
 }
 
 // Handle retrieves all quests assigned to the given user.
 func (h *listAssignedQuestsHandler) Handle(ctx context.Context, userID uuid.UUID) ([]quest.Quest, error) {
-	return h.repo.FindByAssignee(ctx, userID)
+	return h.questRepo.FindByAssignee(ctx, userID)
 }

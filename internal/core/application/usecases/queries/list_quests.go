@@ -15,12 +15,12 @@ type ListQuestsQueryHandler interface {
 }
 
 type listQuestsHandler struct {
-	repo ports.QuestRepository
+	questRepo ports.QuestRepository
 }
 
 // NewListQuestsQueryHandler creates a new ListQuestsQueryHandler instance.
-func NewListQuestsQueryHandler(repo ports.QuestRepository) ListQuestsQueryHandler {
-	return &listQuestsHandler{repo: repo}
+func NewListQuestsQueryHandler(questRepo ports.QuestRepository) ListQuestsQueryHandler {
+	return &listQuestsHandler{questRepo: questRepo}
 }
 
 // Handle retrieves quests from the repository, optionally filtered by status.
@@ -32,8 +32,8 @@ func (h *listQuestsHandler) Handle(ctx context.Context, status *quest.Status) ([
 		}
 
 		// Filter by status
-		return h.repo.FindByStatus(ctx, *status)
+		return h.questRepo.FindByStatus(ctx, *status)
 	}
 	// Return all quests
-	return h.repo.FindAll(ctx)
+	return h.questRepo.FindAll(ctx)
 }

@@ -19,112 +19,111 @@ type CreateQuestCommandHandler interface {
 var _ CreateQuestCommandHandler = &createQuestHandler{}
 
 type createQuestHandler struct {
-	unitOfWork     ports.UnitOfWork
-	eventPublisher ports.EventPublisher
+	txManager ports.TransactionManager
 }
 
 // NewCreateQuestCommandHandler creates a new instance of CreateQuestCommandHandler.
-func NewCreateQuestCommandHandler(unitOfWork ports.UnitOfWork, eventPublisher ports.EventPublisher) CreateQuestCommandHandler {
+func NewCreateQuestCommandHandler(txManager ports.TransactionManager) CreateQuestCommandHandler {
 	return &createQuestHandler{
-		unitOfWork:     unitOfWork,
-		eventPublisher: eventPublisher,
+		txManager: txManager,
 	}
 }
 
 func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand) (quest.Quest, error) {
-	var targetLocationID *uuid.UUID
-	var executionLocationID *uuid.UUID
+	var createdQuest quest.Quest
 
-	// Begin transaction
-	if err := h.unitOfWork.Begin(ctx); err != nil {
-		return quest.Quest{}, errs.WrapInfrastructureError("failed to begin quest creation transaction", err)
-	}
+	err := h.txManager.RunInTransaction(ctx, func(ctx context.Context, repos ports.Repositories) error {
+		var targetLocationID *uuid.UUID
+		var executionLocationID *uuid.UUID
 
-	// Create or find target location
-	targetLoc, err := location.NewLocation(
-		cmd.TargetLocation,
-		cmd.TargetAddress,
-	)
-	if err != nil {
-		_ = h.unitOfWork.Rollback()
-		return quest.Quest{}, errs.WrapInfrastructureError("failed to create target location", err)
-	}
-
-	// Save target location
-	err = h.unitOfWork.LocationRepository().Save(ctx, targetLoc)
-	if err != nil {
-		_ = h.unitOfWork.Rollback()
-		return quest.Quest{}, errs.WrapInfrastructureError("failed to save target location", err)
-	}
-	targetLocID := targetLoc.ID()
-	targetLocationID = &targetLocID
-
-	// Create or find execution location (can be the same as target)
-	var executionLoc *location.Location
-	if cmd.TargetLocation.Equals(cmd.ExecutionLocation) {
-		executionLoc = targetLoc
-		executionLocationID = targetLocationID
-	} else {
-		executionLoc, err = location.NewLocation(
-			cmd.ExecutionLocation,
-			cmd.ExecutionAddress,
+		// Create or find target location
+		targetLoc, err := location.NewLocation(
+			cmd.TargetLocation,
+			cmd.TargetAddress,
 		)
 		if err != nil {
-			_ = h.unitOfWork.Rollback()
-			return quest.Quest{}, errs.WrapInfrastructureError("failed to create execution location", err)
+			return errs.WrapInfrastructureError("failed to create target location", err)
 		}
 
-		// Save execution location
-		err = h.unitOfWork.LocationRepository().Save(ctx, executionLoc)
+		// Save target location
+		err = repos.Location.Save(ctx, targetLoc)
 		if err != nil {
-			_ = h.unitOfWork.Rollback()
-			return quest.Quest{}, errs.WrapInfrastructureError("failed to save execution location", err)
+			return errs.WrapInfrastructureError("failed to save target location", err)
 		}
-		executionLocID := executionLoc.ID()
-		executionLocationID = &executionLocID
-	}
+		targetLocID := targetLoc.ID()
+		targetLocationID = &targetLocID
 
-	// Create quest
-	q, err := quest.NewQuest(
-		cmd.Title,
-		cmd.Description,
-		cmd.Difficulty,
-		cmd.Reward,
-		cmd.DurationMinutes,
-		cmd.TargetLocation,
-		cmd.ExecutionLocation,
-		cmd.Creator,
-		cmd.Equipment,
-		cmd.Skills,
-	)
-	if err != nil {
-		_ = h.unitOfWork.Rollback()
-		return quest.Quest{}, errs.NewDomainValidationErrorWithCause("quest", "invalid quest data", err)
-	}
+		// Create or find execution location (can be the same as target)
+		var executionLoc *location.Location
+		if cmd.TargetLocation.Equals(cmd.ExecutionLocation) {
+			executionLoc = targetLoc
+			executionLocationID = targetLocationID
+		} else {
+			executionLoc, err = location.NewLocation(
+				cmd.ExecutionLocation,
+				cmd.ExecutionAddress,
+			)
+			if err != nil {
+				return errs.WrapInfrastructureError("failed to create execution location", err)
+			}
 
-	// Link quest with created locations
-	q.TargetLocationID = targetLocationID
-	q.ExecutionLocationID = executionLocationID
+			// Save execution location
+			err = repos.Location.Save(ctx, executionLoc)
+			if err != nil {
+				return errs.WrapInfrastructureError("failed to save execution location", err)
+			}
+			executionLocID := executionLoc.ID()
+			executionLocationID = &executionLocID
+		}
 
-	// Save quest
-	err = h.unitOfWork.QuestRepository().Save(ctx, q)
-	if err != nil {
-		_ = h.unitOfWork.Rollback()
-		return quest.Quest{}, errs.WrapInfrastructureError("failed to save quest", err)
-	}
+		// Create quest
+		q, err := quest.NewQuest(
+			cmd.Title,
+			cmd.Description,
+			cmd.Difficulty,
+			cmd.Reward,
+			cmd.DurationMinutes,
+			cmd.TargetLocation,
+			cmd.ExecutionLocation,
+			cmd.Creator,
+			cmd.Equipment,
+			cmd.Skills,
+		)
+		if err != nil {
+			return errs.NewDomainValidationErrorWithCause("quest", "invalid quest data", err)
+		}
 
-	// Commit transaction
-	err = h.unitOfWork.Commit(ctx)
-	if err != nil {
-		return quest.Quest{}, errs.WrapInfrastructureError("failed to commit quest creation transaction", err)
-	}
+		// Link quest with created locations
+		q.TargetLocationID = targetLocationID
+		q.ExecutionLocationID = executionLocationID
 
-	// Publish all domain events asynchronously after successful commit
-	if executionLoc != targetLoc {
-		PublishDomainEventsAsync(context.Background(), h.eventPublisher, q, targetLoc, executionLoc)
-	} else {
-		PublishDomainEventsAsync(context.Background(), h.eventPublisher, q, targetLoc)
-	}
+		// Save quest
+		err = repos.Quest.Save(ctx, q)
+		if err != nil {
+			return errs.WrapInfrastructureError("failed to save quest", err)
+		}
 
-	return q, nil
+		// Publish events synchronously in same transaction
+		events := q.GetDomainEvents()
+		events = append(events, targetLoc.GetDomainEvents()...)
+		// Only add execution location events if it's different from target location
+		if executionLoc != targetLoc {
+			events = append(events, executionLoc.GetDomainEvents()...)
+		}
+		if err := repos.Event.Publish(ctx, events...); err != nil {
+			return errs.WrapInfrastructureError("failed to publish events", err)
+		}
+
+		// Clear events after successful publication
+		q.ClearDomainEvents()
+		targetLoc.ClearDomainEvents()
+		if executionLoc != nil && executionLoc != targetLoc {
+			executionLoc.ClearDomainEvents()
+		}
+
+		createdQuest = q
+		return nil
+	})
+
+	return createdQuest, err
 }

@@ -26,6 +26,7 @@ func (a *ApiHandler) CreateQuest(ctx context.Context, request v1.CreateQuestRequ
 		return nil, errors.NewBadRequest("Request validation failed: execution_location invalid coordinate values (" + err.Error() + ")")
 	}
 
+	// Normalize to empty slices instead of nil to ensure [] serialization, not null
 	equipment := []string{}
 	if request.Body.Equipment != nil {
 		equipment = *request.Body.Equipment
