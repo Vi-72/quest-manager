@@ -104,10 +104,21 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 		}
 
 		// Publish events synchronously in same transaction
-		events := append(q.GetDomainEvents(), targetLoc.GetDomainEvents()...)
-		events = append(events, executionLoc.GetDomainEvents()...)
+		events := q.GetDomainEvents()
+		events = append(events, targetLoc.GetDomainEvents()...)
+		// Only add execution location events if it's different from target location
+		if executionLoc != targetLoc {
+			events = append(events, executionLoc.GetDomainEvents()...)
+		}
 		if err := repos.Event.Publish(ctx, events...); err != nil {
 			return errs.WrapInfrastructureError("failed to publish events", err)
+		}
+
+		// Clear events after successful publication
+		q.ClearDomainEvents()
+		targetLoc.ClearDomainEvents()
+		if executionLoc != nil && executionLoc != targetLoc {
+			executionLoc.ClearDomainEvents()
 		}
 
 		createdQuest = q

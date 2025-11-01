@@ -25,6 +25,8 @@ func NewRepository(db *gorm.DB) *Repository {
 }
 
 // Publish сохраняет доменные события в базу данных
+// Использует существующую транзакцию из r.db, если она есть
+// (например, когда вызывается из TransactionManager.RunInTransaction)
 func (r *Repository) Publish(ctx context.Context, events ...ddd.DomainEvent) error {
 	if len(events) == 0 {
 		return nil
@@ -40,15 +42,16 @@ func (r *Repository) Publish(ctx context.Context, events ...ddd.DomainEvent) err
 		dtos = append(dtos, dto)
 	}
 
-	// Save all events in a single transaction
-	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		for i := range dtos {
-			if err := tx.Create(&dtos[i]).Error; err != nil {
-				return errs.WrapInfrastructureError("failed to save event", err)
-			}
+	// Use r.db directly - it's already a transaction when called from TransactionManager
+	// If it's not a transaction, GORM will execute operations without transaction
+	// This ensures events are part of the same transaction as domain changes
+	db := r.db.WithContext(ctx)
+	for i := range dtos {
+		if err := db.Create(&dtos[i]).Error; err != nil {
+			return errs.WrapInfrastructureError("failed to save event", err)
 		}
-		return nil
-	})
+	}
+	return nil
 }
 
 // domainEventToDTO конвертирует доменное событие в DTO

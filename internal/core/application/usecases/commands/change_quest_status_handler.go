@@ -55,6 +55,9 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 			return errs.WrapInfrastructureError("failed to publish events", err)
 		}
 
+		// Clear events after successful publication
+		q.ClearDomainEvents()
+
 		result = ChangeQuestStatusResult{
 			ID:       q.ID(),
 			Assignee: q.Assignee, // Now both are *uuid.UUID

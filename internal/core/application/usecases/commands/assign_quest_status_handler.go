@@ -52,6 +52,9 @@ func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand)
 			return errs.WrapInfrastructureError("failed to publish events", err)
 		}
 
+		// Clear events after successful publication
+		q.ClearDomainEvents()
+
 		result = AssignQuestResult{
 			ID:       q.ID(),
 			Assignee: cmd.UserID,
