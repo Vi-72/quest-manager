@@ -23,7 +23,7 @@ func NewDefault(s suite.TestingSuite) DefaultSuite {
 func (s *DefaultSuite) SetupSuite() {
 	// Get DB from the test environment
 	// Use test database URL - in real tests this would come from environment
-	testDBURL := "postgres://postgres:postgres@localhost:5432/quest_manager_test?sslmode=disable"
+	testDBURL := "postgres://postgres:password@localhost:5432/quest_manager_test?sslmode=disable"
 	db, _, err := cmd.MustConnectDB(testDBURL)
 	s.Require().NoError(err, "Failed to connect to test database")
 
