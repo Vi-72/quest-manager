@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"os"
 	"quest-manager/cmd"
 
 	"github.com/stretchr/testify/suite"
@@ -19,12 +20,30 @@ func NewDefault(s suite.TestingSuite) DefaultSuite {
 	}
 }
 
+// getEnv returns environment variable value or default value
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
+
 // SetupSuite initializes resources before running all tests in the suite
 func (s *DefaultSuite) SetupSuite() {
-	// Get DB from the test environment
-	// Use test database URL - in real tests this would come from environment
-	testDBURL := "postgres://postgres:password@localhost:5432/quest_manager_test?sslmode=disable"
-	db, _, err := cmd.MustConnectDB(testDBURL)
+	// Get DB connection string from environment variables with fallback to defaults
+	// This allows CI/CD to override values while keeping local development simple
+	host := getEnv("DB_HOST", "localhost")
+	port := getEnv("DB_PORT", "5432")
+	user := getEnv("DB_USER", "postgres")
+	password := getEnv("DB_PASSWORD", "password")
+	dbName := getEnv("DB_NAME", "quest_manager_test")
+	sslMode := getEnv("DB_SSLMODE", "disable")
+
+	// Build connection string using cmd.MakeConnectionString for consistency
+	connectionString, err := cmd.MakeConnectionString(host, port, user, password, dbName, sslMode)
+	s.Require().NoError(err, "Failed to build database connection string")
+
+	db, _, err := cmd.MustConnectDB(connectionString)
 	s.Require().NoError(err, "Failed to connect to test database")
 
 	s.TestDIContainer = NewTestContainer(db)
