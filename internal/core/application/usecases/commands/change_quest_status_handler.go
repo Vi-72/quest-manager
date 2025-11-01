@@ -5,7 +5,6 @@ import (
 
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
-	"quest-manager/internal/pkg/ddd"
 	"quest-manager/internal/pkg/errs"
 )
 
@@ -15,13 +14,13 @@ type ChangeQuestStatusCommandHandler interface {
 }
 
 type changeQuestStatusHandler struct {
-	executor *CommandExecutor
+	txManager ports.TransactionManager
 }
 
 // NewChangeQuestStatusCommandHandler creates a new ChangeQuestStatusCommandHandler instance.
-func NewChangeQuestStatusCommandHandler(uowFactory ports.UnitOfWorkFactory, eventPublisher ports.EventPublisher) ChangeQuestStatusCommandHandler {
+func NewChangeQuestStatusCommandHandler(txManager ports.TransactionManager) ChangeQuestStatusCommandHandler {
 	return &changeQuestStatusHandler{
-		executor: NewCommandExecutor(uowFactory, eventPublisher),
+		txManager: txManager,
 	}
 }
 
@@ -34,21 +33,26 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 
 	var result ChangeQuestStatusResult
 
-	err := h.executor.Execute(ctx, func(ctx context.Context, uow ports.UnitOfWork) ([]ddd.AggregateRoot, error) {
+	err := h.txManager.RunInTransaction(ctx, func(ctx context.Context, repos ports.Repositories) error {
 		// Get quest - if not found → 404
-		q, err := uow.QuestRepository().GetByID(ctx, cmd.QuestID)
+		q, err := repos.Quest.GetByID(ctx, cmd.QuestID)
 		if err != nil {
-			return nil, errs.NewNotFoundErrorWithCause("quest", cmd.QuestID.String(), err)
+			return errs.NewNotFoundErrorWithCause("quest", cmd.QuestID.String(), err)
 		}
 
 		// Use domain logic for status change - domain validation error → 400
 		if err := q.ChangeStatus(cmd.Status); err != nil {
-			return nil, errs.NewDomainValidationErrorWithCause("status", "invalid status transition", err)
+			return errs.NewDomainValidationErrorWithCause("status", "invalid status transition", err)
 		}
 
 		// Save quest - infrastructure error → 500
-		if err := uow.QuestRepository().Save(ctx, q); err != nil {
-			return nil, errs.WrapInfrastructureError("failed to save quest", err)
+		if err := repos.Quest.Save(ctx, q); err != nil {
+			return errs.WrapInfrastructureError("failed to save quest", err)
+		}
+
+		// Publish events synchronously in same transaction
+		if err := repos.Event.Publish(ctx, q.GetDomainEvents()...); err != nil {
+			return errs.WrapInfrastructureError("failed to publish events", err)
 		}
 
 		result = ChangeQuestStatusResult{
@@ -57,8 +61,7 @@ func (h *changeQuestStatusHandler) Handle(ctx context.Context, cmd ChangeQuestSt
 			Status:   string(q.Status),
 		}
 
-		// Return aggregate for event publishing
-		return []ddd.AggregateRoot{&q}, nil
+		return nil
 	})
 
 	return result, err

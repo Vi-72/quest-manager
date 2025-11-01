@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 
 	"quest-manager/internal/core/domain/model/location"
 	"quest-manager/internal/core/domain/model/quest"
@@ -17,47 +18,22 @@ import (
 var _ ports.EventPublisher = &Repository{}
 
 type Repository struct {
-	uowFactory         ports.UnitOfWorkFactory
-	goroutineSemaphore chan struct{}
+	db *gorm.DB
 }
 
-func NewRepository(uowFactory ports.UnitOfWorkFactory, goroutineLimit int) (*Repository, error) {
-	if uowFactory == nil {
-		return nil, errs.NewValueIsRequiredError("uowFactory")
-	}
-	if goroutineLimit <= 0 {
-		goroutineLimit = 5 // default value
-	}
-
-	return &Repository{
-		uowFactory:         uowFactory,
-		goroutineSemaphore: make(chan struct{}, goroutineLimit),
-	}, nil
+func NewRepository(db *gorm.DB) *Repository {
+	return &Repository{db: db}
 }
 
-// PublishAsync asynchronously publishes events with goroutine limiting
+// PublishAsync asynchronously publishes events
 func (r *Repository) PublishAsync(ctx context.Context, events ...ddd.DomainEvent) {
 	if len(events) == 0 {
 		return
 	}
 
-	// Запускаем в горутине с ограничением
+	// Run in goroutine for async behavior
 	go func() {
-		// Занимаем слот в семафоре
-		r.goroutineSemaphore <- struct{}{}
-		defer func() {
-			// Освобождаем слот
-			<-r.goroutineSemaphore
-		}()
-
-		// Create new UoW for this async operation
-		uow, err := r.uowFactory.CreateUnitOfWork()
-		if err != nil {
-			log.Printf("ERROR: Failed to create UoW for event publishing: %v", err)
-			return
-		}
-
-		if err := r.publishWithUnitOfWork(ctx, uow, events...); err != nil {
+		if err := r.Publish(context.Background(), events...); err != nil {
 			log.Printf("ERROR: Failed to publish events: %v", err)
 		}
 	}()
@@ -69,25 +45,7 @@ func (r *Repository) Publish(ctx context.Context, events ...ddd.DomainEvent) err
 		return nil
 	}
 
-	// Prefer using existing UnitOfWork from context when available
-	if existingUow, ok := ports.UoWFromCtx(ctx); ok {
-		return r.publishWithUnitOfWork(ctx, existingUow, events...)
-	}
-
-	// Fallback: create a new UnitOfWork for synchronous publishing
-	uow, err := r.uowFactory.CreateUnitOfWork()
-	if err != nil {
-		return errs.WrapInfrastructureError("failed to create unit of work for event publishing", err)
-	}
-	return r.publishWithUnitOfWork(ctx, uow, events...)
-}
-
-func (r *Repository) publishWithUnitOfWork(ctx context.Context, uow ports.UnitOfWork, events ...ddd.DomainEvent) error {
-	if len(events) == 0 {
-		return nil
-	}
-
-	// Convert all events to DTOs before touching transaction boundaries
+	// Convert all events to DTOs
 	var dtos []EventDTO
 	for _, event := range events {
 		dto, err := r.domainEventToDTO(event)
@@ -97,32 +55,15 @@ func (r *Repository) publishWithUnitOfWork(ctx context.Context, uow ports.UnitOf
 		dtos = append(dtos, dto)
 	}
 
-	// Detect whether we are already in a transaction and manage tx boundaries accordingly
-	tracker := uow.(ports.Tracker)
-	alreadyInTx := tracker.InTx()
-	if !alreadyInTx {
-		if err := uow.Begin(ctx); err != nil {
-			return errs.WrapInfrastructureError("failed to begin event transaction", err)
-		}
-	}
-	tx := tracker.Tx()
-
-	for i := range dtos {
-		if err := tx.WithContext(ctx).Create(&dtos[i]).Error; err != nil {
-			if !alreadyInTx {
-				_ = uow.Rollback()
+	// Save all events in a single transaction
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		for i := range dtos {
+			if err := tx.Create(&dtos[i]).Error; err != nil {
+				return errs.WrapInfrastructureError("failed to save event", err)
 			}
-			return errs.WrapInfrastructureError("failed to save event", err)
 		}
-	}
-
-	if !alreadyInTx {
-		if err := uow.Commit(ctx); err != nil {
-			return errs.WrapInfrastructureError("failed to commit event transaction", err)
-		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 // domainEventToDTO конвертирует доменное событие в DTO

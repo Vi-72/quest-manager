@@ -13,7 +13,7 @@ import (
 	httphandlers "quest-manager/internal/adapters/in/http"
 	authclient "quest-manager/internal/adapters/out/client/auth"
 	"quest-manager/internal/adapters/out/postgres"
-	"quest-manager/internal/adapters/out/postgres/eventrepo"
+	"quest-manager/internal/adapters/out/postgres/questrepo"
 	"quest-manager/internal/core/application/usecases/commands"
 	"quest-manager/internal/core/application/usecases/queries"
 	"quest-manager/internal/core/ports"
@@ -21,30 +21,21 @@ import (
 
 // Container holds all application dependencies and provides access to services.
 type Container struct {
-	configs        Config
-	db             *gorm.DB
-	eventPublisher ports.EventPublisher
-	authClient     ports.AuthClient
-	closers        []Closer
+	configs    Config
+	db         *gorm.DB
+	txManager  ports.TransactionManager
+	authClient ports.AuthClient
+	closers    []Closer
 }
 
 // NewContainer creates a new dependency injection container.
 // Initializes all dependencies including auth client (eager initialization).
 func NewContainer(configs Config, db *gorm.DB) (*Container, error) {
 	container := &Container{
-		configs: configs,
-		db:      db,
+		configs:   configs,
+		db:        db,
+		txManager: postgres.NewTransactionManager(db),
 	}
-
-	// EventPublisher now uses container as UnitOfWorkFactory
-	eventPublisher, err := eventrepo.NewRepository(
-		container, // Container implements UnitOfWorkFactory
-		configs.EventGoroutineLimit,
-	)
-	if err != nil {
-		return nil, fmt.Errorf("create event publisher: %w", err)
-	}
-	container.eventPublisher = eventPublisher
 
 	if !configs.Middleware.DevAuth.Enabled {
 		authClient, _ := container.createAuthClient()
@@ -60,14 +51,8 @@ func (c *Container) Cfg() Config { return c.configs }
 // DB returns database connection.
 func (c *Container) DB() *gorm.DB { return c.db }
 
-// CreateUnitOfWork creates a new UnitOfWork instance for this request
-// This ensures thread safety by avoiding shared state between concurrent requests
-func (c *Container) CreateUnitOfWork() (ports.UnitOfWork, error) {
-	return postgres.NewUnitOfWork(c.db)
-}
-
-// EventPublisher returns EventPublisher.
-func (c *Container) EventPublisher() ports.EventPublisher { return c.eventPublisher }
+// TransactionManager returns the transaction manager.
+func (c *Container) TransactionManager() ports.TransactionManager { return c.txManager }
 
 // GetAuthClient returns auth client (initialized in NewContainer or injected via SetAuthClient).
 func (c *Container) GetAuthClient() ports.AuthClient {
@@ -111,14 +96,14 @@ type Handlers struct {
 // Handlers initializes all application handlers.
 func (c *Container) Handlers() Handlers {
 	return Handlers{
-		CreateQuest:       commands.NewCreateQuestCommandHandler(c, c.eventPublisher),
-		ChangeQuestStatus: commands.NewChangeQuestStatusCommandHandler(c, c.eventPublisher),
-		AssignQuest:       commands.NewAssignQuestCommandHandler(c, c.eventPublisher),
-		// Queries use UnitOfWorkFactory to ensure per-request UoW
-		ListQuests:     queries.NewListQuestsQueryHandler(c),
-		GetQuestByID:   queries.NewGetQuestByIDQueryHandler(c),
-		SearchByRadius: queries.NewSearchQuestsByRadiusQueryHandler(c),
-		ListAssigned:   queries.NewListAssignedQuestsQueryHandler(c),
+		CreateQuest:       commands.NewCreateQuestCommandHandler(c.txManager),
+		ChangeQuestStatus: commands.NewChangeQuestStatusCommandHandler(c.txManager),
+		AssignQuest:       commands.NewAssignQuestCommandHandler(c.txManager),
+		// Queries use bare repositories without transactions
+		ListQuests:     queries.NewListQuestsQueryHandler(questrepo.NewRepository(c.db)),
+		GetQuestByID:   queries.NewGetQuestByIDQueryHandler(questrepo.NewRepository(c.db)),
+		SearchByRadius: queries.NewSearchQuestsByRadiusQueryHandler(questrepo.NewRepository(c.db)),
+		ListAssigned:   queries.NewListAssignedQuestsQueryHandler(questrepo.NewRepository(c.db)),
 	}
 }
 

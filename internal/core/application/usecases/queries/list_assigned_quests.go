@@ -15,19 +15,15 @@ type ListAssignedQuestsQueryHandler interface {
 }
 
 type listAssignedQuestsHandler struct {
-	uowFactory ports.UnitOfWorkFactory
+	questRepo ports.QuestRepository
 }
 
 // NewListAssignedQuestsQueryHandler creates a new instance of ListAssignedQuestsQueryHandler.
-func NewListAssignedQuestsQueryHandler(uowFactory ports.UnitOfWorkFactory) ListAssignedQuestsQueryHandler {
-	return &listAssignedQuestsHandler{uowFactory: uowFactory}
+func NewListAssignedQuestsQueryHandler(questRepo ports.QuestRepository) ListAssignedQuestsQueryHandler {
+	return &listAssignedQuestsHandler{questRepo: questRepo}
 }
 
 // Handle retrieves all quests assigned to the given user.
 func (h *listAssignedQuestsHandler) Handle(ctx context.Context, userID uuid.UUID) ([]quest.Quest, error) {
-	uow, err := h.uowFactory.CreateUnitOfWork()
-	if err != nil {
-		return nil, err
-	}
-	return uow.QuestRepository().FindByAssignee(ctx, userID)
+	return h.questRepo.FindByAssignee(ctx, userID)
 }

@@ -15,21 +15,16 @@ type ListQuestsQueryHandler interface {
 }
 
 type listQuestsHandler struct {
-	uowFactory ports.UnitOfWorkFactory
+	questRepo ports.QuestRepository
 }
 
 // NewListQuestsQueryHandler creates a new ListQuestsQueryHandler instance.
-func NewListQuestsQueryHandler(uowFactory ports.UnitOfWorkFactory) ListQuestsQueryHandler {
-	return &listQuestsHandler{uowFactory: uowFactory}
+func NewListQuestsQueryHandler(questRepo ports.QuestRepository) ListQuestsQueryHandler {
+	return &listQuestsHandler{questRepo: questRepo}
 }
 
 // Handle retrieves quests from the repository, optionally filtered by status.
 func (h *listQuestsHandler) Handle(ctx context.Context, status *quest.Status) ([]quest.Quest, error) {
-	uow, err := h.uowFactory.CreateUnitOfWork()
-	if err != nil {
-		return nil, errs.WrapInfrastructureError("failed to create unit of work", err)
-	}
-
 	if status != nil {
 		// Validate status using domain logic - return DomainValidationError for 400
 		if !quest.IsValidStatus(string(*status)) {
@@ -37,8 +32,8 @@ func (h *listQuestsHandler) Handle(ctx context.Context, status *quest.Status) ([
 		}
 
 		// Filter by status
-		return uow.QuestRepository().FindByStatus(ctx, *status)
+		return h.questRepo.FindByStatus(ctx, *status)
 	}
 	// Return all quests
-	return uow.QuestRepository().FindAll(ctx)
+	return h.questRepo.FindAll(ctx)
 }

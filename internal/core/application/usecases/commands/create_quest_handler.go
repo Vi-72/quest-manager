@@ -6,7 +6,6 @@ import (
 	"quest-manager/internal/core/domain/model/location"
 	"quest-manager/internal/core/domain/model/quest"
 	"quest-manager/internal/core/ports"
-	"quest-manager/internal/pkg/ddd"
 	"quest-manager/internal/pkg/errs"
 
 	"github.com/google/uuid"
@@ -20,20 +19,20 @@ type CreateQuestCommandHandler interface {
 var _ CreateQuestCommandHandler = &createQuestHandler{}
 
 type createQuestHandler struct {
-	executor *CommandExecutor
+	txManager ports.TransactionManager
 }
 
 // NewCreateQuestCommandHandler creates a new instance of CreateQuestCommandHandler.
-func NewCreateQuestCommandHandler(uowFactory ports.UnitOfWorkFactory, eventPublisher ports.EventPublisher) CreateQuestCommandHandler {
+func NewCreateQuestCommandHandler(txManager ports.TransactionManager) CreateQuestCommandHandler {
 	return &createQuestHandler{
-		executor: NewCommandExecutor(uowFactory, eventPublisher),
+		txManager: txManager,
 	}
 }
 
 func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand) (quest.Quest, error) {
 	var createdQuest quest.Quest
 
-	err := h.executor.Execute(ctx, func(ctx context.Context, uow ports.UnitOfWork) ([]ddd.AggregateRoot, error) {
+	err := h.txManager.RunInTransaction(ctx, func(ctx context.Context, repos ports.Repositories) error {
 		var targetLocationID *uuid.UUID
 		var executionLocationID *uuid.UUID
 
@@ -43,13 +42,13 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 			cmd.TargetAddress,
 		)
 		if err != nil {
-			return nil, errs.WrapInfrastructureError("failed to create target location", err)
+			return errs.WrapInfrastructureError("failed to create target location", err)
 		}
 
 		// Save target location
-		err = uow.LocationRepository().Save(ctx, targetLoc)
+		err = repos.Location.Save(ctx, targetLoc)
 		if err != nil {
-			return nil, errs.WrapInfrastructureError("failed to save target location", err)
+			return errs.WrapInfrastructureError("failed to save target location", err)
 		}
 		targetLocID := targetLoc.ID()
 		targetLocationID = &targetLocID
@@ -65,13 +64,13 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 				cmd.ExecutionAddress,
 			)
 			if err != nil {
-				return nil, errs.WrapInfrastructureError("failed to create execution location", err)
+				return errs.WrapInfrastructureError("failed to create execution location", err)
 			}
 
 			// Save execution location
-			err = uow.LocationRepository().Save(ctx, executionLoc)
+			err = repos.Location.Save(ctx, executionLoc)
 			if err != nil {
-				return nil, errs.WrapInfrastructureError("failed to save execution location", err)
+				return errs.WrapInfrastructureError("failed to save execution location", err)
 			}
 			executionLocID := executionLoc.ID()
 			executionLocationID = &executionLocID
@@ -91,7 +90,7 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 			cmd.Skills,
 		)
 		if err != nil {
-			return nil, errs.NewDomainValidationErrorWithCause("quest", "invalid quest data", err)
+			return errs.NewDomainValidationErrorWithCause("quest", "invalid quest data", err)
 		}
 
 		// Link quest with created locations
@@ -99,18 +98,20 @@ func (h *createQuestHandler) Handle(ctx context.Context, cmd CreateQuestCommand)
 		q.ExecutionLocationID = executionLocationID
 
 		// Save quest
-		err = uow.QuestRepository().Save(ctx, q)
+		err = repos.Quest.Save(ctx, q)
 		if err != nil {
-			return nil, errs.WrapInfrastructureError("failed to save quest", err)
+			return errs.WrapInfrastructureError("failed to save quest", err)
+		}
+
+		// Publish events synchronously in same transaction
+		events := append(q.GetDomainEvents(), targetLoc.GetDomainEvents()...)
+		events = append(events, executionLoc.GetDomainEvents()...)
+		if err := repos.Event.Publish(ctx, events...); err != nil {
+			return errs.WrapInfrastructureError("failed to publish events", err)
 		}
 
 		createdQuest = q
-
-		// Return aggregates for event publishing
-		if executionLoc != targetLoc {
-			return []ddd.AggregateRoot{&q, targetLoc, executionLoc}, nil
-		}
-		return []ddd.AggregateRoot{&q, targetLoc}, nil
+		return nil
 	})
 
 	return createdQuest, err

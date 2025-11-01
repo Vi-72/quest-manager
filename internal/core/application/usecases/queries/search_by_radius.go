@@ -15,14 +15,14 @@ type SearchQuestsByRadiusQueryHandler interface {
 }
 
 type searchQuestsByRadiusHandler struct {
-	uowFactory    ports.UnitOfWorkFactory
+	questRepo     ports.QuestRepository
 	searchService services.QuestSearchService
 }
 
 // NewSearchQuestsByRadiusQueryHandler creates a new SearchQuestsByRadiusQueryHandler instance.
-func NewSearchQuestsByRadiusQueryHandler(uowFactory ports.UnitOfWorkFactory) SearchQuestsByRadiusQueryHandler {
+func NewSearchQuestsByRadiusQueryHandler(questRepo ports.QuestRepository) SearchQuestsByRadiusQueryHandler {
 	return &searchQuestsByRadiusHandler{
-		uowFactory:    uowFactory,
+		questRepo:     questRepo,
 		searchService: services.NewQuestSearchService(),
 	}
 }
@@ -37,11 +37,7 @@ func (h *searchQuestsByRadiusHandler) Handle(ctx context.Context, center kernel.
 	bbox := center.BoundingBoxForRadius(radiusKm)
 
 	// Step 2: Get candidates from repository using simple bounding box query
-	uow, err := h.uowFactory.CreateUnitOfWork()
-	if err != nil {
-		return nil, err
-	}
-	candidates, err := uow.QuestRepository().FindByBoundingBox(ctx, bbox)
+	candidates, err := h.questRepo.FindByBoundingBox(ctx, bbox)
 	if err != nil {
 		return nil, err
 	}

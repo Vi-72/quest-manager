@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"quest-manager/internal/core/ports"
-	"quest-manager/internal/pkg/ddd"
 	"quest-manager/internal/pkg/errs"
 )
 
@@ -17,13 +16,13 @@ var _ AssignQuestCommandHandler = &assignQuestHandler{}
 
 // assignQuestHandler implements AssignQuestCommandHandler.
 type assignQuestHandler struct {
-	executor *CommandExecutor
+	txManager ports.TransactionManager
 }
 
 // NewAssignQuestCommandHandler creates a new instance of AssignQuestCommandHandler.
-func NewAssignQuestCommandHandler(uowFactory ports.UnitOfWorkFactory, eventPublisher ports.EventPublisher) AssignQuestCommandHandler {
+func NewAssignQuestCommandHandler(txManager ports.TransactionManager) AssignQuestCommandHandler {
 	return &assignQuestHandler{
-		executor: NewCommandExecutor(uowFactory, eventPublisher),
+		txManager: txManager,
 	}
 }
 
@@ -31,21 +30,26 @@ func NewAssignQuestCommandHandler(uowFactory ports.UnitOfWorkFactory, eventPubli
 func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand) (AssignQuestResult, error) {
 	var result AssignQuestResult
 
-	err := h.executor.Execute(ctx, func(ctx context.Context, uow ports.UnitOfWork) ([]ddd.AggregateRoot, error) {
+	err := h.txManager.RunInTransaction(ctx, func(ctx context.Context, repos ports.Repositories) error {
 		// Get quest - if not found → 404
-		q, err := uow.QuestRepository().GetByID(ctx, cmd.ID)
+		q, err := repos.Quest.GetByID(ctx, cmd.ID)
 		if err != nil {
-			return nil, errs.NewNotFoundErrorWithCause("quest", cmd.ID.String(), err)
+			return errs.NewNotFoundErrorWithCause("quest", cmd.ID.String(), err)
 		}
 
 		// Use domain logic - business rules errors → 400
 		if err := q.AssignTo(cmd.UserID); err != nil {
-			return nil, errs.NewDomainValidationErrorWithCause("assignment", "failed to assign quest", err)
+			return errs.NewDomainValidationErrorWithCause("assignment", "failed to assign quest", err)
 		}
 
 		// Save quest - infrastructure error → 500
-		if err := uow.QuestRepository().Save(ctx, q); err != nil {
-			return nil, errs.WrapInfrastructureError("failed to save quest", err)
+		if err := repos.Quest.Save(ctx, q); err != nil {
+			return errs.WrapInfrastructureError("failed to save quest", err)
+		}
+
+		// Publish events synchronously in same transaction
+		if err := repos.Event.Publish(ctx, q.GetDomainEvents()...); err != nil {
+			return errs.WrapInfrastructureError("failed to publish events", err)
 		}
 
 		result = AssignQuestResult{
@@ -54,8 +58,7 @@ func (h *assignQuestHandler) Handle(ctx context.Context, cmd AssignQuestCommand)
 			Status:   string(q.Status),
 		}
 
-		// Return aggregate for event publishing
-		return []ddd.AggregateRoot{&q}, nil
+		return nil
 	})
 
 	return result, err
